@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Tracker - Expense, Debt & Investment Analyzer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">
+                <span class="logo-icon">💰</span>
+                <h1>FinanceTracker</h1>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#dashboard" class="active">Dashboard</a></li>
+                <li><a href="#expenses">Expenses</a></li>
+                <li><a href="#debt">Debt Analysis</a></li>
+                <li><a href="#investments">Investments</a></li>
+                <li><a href="#upload">Upload</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Dashboard Section -->
+        <section id="dashboard" class="section active">
+            <h2>Financial Dashboard</h2>
+            <div class="dashboard-grid">
+                <div class="card summary-card income">
+                    <h3>Monthly Income</h3>
+                    <p class="amount" id="total-income">$0.00</p>
+                    <span class="trend positive">From payslips</span>
+                </div>
+                <div class="card summary-card expenses">
+                    <h3>Total Expenses</h3>
+                    <p class="amount" id="total-expenses">$0.00</p>
+                    <span class="trend negative">This month</span>
+                </div>
+                <div class="card summary-card debt">
+                    <h3>Total Debt</h3>
+                    <p class="amount" id="total-debt">$0.00</p>
+                    <span class="trend">Outstanding</span>
+                </div>
+                <div class="card summary-card savings">
+                    <h3>Net Savings</h3>
+                    <p class="amount" id="net-savings">$0.00</p>
+                    <span class="trend">Available to invest</span>
+                </div>
+            </div>
+
+            <div class="charts-container">
+                <div class="card chart-card">
+                    <h3>Expense Breakdown</h3>
+                    <canvas id="expense-chart"></canvas>
+                </div>
+                <div class="card chart-card">
+                    <h3>Financial Health Score</h3>
+                    <div class="health-score">
+                        <div class="score-circle" id="health-score">
+                            <span class="score-value">--</span>
+                            <span class="score-label">Score</span>
+                        </div>
+                        <div class="score-details">
+                            <p id="health-message">Add your financial data to see your score</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Expenses Section -->
+        <section id="expenses" class="section">
+            <h2>Expense Tracker</h2>
+            <div class="expense-container">
+                <div class="card add-expense-card">
+                    <h3>Add New Expense</h3>
+                    <form id="expense-form">
+                        <div class="form-group">
+                            <label for="expense-description">Description</label>
+                            <input type="text" id="expense-description" placeholder="e.g., Grocery shopping" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="expense-amount">Amount ($)</label>
+                                <input type="number" id="expense-amount" step="0.01" min="0" placeholder="0.00" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="expense-category">Category</label>
+                                <select id="expense-category" required>
+                                    <option value="">Select category</option>
+                                    <option value="housing">Housing</option>
+                                    <option value="transportation">Transportation</option>
+                                    <option value="food">Food & Groceries</option>
+                                    <option value="utilities">Utilities</option>
+                                    <option value="healthcare">Healthcare</option>
+                                    <option value="entertainment">Entertainment</option>
+                                    <option value="shopping">Shopping</option>
+                                    <option value="education">Education</option>
+                                    <option value="personal">Personal Care</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="expense-date">Date</label>
+                            <input type="date" id="expense-date" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Expense</button>
+                    </form>
+                </div>
+
+                <div class="card expense-list-card">
+                    <h3>Recent Expenses</h3>
+                    <div class="expense-filters">
+                        <select id="filter-category">
+                            <option value="all">All Categories</option>
+                            <option value="housing">Housing</option>
+                            <option value="transportation">Transportation</option>
+                            <option value="food">Food & Groceries</option>
+                            <option value="utilities">Utilities</option>
+                            <option value="healthcare">Healthcare</option>
+                            <option value="entertainment">Entertainment</option>
+                            <option value="shopping">Shopping</option>
+                            <option value="education">Education</option>
+                            <option value="personal">Personal Care</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="expense-list" id="expense-list">
+                        <p class="empty-state">No expenses recorded yet. Add your first expense above.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Debt Analysis Section -->
+        <section id="debt" class="section">
+            <h2>Debt Analysis & Payoff Plan</h2>
+            <div class="debt-container">
+                <div class="card add-debt-card">
+                    <h3>Add Debt</h3>
+                    <form id="debt-form">
+                        <div class="form-group">
+                            <label for="debt-name">Debt Name</label>
+                            <input type="text" id="debt-name" placeholder="e.g., Credit Card, Car Loan" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="debt-balance">Balance ($)</label>
+                                <input type="number" id="debt-balance" step="0.01" min="0" placeholder="0.00" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="debt-rate">Interest Rate (%)</label>
+                                <input type="number" id="debt-rate" step="0.01" min="0" max="100" placeholder="0.00" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="debt-minimum">Minimum Payment ($)</label>
+                                <input type="number" id="debt-minimum" step="0.01" min="0" placeholder="0.00" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="debt-type">Debt Type</label>
+                                <select id="debt-type" required>
+                                    <option value="">Select type</option>
+                                    <option value="credit-card">Credit Card</option>
+                                    <option value="student-loan">Student Loan</option>
+                                    <option value="car-loan">Car Loan</option>
+                                    <option value="mortgage">Mortgage</option>
+                                    <option value="personal-loan">Personal Loan</option>
+                                    <option value="medical">Medical Debt</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Debt</button>
+                    </form>
+                </div>
+
+                <div class="card debt-list-card">
+                    <h3>Your Debts</h3>
+                    <div class="debt-list" id="debt-list">
+                        <p class="empty-state">No debts recorded. Add your debts to get a personalized payoff plan.</p>
+                    </div>
+                </div>
+
+                <div class="card payoff-card">
+                    <h3>Debt Payoff Strategies</h3>
+                    <div class="payoff-strategies">
+                        <div class="strategy-tabs">
+                            <button class="strategy-tab active" data-strategy="avalanche">Avalanche Method</button>
+                            <button class="strategy-tab" data-strategy="snowball">Snowball Method</button>
+                        </div>
+                        <div class="strategy-content" id="strategy-content">
+                            <div class="strategy-info">
+                                <h4>Avalanche Method</h4>
+                                <p>Pay off debts with the highest interest rate first. This saves the most money on interest over time.</p>
+                            </div>
+                            <div class="payoff-plan" id="payoff-plan">
+                                <p class="empty-state">Add debts to see your recommended payoff order.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="extra-payment">
+                        <label for="extra-payment-amount">Extra Monthly Payment ($)</label>
+                        <input type="number" id="extra-payment-amount" step="0.01" min="0" placeholder="0.00">
+                        <button class="btn btn-secondary" id="calculate-payoff">Calculate Payoff Timeline</button>
+                    </div>
+                    <div class="payoff-summary" id="payoff-summary"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Investments Section -->
+        <section id="investments" class="section">
+            <h2>Investment Analysis & Recommendations</h2>
+            <div class="investment-container">
+                <div class="card investment-profile-card">
+                    <h3>Your Investment Profile</h3>
+                    <form id="investment-profile-form">
+                        <div class="form-group">
+                            <label for="investment-goal">Investment Goal</label>
+                            <select id="investment-goal" required>
+                                <option value="">Select your goal</option>
+                                <option value="retirement">Retirement</option>
+                                <option value="emergency">Emergency Fund</option>
+                                <option value="home">Home Purchase</option>
+                                <option value="education">Education</option>
+                                <option value="wealth">Wealth Building</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="investment-timeline">Time Horizon (Years)</label>
+                                <input type="number" id="investment-timeline" min="1" max="50" placeholder="10" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="risk-tolerance">Risk Tolerance</label>
+                                <select id="risk-tolerance" required>
+                                    <option value="">Select risk level</option>
+                                    <option value="conservative">Conservative</option>
+                                    <option value="moderate">Moderate</option>
+                                    <option value="aggressive">Aggressive</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="monthly-investment">Monthly Investment Amount ($)</label>
+                            <input type="number" id="monthly-investment" step="0.01" min="0" placeholder="0.00" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Get Recommendations</button>
+                    </form>
+                </div>
+
+                <div class="card current-investments-card">
+                    <h3>Current Investments</h3>
+                    <form id="add-investment-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="investment-name">Investment Name</label>
+                                <input type="text" id="investment-name" placeholder="e.g., 401k, IRA" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="investment-value">Current Value ($)</label>
+                                <input type="number" id="investment-value" step="0.01" min="0" placeholder="0.00" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="investment-type">Investment Type</label>
+                            <select id="investment-type" required>
+                                <option value="">Select type</option>
+                                <option value="401k">401(k)</option>
+                                <option value="ira">IRA</option>
+                                <option value="roth-ira">Roth IRA</option>
+                                <option value="brokerage">Brokerage Account</option>
+                                <option value="savings">High-Yield Savings</option>
+                                <option value="bonds">Bonds</option>
+                                <option value="stocks">Individual Stocks</option>
+                                <option value="etf">ETFs</option>
+                                <option value="mutual-fund">Mutual Funds</option>
+                                <option value="real-estate">Real Estate</option>
+                                <option value="crypto">Cryptocurrency</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-secondary">Add Investment</button>
+                    </form>
+                    <div class="investment-list" id="investment-list">
+                        <p class="empty-state">No investments recorded yet.</p>
+                    </div>
+                    <div class="investment-total">
+                        <span>Total Portfolio Value:</span>
+                        <span class="amount" id="total-investments">$0.00</span>
+                    </div>
+                </div>
+
+                <div class="card recommendations-card">
+                    <h3>Investment Recommendations</h3>
+                    <div id="investment-recommendations">
+                        <p class="empty-state">Complete your investment profile to receive personalized recommendations.</p>
+                    </div>
+                </div>
+
+                <div class="card projection-card">
+                    <h3>Investment Growth Projection</h3>
+                    <canvas id="investment-chart"></canvas>
+                    <div id="projection-details"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Upload Section -->
+        <section id="upload" class="section">
+            <h2>Upload Documents</h2>
+            <div class="upload-container">
+                <div class="card upload-card">
+                    <h3>Upload Expense Report</h3>
+                    <p class="upload-description">Upload your monthly expense report (CSV, Excel, or PDF)</p>
+                    <div class="upload-zone" id="expense-upload-zone">
+                        <div class="upload-icon">📄</div>
+                        <p>Drag & drop your expense report here</p>
+                        <p class="upload-or">or</p>
+                        <label class="btn btn-secondary upload-btn">
+                            Browse Files
+                            <input type="file" id="expense-file-input" accept=".csv,.xlsx,.xls,.pdf" hidden>
+                        </label>
+                    </div>
+                    <div class="upload-preview" id="expense-upload-preview"></div>
+                </div>
+
+                <div class="card upload-card">
+                    <h3>Upload Payslip</h3>
+                    <p class="upload-description">Upload your payslip to track income (PDF or Image)</p>
+                    <div class="upload-zone" id="payslip-upload-zone">
+                        <div class="upload-icon">💵</div>
+                        <p>Drag & drop your payslip here</p>
+                        <p class="upload-or">or</p>
+                        <label class="btn btn-secondary upload-btn">
+                            Browse Files
+                            <input type="file" id="payslip-file-input" accept=".pdf,.png,.jpg,.jpeg" hidden>
+                        </label>
+                    </div>
+                    <div class="upload-preview" id="payslip-upload-preview"></div>
+                </div>
+
+                <div class="card upload-history-card">
+                    <h3>Upload History</h3>
+                    <div class="upload-history" id="upload-history">
+                        <p class="empty-state">No documents uploaded yet.</p>
+                    </div>
+                </div>
+
+                <div class="card manual-income-card">
+                    <h3>Manual Income Entry</h3>
+                    <p class="upload-description">Or enter your income details manually</p>
+                    <form id="income-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="income-source">Income Source</label>
+                                <input type="text" id="income-source" placeholder="e.g., Primary Job" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="income-amount">Monthly Amount ($)</label>
+                                <input type="number" id="income-amount" step="0.01" min="0" placeholder="0.00" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="income-type">Income Type</label>
+                            <select id="income-type" required>
+                                <option value="">Select type</option>
+                                <option value="salary">Salary</option>
+                                <option value="hourly">Hourly Wages</option>
+                                <option value="freelance">Freelance/Contract</option>
+                                <option value="business">Business Income</option>
+                                <option value="investment">Investment Income</option>
+                                <option value="rental">Rental Income</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Income</button>
+                    </form>
+                    <div class="income-list" id="income-list">
+                        <p class="empty-state">No income sources recorded.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 FinanceTracker. All rights reserved. This tool provides general financial guidance and should not be considered professional financial advice.</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

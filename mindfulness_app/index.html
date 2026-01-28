@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mindfulness Sync - Awareness Signals</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2d3436">
+    <meta name="description" content="Mindfulness app with synchronized sound and vibration alerts for awareness">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1>Mindfulness Sync</h1>
+            <p class="tagline">Synchronized awareness signals</p>
+        </header>
+
+        <main class="main-content">
+            <!-- Timer Display -->
+            <section class="timer-section">
+                <div class="timer-display">
+                    <div class="timer-circle" id="timerCircle">
+                        <svg class="progress-ring" width="280" height="280">
+                            <circle class="progress-ring-bg" cx="140" cy="140" r="130"/>
+                            <circle class="progress-ring-circle" id="progressCircle" cx="140" cy="140" r="130"/>
+                        </svg>
+                        <div class="timer-inner">
+                            <span class="timer-text" id="timerText">00:00</span>
+                            <span class="timer-label" id="timerLabel">Ready</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="breathing-indicator" id="breathingIndicator">
+                    <div class="breath-circle"></div>
+                    <span class="breath-text" id="breathText">Breathe</span>
+                </div>
+            </section>
+
+            <!-- Control Buttons -->
+            <section class="controls-section">
+                <button class="control-btn primary" id="startBtn">
+                    <span class="btn-icon">&#9658;</span>
+                    <span class="btn-text">Start Session</span>
+                </button>
+                <button class="control-btn secondary" id="pauseBtn" disabled>
+                    <span class="btn-icon">&#10074;&#10074;</span>
+                    <span class="btn-text">Pause</span>
+                </button>
+                <button class="control-btn danger" id="stopBtn" disabled>
+                    <span class="btn-icon">&#9632;</span>
+                    <span class="btn-text">Stop</span>
+                </button>
+            </section>
+
+            <!-- Quick Presets -->
+            <section class="presets-section">
+                <h2>Quick Sessions</h2>
+                <div class="presets-grid">
+                    <button class="preset-btn" data-duration="60" data-interval="15">
+                        <span class="preset-name">Quick Focus</span>
+                        <span class="preset-info">1 min / 15s bells</span>
+                    </button>
+                    <button class="preset-btn" data-duration="300" data-interval="60">
+                        <span class="preset-name">Morning Calm</span>
+                        <span class="preset-info">5 min / 1m bells</span>
+                    </button>
+                    <button class="preset-btn" data-duration="600" data-interval="120">
+                        <span class="preset-name">Deep Awareness</span>
+                        <span class="preset-info">10 min / 2m bells</span>
+                    </button>
+                    <button class="preset-btn" data-duration="1200" data-interval="180">
+                        <span class="preset-name">Extended Peace</span>
+                        <span class="preset-info">20 min / 3m bells</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Settings Panel -->
+            <section class="settings-section" id="settingsPanel">
+                <h2>
+                    <span>Settings</span>
+                    <button class="toggle-btn" id="toggleSettings">&#9660;</button>
+                </h2>
+                <div class="settings-content" id="settingsContent">
+                    <!-- Duration Setting -->
+                    <div class="setting-group">
+                        <label for="durationInput">Session Duration</label>
+                        <div class="input-group">
+                            <input type="number" id="durationInput" min="1" max="120" value="5">
+                            <span class="input-suffix">minutes</span>
+                        </div>
+                    </div>
+
+                    <!-- Interval Setting -->
+                    <div class="setting-group">
+                        <label for="intervalInput">Signal Interval</label>
+                        <div class="input-group">
+                            <input type="number" id="intervalInput" min="5" max="600" value="60">
+                            <span class="input-suffix">seconds</span>
+                        </div>
+                    </div>
+
+                    <!-- Sound Selection -->
+                    <div class="setting-group">
+                        <label for="soundSelect">Alert Sound</label>
+                        <select id="soundSelect">
+                            <option value="tibetan_bowl">Tibetan Singing Bowl</option>
+                            <option value="zen_bell">Zen Bell</option>
+                            <option value="crystal_chime">Crystal Chime</option>
+                            <option value="ocean_wave">Ocean Wave</option>
+                            <option value="gentle_gong">Gentle Gong</option>
+                            <option value="wind_chime">Wind Chime</option>
+                            <option value="rain_drop">Rain Drop</option>
+                            <option value="forest_bird">Forest Bird</option>
+                        </select>
+                    </div>
+
+                    <!-- Volume Control -->
+                    <div class="setting-group">
+                        <label for="volumeSlider">Volume</label>
+                        <div class="slider-group">
+                            <input type="range" id="volumeSlider" min="0" max="100" value="70">
+                            <span class="slider-value" id="volumeValue">70%</span>
+                        </div>
+                    </div>
+
+                    <!-- Vibration Toggle -->
+                    <div class="setting-group">
+                        <label for="vibrationToggle">Vibration</label>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="vibrationToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </div>
+                    </div>
+
+                    <!-- Breathing Guide Toggle -->
+                    <div class="setting-group">
+                        <label for="breathingToggle">Breathing Guide</label>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="breathingToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </div>
+                    </div>
+
+                    <!-- Sound Preview -->
+                    <div class="setting-group">
+                        <button class="preview-btn" id="previewSound">
+                            <span class="btn-icon">&#9834;</span>
+                            Preview Sound
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sync Session Panel -->
+            <section class="sync-section" id="syncPanel">
+                <h2>
+                    <span>Group Sync</span>
+                    <button class="toggle-btn" id="toggleSync">&#9660;</button>
+                </h2>
+                <div class="sync-content" id="syncContent">
+                    <p class="sync-description">
+                        Synchronize mindfulness signals across multiple devices for group meditation sessions.
+                    </p>
+
+                    <div class="sync-options">
+                        <div class="sync-create">
+                            <button class="sync-btn" id="createSession">
+                                <span class="btn-icon">&#43;</span>
+                                Create Session
+                            </button>
+                        </div>
+
+                        <div class="sync-join">
+                            <input type="text" id="sessionCode" placeholder="Enter session code" maxlength="6">
+                            <button class="sync-btn secondary" id="joinSession">
+                                <span class="btn-icon">&#8594;</span>
+                                Join
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="sync-status" id="syncStatus" style="display: none;">
+                        <div class="status-indicator">
+                            <span class="status-dot"></span>
+                            <span class="status-text" id="syncStatusText">Connected</span>
+                        </div>
+                        <div class="session-info">
+                            <span>Session: </span>
+                            <span class="session-code" id="activeSessionCode">------</span>
+                            <button class="copy-btn" id="copyCode" title="Copy code">&#128203;</button>
+                        </div>
+                        <div class="participants">
+                            <span>Participants: </span>
+                            <span id="participantCount">1</span>
+                        </div>
+                        <button class="leave-btn" id="leaveSession">Leave Session</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Statistics Section -->
+            <section class="stats-section">
+                <h2>Today's Progress</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <span class="stat-value" id="totalSessions">0</span>
+                        <span class="stat-label">Sessions</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value" id="totalMinutes">0</span>
+                        <span class="stat-label">Minutes</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value" id="totalSignals">0</span>
+                        <span class="stat-label">Signals</span>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="app-footer">
+            <p>Take a moment. Be present. Breathe.</p>
+        </footer>
+    </div>
+
+    <!-- Notification Toast -->
+    <div class="toast" id="toast">
+        <span class="toast-message" id="toastMessage"></span>
+    </div>
+
+    <script src="sounds.js"></script>
+    <script src="sync.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

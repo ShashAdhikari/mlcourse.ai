@@ -20,6 +20,30 @@
                 <li><a href="#investments">Investments</a></li>
                 <li><a href="#upload">Upload</a></li>
             </ul>
+            <div class="currency-selector">
+                <label for="currency-select">Currency:</label>
+                <select id="currency-select">
+                    <option value="USD">$ USD</option>
+                    <option value="EUR">&#8364; EUR</option>
+                    <option value="GBP">&#163; GBP</option>
+                    <option value="JPY">&#165; JPY</option>
+                    <option value="AUD">A$ AUD</option>
+                    <option value="CAD">C$ CAD</option>
+                    <option value="CHF">CHF</option>
+                    <option value="CNY">&#165; CNY</option>
+                    <option value="INR">&#8377; INR</option>
+                    <option value="NZD">NZ$ NZD</option>
+                    <option value="SGD">S$ SGD</option>
+                    <option value="HKD">HK$ HKD</option>
+                    <option value="KRW">&#8361; KRW</option>
+                    <option value="BRL">R$ BRL</option>
+                    <option value="ZAR">R ZAR</option>
+                    <option value="MXN">MX$ MXN</option>
+                    <option value="SEK">kr SEK</option>
+                    <option value="NOK">kr NOK</option>
+                    <option value="NPR">&#8360; NPR</option>
+                </select>
+            </div>
         </nav>
     </header>
 
@@ -68,6 +92,32 @@
                     </div>
                 </div>
             </div>
+
+            <div class="card quick-upload-card">
+                <h3>Quick Import</h3>
+                <p class="upload-description">Upload your expense report or payslip to auto-import transactions. Personal details (names, account numbers) are automatically redacted.</p>
+                <div class="quick-upload-row">
+                    <div class="upload-zone upload-zone-compact" id="dashboard-upload-zone">
+                        <div class="upload-icon">📄</div>
+                        <p>Drop expense report or payslip here</p>
+                        <p class="upload-or">or</p>
+                        <label class="btn btn-secondary upload-btn">
+                            Browse Files
+                            <input type="file" id="dashboard-file-input" accept=".csv,.xlsx,.xls,.pdf,.png,.jpg,.jpeg" hidden>
+                        </label>
+                    </div>
+                    <div class="quick-upload-results" id="dashboard-upload-results">
+                        <div class="anonymize-notice">
+                            <span class="lock-icon">🔒</span>
+                            <div>
+                                <strong>Privacy Protected</strong>
+                                <p>Names, bank accounts, SSNs, and card numbers are automatically anonymized before processing.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="upload-preview" id="dashboard-upload-preview"></div>
+            </div>
         </section>
 
         <!-- Expenses Section -->
@@ -77,13 +127,14 @@
                 <div class="card add-expense-card">
                     <h3>Add New Expense</h3>
                     <form id="expense-form">
-                        <div class="form-group">
+                        <div class="form-group description-group">
                             <label for="expense-description">Description</label>
-                            <input type="text" id="expense-description" placeholder="e.g., Grocery shopping" required>
+                            <input type="text" id="expense-description" placeholder="e.g., Grocery shopping" autocomplete="off" required>
+                            <div class="tag-suggestions" id="tag-suggestions"></div>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="expense-amount">Amount ($)</label>
+                                <label for="expense-amount">Amount</label>
                                 <input type="number" id="expense-amount" step="0.01" min="0" placeholder="0.00" required>
                             </div>
                             <div class="form-group">

@@ -19,11 +19,37 @@ const state = {
     investmentProfile: safeParse('investmentProfile', null)
 };
 
+// ==================== CURRENCY MANAGEMENT ====================
+
+// Detect currency from browser locale
+const detectCurrency = () => {
+    const saved = localStorage.getItem('selectedCurrency');
+    if (saved) return saved;
+
+    try {
+        const locale = navigator.language || navigator.userLanguage || 'en-US';
+        const localeCurrencyMap = {
+            'en-US': 'USD', 'en-GB': 'GBP', 'en-AU': 'AUD', 'en-CA': 'CAD',
+            'en-NZ': 'NZD', 'en-SG': 'SGD', 'en-HK': 'HKD', 'en-ZA': 'ZAR',
+            'en-IN': 'INR', 'ne-NP': 'NPR', 'hi-IN': 'INR',
+            'ja-JP': 'JPY', 'zh-CN': 'CNY', 'zh-TW': 'TWD', 'ko-KR': 'KRW',
+            'de-DE': 'EUR', 'fr-FR': 'EUR', 'es-ES': 'EUR', 'it-IT': 'EUR',
+            'pt-BR': 'BRL', 'es-MX': 'MXN', 'sv-SE': 'SEK', 'nb-NO': 'NOK',
+            'de-CH': 'CHF', 'fr-CH': 'CHF'
+        };
+        return localeCurrencyMap[locale] || 'USD';
+    } catch {
+        return 'USD';
+    }
+};
+
+let selectedCurrency = detectCurrency();
+
 // Utility functions
 const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat(navigator.language || 'en-US', {
         style: 'currency',
-        currency: 'USD'
+        currency: selectedCurrency
     }).format(amount);
 };
 
@@ -1009,9 +1035,304 @@ const updateExpenseChart = () => {
     });
 };
 
+// ==================== ANONYMIZATION ENGINE ====================
+
+const anonymizeText = (text) => {
+    let result = text;
+    const redact = (label) => `[${label} REDACTED]`;
+
+    // SSN patterns: 123-45-6789 or 123 45 6789
+    result = result.replace(/\b\d{3}[-\s]?\d{2}[-\s]?\d{4}\b/g, redact('SSN'));
+
+    // Credit/debit card numbers: 4 groups of 4 digits
+    result = result.replace(/\b\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}\b/g, redact('CARD'));
+
+    // Bank account numbers: 8-17 consecutive digits (after SSN/card patterns removed)
+    result = result.replace(/\b\d{8,17}\b/g, redact('ACCOUNT'));
+
+    // Routing numbers: 9 digits
+    result = result.replace(/\b\d{9}\b/g, redact('ROUTING'));
+
+    // Email addresses
+    result = result.replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, redact('EMAIL'));
+
+    // Phone numbers: various formats
+    result = result.replace(/(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b/g, redact('PHONE'));
+
+    // Names after common labels (Name:, Account Holder:, etc.)
+    result = result.replace(/((?:name|account\s*holder|customer|client|employee|recipient|beneficiary)\s*[:]\s*)([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/gi,
+        (match, label) => label + redact('NAME'));
+
+    // Addresses (street number + street name pattern)
+    result = result.replace(/\b\d{1,5}\s+[A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*\s+(?:St|Street|Ave|Avenue|Blvd|Boulevard|Dr|Drive|Ln|Lane|Rd|Road|Ct|Court|Way|Pl|Place)\b\.?/gi,
+        redact('ADDRESS'));
+
+    return result;
+};
+
+const renderAnonymizedPreview = (text, container) => {
+    const anonymized = anonymizeText(text);
+    // Highlight redacted portions
+    const highlighted = anonymized.replace(/\[([\w\s]+) REDACTED\]/g,
+        '<span class="redacted">[$1 REDACTED]</span>');
+    container.innerHTML = `
+        <div class="anonymize-notice">
+            <span class="lock-icon">🔒</span>
+            <div>
+                <strong>Privacy Protected</strong>
+                <p>Personal details have been automatically redacted from the uploaded file.</p>
+            </div>
+        </div>
+        <div class="anonymized-preview">${highlighted}</div>
+    `;
+};
+
+// Dashboard quick upload zone
+const setupDashboardUpload = () => {
+    const zone = document.getElementById('dashboard-upload-zone');
+    const input = document.getElementById('dashboard-file-input');
+    const preview = document.getElementById('dashboard-upload-preview');
+    const results = document.getElementById('dashboard-upload-results');
+
+    if (!zone) return;
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        zone.addEventListener(eventName, (e) => { e.preventDefault(); e.stopPropagation(); }, false);
+    });
+    ['dragenter', 'dragover'].forEach(eventName => {
+        zone.addEventListener(eventName, () => zone.classList.add('dragover'), false);
+    });
+    ['dragleave', 'drop'].forEach(eventName => {
+        zone.addEventListener(eventName, () => zone.classList.remove('dragover'), false);
+    });
+
+    const handleDashboardFile = (file) => {
+        const safeName = escapeHtml(file.name);
+        const isPayslip = /payslip|salary|wage|pay\s*stub/i.test(file.name);
+        const fileType = isPayslip ? 'payslip' : 'expense';
+
+        preview.innerHTML = `
+            <div class="upload-preview-item">
+                <span class="file-icon">${isPayslip ? '💵' : '📄'}</span>
+                <div class="file-info">
+                    <span class="file-name">${safeName}</span>
+                    <span class="file-size">${formatFileSize(file.size)}</span>
+                </div>
+                <span class="file-status processing">Processing & anonymizing...</span>
+            </div>
+        `;
+
+        // Read file if it's a text-based format for anonymization demo
+        if (file.name.endsWith('.csv') || file.type === 'text/csv' || file.type === 'text/plain') {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const rawText = e.target.result;
+                renderAnonymizedPreview(rawText, results);
+                finalizeDashboardUpload(file, fileType, safeName, preview);
+            };
+            reader.readAsText(file);
+        } else {
+            // For binary files, show a simulated anonymization notice
+            const simulatedContent = `File: ${file.name}\nName: [NAME REDACTED]\nAccount: [ACCOUNT REDACTED]\nProcessed: ${new Date().toLocaleDateString()}`;
+            renderAnonymizedPreview(simulatedContent, results);
+            finalizeDashboardUpload(file, fileType, safeName, preview);
+        }
+    };
+
+    const finalizeDashboardUpload = (file, fileType, safeName, previewEl) => {
+        setTimeout(() => {
+            const upload = {
+                id: generateId(),
+                name: file.name,
+                size: file.size,
+                type: fileType,
+                date: new Date().toISOString(),
+                status: 'success'
+            };
+            state.uploads.push(upload);
+            saveState();
+
+            previewEl.innerHTML = `
+                <div class="upload-preview-item">
+                    <span class="file-icon">${fileType === 'payslip' ? '💵' : '📄'}</span>
+                    <div class="file-info">
+                        <span class="file-name">${safeName}</span>
+                        <span class="file-size">${formatFileSize(file.size)}</span>
+                    </div>
+                    <span class="file-status success">Uploaded & Anonymized</span>
+                </div>
+            `;
+
+            renderUploadHistory();
+            if (fileType === 'expense') { addSampleExpenses(); } else { addSampleIncome(); }
+        }, 1500);
+    };
+
+    zone.addEventListener('drop', (e) => {
+        if (e.dataTransfer.files.length > 0) handleDashboardFile(e.dataTransfer.files[0]);
+    });
+    input.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) handleDashboardFile(e.target.files[0]);
+    });
+    zone.addEventListener('click', (e) => {
+        if (!e.target.closest('.upload-btn') && e.target.tagName !== 'INPUT') {
+            input.click();
+        }
+    });
+};
+
+// ==================== TAG / CATEGORY SUGGESTIONS ====================
+
+const categoryKeywords = {
+    housing: ['rent', 'mortgage', 'lease', 'apartment', 'condo', 'property', 'hoa', 'home', 'house', 'landlord', 'tenant', 'real estate', 'down payment'],
+    transportation: ['gas', 'fuel', 'uber', 'lyft', 'taxi', 'bus', 'train', 'subway', 'metro', 'car', 'auto', 'parking', 'toll', 'oil change', 'tire', 'vehicle', 'mechanic', 'flight', 'airline'],
+    food: ['grocery', 'groceries', 'restaurant', 'dining', 'coffee', 'lunch', 'dinner', 'breakfast', 'takeout', 'delivery', 'doordash', 'grubhub', 'ubereats', 'pizza', 'food', 'meal', 'snack', 'cafe', 'bar', 'drink'],
+    utilities: ['electric', 'electricity', 'water', 'gas bill', 'internet', 'wifi', 'phone', 'mobile', 'cable', 'trash', 'sewage', 'heating', 'cooling', 'power'],
+    healthcare: ['doctor', 'hospital', 'pharmacy', 'medicine', 'prescription', 'dental', 'dentist', 'vision', 'therapy', 'clinic', 'health', 'medical', 'lab', 'insurance premium', 'copay'],
+    entertainment: ['movie', 'netflix', 'spotify', 'hulu', 'disney', 'concert', 'theater', 'game', 'gaming', 'subscription', 'streaming', 'music', 'book', 'hobby', 'sport', 'gym', 'fitness'],
+    shopping: ['amazon', 'walmart', 'target', 'clothing', 'clothes', 'shoes', 'electronics', 'furniture', 'appliance', 'gift', 'online', 'store', 'mall', 'purchase'],
+    education: ['tuition', 'textbook', 'course', 'class', 'school', 'college', 'university', 'student', 'loan', 'training', 'certification', 'exam', 'udemy', 'coursera'],
+    personal: ['haircut', 'salon', 'spa', 'skincare', 'makeup', 'laundry', 'dry clean', 'grooming', 'barber', 'nail', 'massage', 'cosmetics']
+};
+
+const categoryLabels = {
+    housing: 'Housing', transportation: 'Transportation', food: 'Food & Groceries',
+    utilities: 'Utilities', healthcare: 'Healthcare', entertainment: 'Entertainment',
+    shopping: 'Shopping', education: 'Education', personal: 'Personal Care', other: 'Other'
+};
+
+const categoryColors = {
+    housing: '#dbeafe;color:#1e40af', transportation: '#fef3c7;color:#92400e',
+    food: '#d1fae5;color:#065f46', utilities: '#e0e7ff;color:#3730a3',
+    healthcare: '#fce7f3;color:#9d174d', entertainment: '#fae8ff;color:#86198f',
+    shopping: '#fed7aa;color:#c2410c', education: '#ccfbf1;color:#0f766e',
+    personal: '#f5d0fe;color:#a21caf', other: '#e2e8f0;color:#475569'
+};
+
+let highlightedSuggestionIndex = -1;
+
+const suggestCategory = (description) => {
+    const lower = description.toLowerCase().trim();
+    if (lower.length < 2) return [];
+
+    const matches = [];
+    for (const [category, keywords] of Object.entries(categoryKeywords)) {
+        for (const keyword of keywords) {
+            if (keyword.includes(lower) || lower.includes(keyword)) {
+                const score = keyword === lower ? 100 : keyword.startsWith(lower) ? 80 : 60;
+                matches.push({ category, keyword, score });
+            }
+        }
+    }
+
+    // Deduplicate by category (keep highest score)
+    const best = {};
+    for (const m of matches) {
+        if (!best[m.category] || m.score > best[m.category].score) {
+            best[m.category] = m;
+        }
+    }
+
+    return Object.values(best).sort((a, b) => b.score - a.score).slice(0, 5);
+};
+
+const setupTagSuggestions = () => {
+    const input = document.getElementById('expense-description');
+    const container = document.getElementById('tag-suggestions');
+    const categorySelect = document.getElementById('expense-category');
+
+    input.addEventListener('input', () => {
+        const value = input.value;
+        const suggestions = suggestCategory(value);
+        highlightedSuggestionIndex = -1;
+
+        if (suggestions.length === 0 || value.length < 2) {
+            container.classList.remove('visible');
+            container.innerHTML = '';
+            return;
+        }
+
+        container.innerHTML = suggestions.map((s, i) => `
+            <div class="tag-suggestion-item" data-category="${s.category}" data-index="${i}">
+                <span class="suggestion-category" style="background:${categoryColors[s.category]}">${categoryLabels[s.category]}</span>
+                <span class="suggestion-text">${escapeHtml(capitalizeFirst(s.keyword))}</span>
+                <span class="suggestion-hint">Tab to apply</span>
+            </div>
+        `).join('');
+        container.classList.add('visible');
+
+        container.querySelectorAll('.tag-suggestion-item').forEach(item => {
+            item.addEventListener('click', () => {
+                categorySelect.value = item.dataset.category;
+                container.classList.remove('visible');
+            });
+        });
+    });
+
+    input.addEventListener('keydown', (e) => {
+        const items = container.querySelectorAll('.tag-suggestion-item');
+        if (!items.length || !container.classList.contains('visible')) return;
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            highlightedSuggestionIndex = Math.min(highlightedSuggestionIndex + 1, items.length - 1);
+            items.forEach((item, i) => item.classList.toggle('highlighted', i === highlightedSuggestionIndex));
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            highlightedSuggestionIndex = Math.max(highlightedSuggestionIndex - 1, 0);
+            items.forEach((item, i) => item.classList.toggle('highlighted', i === highlightedSuggestionIndex));
+        } else if (e.key === 'Tab' || e.key === 'Enter') {
+            const idx = highlightedSuggestionIndex >= 0 ? highlightedSuggestionIndex : 0;
+            if (items[idx]) {
+                e.preventDefault();
+                categorySelect.value = items[idx].dataset.category;
+                container.classList.remove('visible');
+            }
+        } else if (e.key === 'Escape') {
+            container.classList.remove('visible');
+        }
+    });
+
+    // Close suggestions when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.description-group')) {
+            container.classList.remove('visible');
+        }
+    });
+};
+
+// ==================== CURRENCY CHANGE HANDLER ====================
+
+const setupCurrencySelector = () => {
+    const select = document.getElementById('currency-select');
+    if (!select) return;
+
+    select.value = selectedCurrency;
+
+    select.addEventListener('change', () => {
+        selectedCurrency = select.value;
+        localStorage.setItem('selectedCurrency', selectedCurrency);
+        // Re-render everything with new currency
+        renderExpenses();
+        renderDebts();
+        renderInvestments();
+        renderIncomes();
+        updateDashboard();
+        updatePayoffPlan();
+        if (state.investmentProfile) {
+            generateInvestmentRecommendations();
+            generateInvestmentProjection();
+        }
+    });
+};
+
 // ==================== INITIALIZATION ====================
 
 const init = () => {
+    setupCurrencySelector();
+    setupTagSuggestions();
+    setupDashboardUpload();
+
     renderExpenses();
     renderDebts();
     renderInvestments();

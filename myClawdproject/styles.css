@@ -1081,12 +1081,6 @@ h2 {
     font-size: 0.9rem;
 }
 
-.analytics-table thead {
-    position: sticky;
-    top: 0;
-    z-index: 1;
-}
-
 .analytics-table th {
     background: var(--primary-color);
     color: white;
@@ -1096,6 +1090,9 @@ h2 {
     font-size: 0.8rem;
     text-transform: uppercase;
     letter-spacing: 0.03em;
+    position: sticky;
+    top: 0;
+    z-index: 1;
 }
 
 .analytics-table td {

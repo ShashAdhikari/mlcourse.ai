@@ -201,6 +201,11 @@ const editExpense = (id) => {
     `;
 };
 
+const getCurrentFilter = () => {
+    const filterEl = document.getElementById('filter-category');
+    return filterEl ? filterEl.value : 'all';
+};
+
 const saveExpenseEdit = (id) => {
     const expense = state.expenses.find(e => e.id === id);
     if (!expense) return;
@@ -219,12 +224,12 @@ const saveExpenseEdit = (id) => {
     expense.date = date.value;
 
     saveState();
-    renderExpenses();
+    renderExpenses(getCurrentFilter());
     updateDashboard();
 };
 
 const cancelExpenseEdit = () => {
-    renderExpenses();
+    renderExpenses(getCurrentFilter());
 };
 
 document.getElementById('expense-form').addEventListener('submit', addExpense);
@@ -907,13 +912,14 @@ const renderUploadHistory = () => {
 };
 
 // Sample data functions (simulating file parsing)
-// Track whether sample data has been added to avoid duplicates
-let sampleExpensesAdded = false;
-let sampleIncomeAdded = false;
+// Track whether sample data has been added to avoid duplicates (persisted)
+let sampleExpensesAdded = localStorage.getItem('sampleExpensesAdded') === 'true';
+let sampleIncomeAdded = localStorage.getItem('sampleIncomeAdded') === 'true';
 
 const addSampleExpenses = () => {
     if (sampleExpensesAdded) return;
     sampleExpensesAdded = true;
+    localStorage.setItem('sampleExpensesAdded', 'true');
 
     const today = new Date().toISOString().split('T')[0];
     const sampleExpenses = [
@@ -936,6 +942,7 @@ const addSampleExpenses = () => {
 const addSampleIncome = () => {
     if (sampleIncomeAdded) return;
     sampleIncomeAdded = true;
+    localStorage.setItem('sampleIncomeAdded', 'true');
 
     const sampleIncome = {
         id: generateId(),
@@ -969,7 +976,10 @@ const updateDashboard = () => {
     document.getElementById('total-income').textContent = formatCurrency(totalIncome);
     document.getElementById('total-expenses').textContent = formatCurrency(totalExpenses);
     document.getElementById('total-debt').textContent = formatCurrency(totalDebt);
-    document.getElementById('net-savings').textContent = formatCurrency(netSavings);
+
+    const savingsEl = document.getElementById('net-savings');
+    savingsEl.textContent = formatCurrency(netSavings);
+    savingsEl.style.color = netSavings < 0 ? 'var(--danger-color)' : 'var(--primary-color)';
 
     // Update health score
     updateHealthScore(totalIncome, totalExpenses, totalDebt, netSavings);
@@ -1389,12 +1399,25 @@ const getMonthlyBreakdown = () => {
     return monthlyExpenses;
 };
 
+const parseMonthKey = (monthKey) => {
+    // Parse "YYYY-MM" without UTC offset issues
+    const [year, month] = monthKey.split('-').map(Number);
+    return new Date(year, month - 1, 1);
+};
+
 const renderMonthlyAnalytics = () => {
     const container = document.getElementById('monthly-analytics');
     if (!container) return;
 
     const totalIncome = state.incomes.reduce((sum, inc) => sum + inc.amount, 0);
     const totalExpenses = state.expenses.reduce((sum, exp) => sum + exp.amount, 0);
+
+    // Show empty state when no data exists
+    if (state.expenses.length === 0 && state.incomes.length === 0) {
+        container.innerHTML = '<p class="empty-state">Add expenses and income to see your monthly comparison.</p>';
+        return;
+    }
+
     const monthlyBreakdown = getMonthlyBreakdown();
     const months = Object.keys(monthlyBreakdown);
     const monthCount = months.length || 1;
@@ -1412,7 +1435,7 @@ const renderMonthlyAnalytics = () => {
             const mExp = monthlyBreakdown[m];
             const mDiff = totalIncome - mExp;
             const mClass = mDiff >= 0 ? 'positive' : 'negative';
-            const monthLabel = new Date(m + '-01').toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+            const monthLabel = parseMonthKey(m).toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
             return `
                 <tr>
                     <td>${monthLabel}</td>
@@ -1426,6 +1449,10 @@ const renderMonthlyAnalytics = () => {
         monthRows = '<tr><td colspan="4" class="empty-state">No expense data yet</td></tr>';
     }
 
+    const ratio = totalIncome > 0 ? avgMonthlyExpense / totalIncome : 0;
+    const ratioPercent = Math.min(100, ratio * 100).toFixed(1);
+    const ratioClass = ratio > 0.9 ? 'danger' : ratio > 0.7 ? 'warning' : 'good';
+
     container.innerHTML = `
         <div class="analytics-summary">
             <div class="analytics-stat">
@@ -1438,7 +1465,7 @@ const renderMonthlyAnalytics = () => {
             </div>
             <div class="analytics-stat">
                 <span class="analytics-label">Monthly ${capitalizeFirst(diffLabel)}</span>
-                <span class="analytics-value ${diffClass}">${formatCurrency(Math.abs(diff))}</span>
+                <span class="analytics-value ${diffClass}">${formatCurrency(diff)}</span>
             </div>
             <div class="analytics-stat">
                 <span class="analytics-label">Months Tracked</span>
@@ -1449,9 +1476,9 @@ const renderMonthlyAnalytics = () => {
         <div class="analytics-bar-container">
             <div class="analytics-bar-label">Expense-to-Income Ratio</div>
             <div class="analytics-bar-track">
-                <div class="analytics-bar-fill ${avgMonthlyExpense / totalIncome > 0.9 ? 'danger' : avgMonthlyExpense / totalIncome > 0.7 ? 'warning' : 'good'}"
-                     style="width: ${Math.min(100, (avgMonthlyExpense / totalIncome) * 100).toFixed(1)}%">
-                    ${((avgMonthlyExpense / totalIncome) * 100).toFixed(1)}%
+                <div class="analytics-bar-fill ${ratioClass}"
+                     style="width: ${ratioPercent}%">
+                    ${ratioPercent}%
                 </div>
             </div>
         </div>
@@ -1480,16 +1507,23 @@ const renderYearlyProjection = () => {
 
     const totalIncome = state.incomes.reduce((sum, inc) => sum + inc.amount, 0);
     const totalExpenses = state.expenses.reduce((sum, exp) => sum + exp.amount, 0);
+
+    // Show empty state when no data exists
+    if (state.expenses.length === 0 && state.incomes.length === 0) {
+        container.innerHTML = '<p class="empty-state">Add expenses and income to see your annual projection.</p>';
+        return;
+    }
+
     const monthlyBreakdown = getMonthlyBreakdown();
     const months = Object.keys(monthlyBreakdown);
     const monthCount = months.length || 1;
     const avgMonthlyExpense = totalExpenses / monthCount;
 
-    // Figure out how many months are left in the year
+    // Figure out how many months are left in the year (calendar-based)
     const now = new Date();
     const currentMonth = now.getMonth(); // 0-indexed
     const currentYear = now.getFullYear();
-    const monthsElapsed = months.filter(m => m.startsWith(String(currentYear))).length || currentMonth + 1;
+    const monthsElapsed = currentMonth + 1;
     const monthsRemaining = 12 - monthsElapsed;
 
     // Already-tracked expenses for this year
@@ -1501,6 +1535,7 @@ const renderYearlyProjection = () => {
     const projectedYearIncome = totalIncome * 12;
     const projectedYearNet = projectedYearIncome - projectedYearExpenses;
     const netClass = projectedYearNet >= 0 ? 'positive' : 'negative';
+    const netLabel = projectedYearNet >= 0 ? 'Projected Net Savings' : 'Projected Net Deficit';
 
     // Month-by-month projection rows
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -1542,8 +1577,8 @@ const renderYearlyProjection = () => {
                 <span class="projection-value income">${formatCurrency(projectedYearIncome)}</span>
             </div>
             <div class="projection-stat">
-                <span class="projection-label">Projected Net Savings</span>
-                <span class="projection-value ${netClass}">${formatCurrency(Math.abs(projectedYearNet))}</span>
+                <span class="projection-label">${netLabel}</span>
+                <span class="projection-value ${netClass}">${formatCurrency(projectedYearNet)}</span>
             </div>
             <div class="projection-stat">
                 <span class="projection-label">Based on</span>

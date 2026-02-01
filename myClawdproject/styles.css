@@ -916,6 +916,228 @@ h2 {
     color: var(--text-secondary);
 }
 
+/* Expense Edit Form */
+.expense-item.editing {
+    padding: 0;
+    flex-direction: column;
+}
+
+.edit-form {
+    width: 100%;
+    padding: 1rem;
+}
+
+.edit-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.edit-field label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+}
+
+.edit-input {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 2px solid var(--primary-color);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    transition: var(--transition);
+}
+
+.edit-input:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.edit-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.btn-sm {
+    padding: 0.4rem 1rem;
+    font-size: 0.85rem;
+}
+
+.edit-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 4px;
+    transition: var(--transition);
+    font-size: 1rem;
+}
+
+.edit-btn:hover {
+    background: rgba(37, 99, 235, 0.1);
+}
+
+/* Monthly Analytics & Yearly Projection */
+.analytics-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.analytics-card {
+    overflow: hidden;
+}
+
+.analytics-summary,
+.projection-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.analytics-stat,
+.projection-stat {
+    background: var(--background-color);
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.analytics-label,
+.projection-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 0.4rem;
+}
+
+.analytics-value,
+.projection-value {
+    display: block;
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.analytics-value.expense,
+.projection-value.expense { color: var(--danger-color); }
+.analytics-value.income,
+.projection-value.income { color: var(--success-color); }
+.analytics-value.positive,
+.projection-value.positive { color: var(--success-color); }
+.analytics-value.negative,
+.projection-value.negative { color: var(--danger-color); }
+
+.analytics-bar-container {
+    margin-bottom: 1.25rem;
+}
+
+.analytics-bar-label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 0.4rem;
+}
+
+.analytics-bar-track {
+    height: 28px;
+    background: var(--border-color);
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.analytics-bar-fill {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: white;
+    border-radius: 14px;
+    min-width: 3rem;
+    transition: width 0.6s ease;
+}
+
+.analytics-bar-fill.good { background: var(--success-color); }
+.analytics-bar-fill.warning { background: var(--warning-color); }
+.analytics-bar-fill.danger { background: var(--danger-color); }
+
+.analytics-table-wrapper {
+    overflow-x: auto;
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.analytics-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.analytics-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.analytics-table th {
+    background: var(--primary-color);
+    color: white;
+    padding: 0.6rem 0.75rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.analytics-table td {
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.analytics-table tbody tr:hover {
+    background: var(--background-color);
+}
+
+.analytics-table td.positive { color: var(--success-color); font-weight: 600; }
+.analytics-table td.negative { color: var(--danger-color); font-weight: 600; }
+
+.analytics-table tfoot td {
+    background: var(--background-color);
+    border-top: 2px solid var(--border-color);
+    font-weight: 700;
+}
+
+.projection-table tr.projected {
+    color: var(--text-secondary);
+}
+
+.projection-badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.projection-badge.actual {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.projection-badge.projected {
+    background: #e0e7ff;
+    color: #3730a3;
+}
+
 /* Footer */
 footer {
     text-align: center;
@@ -982,6 +1204,14 @@ footer {
 
     .currency-selector {
         margin-top: 0.5rem;
+    }
+
+    .analytics-row {
+        grid-template-columns: 1fr;
+    }
+
+    .edit-row {
+        grid-template-columns: 1fr;
     }
 }
 

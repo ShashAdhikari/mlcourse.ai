@@ -124,6 +124,7 @@ const renderExpenses = (filter = 'all') => {
                 <span class="category-tag ${escapeHtml(expense.category)}">${escapeHtml(expense.category)}</span>
             </div>
             <span class="item-amount expense">-${formatCurrency(expense.amount)}</span>
+            <button class="edit-btn" onclick="editExpense('${escapeHtml(expense.id)}')">✏️</button>
             <button class="delete-btn" onclick="deleteExpense('${escapeHtml(expense.id)}')">🗑️</button>
         </div>
     `).join('');
@@ -153,6 +154,77 @@ const deleteExpense = (id) => {
     saveState();
     renderExpenses();
     updateDashboard();
+};
+
+const editExpense = (id) => {
+    const expense = state.expenses.find(e => e.id === id);
+    if (!expense) return;
+
+    const container = document.querySelector(`.expense-item[data-id="${CSS.escape(id)}"]`);
+    if (!container) return;
+
+    const categories = ['housing', 'transportation', 'food', 'utilities', 'healthcare', 'entertainment', 'shopping', 'education', 'personal', 'other'];
+    const categoryOptions = categories.map(c =>
+        `<option value="${c}" ${c === expense.category ? 'selected' : ''}>${capitalizeFirst(c)}</option>`
+    ).join('');
+
+    container.classList.add('editing');
+    container.innerHTML = `
+        <div class="edit-form">
+            <div class="edit-row">
+                <div class="edit-field">
+                    <label>Description</label>
+                    <input type="text" class="edit-input" id="edit-desc-${escapeHtml(id)}" value="${escapeHtml(expense.description)}">
+                </div>
+                <div class="edit-field">
+                    <label>Amount</label>
+                    <input type="number" class="edit-input" id="edit-amount-${escapeHtml(id)}" step="0.01" min="0" value="${expense.amount}">
+                </div>
+            </div>
+            <div class="edit-row">
+                <div class="edit-field">
+                    <label>Category</label>
+                    <select class="edit-input" id="edit-cat-${escapeHtml(id)}">
+                        ${categoryOptions}
+                    </select>
+                </div>
+                <div class="edit-field">
+                    <label>Date</label>
+                    <input type="date" class="edit-input" id="edit-date-${escapeHtml(id)}" value="${expense.date}">
+                </div>
+            </div>
+            <div class="edit-actions">
+                <button class="btn btn-primary btn-sm" onclick="saveExpenseEdit('${escapeHtml(id)}')">Save</button>
+                <button class="btn btn-secondary btn-sm" onclick="cancelExpenseEdit()">Cancel</button>
+            </div>
+        </div>
+    `;
+};
+
+const saveExpenseEdit = (id) => {
+    const expense = state.expenses.find(e => e.id === id);
+    if (!expense) return;
+
+    const desc = document.getElementById(`edit-desc-${id}`);
+    const amount = document.getElementById(`edit-amount-${id}`);
+    const cat = document.getElementById(`edit-cat-${id}`);
+    const date = document.getElementById(`edit-date-${id}`);
+
+    if (!desc || !amount || !cat || !date) return;
+    if (!desc.value.trim() || !amount.value || !date.value) return;
+
+    expense.description = desc.value.trim();
+    expense.amount = parseFloat(amount.value);
+    expense.category = cat.value;
+    expense.date = date.value;
+
+    saveState();
+    renderExpenses();
+    updateDashboard();
+};
+
+const cancelExpenseEdit = () => {
+    renderExpenses();
 };
 
 document.getElementById('expense-form').addEventListener('submit', addExpense);
@@ -904,6 +976,10 @@ const updateDashboard = () => {
 
     // Update expense chart
     updateExpenseChart();
+
+    // Update monthly analytics and yearly projection
+    renderMonthlyAnalytics();
+    renderYearlyProjection();
 };
 
 const updateHealthScore = (income, expenses, debt, savings) => {
@@ -1301,6 +1377,207 @@ const setupTagSuggestions = () => {
     });
 };
 
+// ==================== MONTHLY ANALYTICS & YEARLY PROJECTION ====================
+
+const getMonthlyBreakdown = () => {
+    const monthlyExpenses = {};
+    state.expenses.forEach(exp => {
+        const key = exp.date.substring(0, 7); // YYYY-MM
+        if (!monthlyExpenses[key]) monthlyExpenses[key] = 0;
+        monthlyExpenses[key] += exp.amount;
+    });
+    return monthlyExpenses;
+};
+
+const renderMonthlyAnalytics = () => {
+    const container = document.getElementById('monthly-analytics');
+    if (!container) return;
+
+    const totalIncome = state.incomes.reduce((sum, inc) => sum + inc.amount, 0);
+    const totalExpenses = state.expenses.reduce((sum, exp) => sum + exp.amount, 0);
+    const monthlyBreakdown = getMonthlyBreakdown();
+    const months = Object.keys(monthlyBreakdown);
+    const monthCount = months.length || 1;
+    const avgMonthlyExpense = totalExpenses / monthCount;
+    const diff = totalIncome - avgMonthlyExpense;
+    const diffClass = diff >= 0 ? 'positive' : 'negative';
+    const diffLabel = diff >= 0 ? 'surplus' : 'deficit';
+
+    // Sort months for the breakdown table
+    const sortedMonths = [...months].sort().reverse();
+
+    let monthRows = '';
+    if (sortedMonths.length > 0) {
+        monthRows = sortedMonths.map(m => {
+            const mExp = monthlyBreakdown[m];
+            const mDiff = totalIncome - mExp;
+            const mClass = mDiff >= 0 ? 'positive' : 'negative';
+            const monthLabel = new Date(m + '-01').toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+            return `
+                <tr>
+                    <td>${monthLabel}</td>
+                    <td>${formatCurrency(mExp)}</td>
+                    <td>${formatCurrency(totalIncome)}</td>
+                    <td class="${mClass}">${formatCurrency(mDiff)}</td>
+                </tr>
+            `;
+        }).join('');
+    } else {
+        monthRows = '<tr><td colspan="4" class="empty-state">No expense data yet</td></tr>';
+    }
+
+    container.innerHTML = `
+        <div class="analytics-summary">
+            <div class="analytics-stat">
+                <span class="analytics-label">Avg Monthly Expense</span>
+                <span class="analytics-value expense">${formatCurrency(avgMonthlyExpense)}</span>
+            </div>
+            <div class="analytics-stat">
+                <span class="analytics-label">Monthly Income</span>
+                <span class="analytics-value income">${formatCurrency(totalIncome)}</span>
+            </div>
+            <div class="analytics-stat">
+                <span class="analytics-label">Monthly ${capitalizeFirst(diffLabel)}</span>
+                <span class="analytics-value ${diffClass}">${formatCurrency(Math.abs(diff))}</span>
+            </div>
+            <div class="analytics-stat">
+                <span class="analytics-label">Months Tracked</span>
+                <span class="analytics-value">${months.length}</span>
+            </div>
+        </div>
+        ${totalIncome > 0 ? `
+        <div class="analytics-bar-container">
+            <div class="analytics-bar-label">Expense-to-Income Ratio</div>
+            <div class="analytics-bar-track">
+                <div class="analytics-bar-fill ${avgMonthlyExpense / totalIncome > 0.9 ? 'danger' : avgMonthlyExpense / totalIncome > 0.7 ? 'warning' : 'good'}"
+                     style="width: ${Math.min(100, (avgMonthlyExpense / totalIncome) * 100).toFixed(1)}%">
+                    ${((avgMonthlyExpense / totalIncome) * 100).toFixed(1)}%
+                </div>
+            </div>
+        </div>
+        ` : ''}
+        <div class="analytics-table-wrapper">
+            <table class="analytics-table">
+                <thead>
+                    <tr>
+                        <th>Month</th>
+                        <th>Expenses</th>
+                        <th>Income</th>
+                        <th>Net</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${monthRows}
+                </tbody>
+            </table>
+        </div>
+    `;
+};
+
+const renderYearlyProjection = () => {
+    const container = document.getElementById('yearly-projection');
+    if (!container) return;
+
+    const totalIncome = state.incomes.reduce((sum, inc) => sum + inc.amount, 0);
+    const totalExpenses = state.expenses.reduce((sum, exp) => sum + exp.amount, 0);
+    const monthlyBreakdown = getMonthlyBreakdown();
+    const months = Object.keys(monthlyBreakdown);
+    const monthCount = months.length || 1;
+    const avgMonthlyExpense = totalExpenses / monthCount;
+
+    // Figure out how many months are left in the year
+    const now = new Date();
+    const currentMonth = now.getMonth(); // 0-indexed
+    const currentYear = now.getFullYear();
+    const monthsElapsed = months.filter(m => m.startsWith(String(currentYear))).length || currentMonth + 1;
+    const monthsRemaining = 12 - monthsElapsed;
+
+    // Already-tracked expenses for this year
+    const yearExpensesSoFar = months
+        .filter(m => m.startsWith(String(currentYear)))
+        .reduce((sum, m) => sum + monthlyBreakdown[m], 0);
+
+    const projectedYearExpenses = yearExpensesSoFar + (avgMonthlyExpense * monthsRemaining);
+    const projectedYearIncome = totalIncome * 12;
+    const projectedYearNet = projectedYearIncome - projectedYearExpenses;
+    const netClass = projectedYearNet >= 0 ? 'positive' : 'negative';
+
+    // Month-by-month projection rows
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    let projRows = '';
+    let runningExpense = 0;
+    let runningIncome = 0;
+
+    for (let m = 0; m < 12; m++) {
+        const key = `${currentYear}-${String(m + 1).padStart(2, '0')}`;
+        const isActual = monthlyBreakdown[key] !== undefined;
+        const mExpense = isActual ? monthlyBreakdown[key] : avgMonthlyExpense;
+        const mIncome = totalIncome;
+        runningExpense += mExpense;
+        runningIncome += mIncome;
+        const mNet = mIncome - mExpense;
+        const mClass = mNet >= 0 ? 'positive' : 'negative';
+        const typeLabel = isActual ? 'Actual' : 'Projected';
+        const typeCls = isActual ? 'actual' : 'projected';
+
+        projRows += `
+            <tr class="${typeCls}">
+                <td>${monthNames[m]} ${currentYear}</td>
+                <td>${formatCurrency(mExpense)}</td>
+                <td>${formatCurrency(mIncome)}</td>
+                <td class="${mClass}">${formatCurrency(mNet)}</td>
+                <td><span class="projection-badge ${typeCls}">${typeLabel}</span></td>
+            </tr>
+        `;
+    }
+
+    container.innerHTML = `
+        <div class="projection-summary">
+            <div class="projection-stat">
+                <span class="projection-label">Projected Annual Expenses</span>
+                <span class="projection-value expense">${formatCurrency(projectedYearExpenses)}</span>
+            </div>
+            <div class="projection-stat">
+                <span class="projection-label">Projected Annual Income</span>
+                <span class="projection-value income">${formatCurrency(projectedYearIncome)}</span>
+            </div>
+            <div class="projection-stat">
+                <span class="projection-label">Projected Net Savings</span>
+                <span class="projection-value ${netClass}">${formatCurrency(Math.abs(projectedYearNet))}</span>
+            </div>
+            <div class="projection-stat">
+                <span class="projection-label">Based on</span>
+                <span class="projection-value">${monthsElapsed} actual + ${monthsRemaining} projected mo.</span>
+            </div>
+        </div>
+        <div class="analytics-table-wrapper">
+            <table class="analytics-table projection-table">
+                <thead>
+                    <tr>
+                        <th>Month</th>
+                        <th>Expenses</th>
+                        <th>Income</th>
+                        <th>Net</th>
+                        <th>Type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${projRows}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td><strong>Total</strong></td>
+                        <td><strong>${formatCurrency(runningExpense)}</strong></td>
+                        <td><strong>${formatCurrency(runningIncome)}</strong></td>
+                        <td class="${netClass}"><strong>${formatCurrency(runningIncome - runningExpense)}</strong></td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    `;
+};
+
 // ==================== CURRENCY CHANGE HANDLER ====================
 
 const setupCurrencySelector = () => {
@@ -1350,8 +1627,11 @@ const init = () => {
     }
 };
 
-// Make delete functions globally accessible
+// Make functions globally accessible
 window.deleteExpense = deleteExpense;
+window.editExpense = editExpense;
+window.saveExpenseEdit = saveExpenseEdit;
+window.cancelExpenseEdit = cancelExpenseEdit;
 window.deleteDebt = deleteDebt;
 window.deleteInvestment = deleteInvestment;
 window.deleteIncome = deleteIncome;

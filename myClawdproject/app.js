@@ -1,12 +1,22 @@
 // Financial Tracker Application
+// Safe JSON parse with fallback
+const safeParse = (key, fallback) => {
+    try {
+        const data = localStorage.getItem(key);
+        return data ? JSON.parse(data) : fallback;
+    } catch {
+        return fallback;
+    }
+};
+
 // Main application state
 const state = {
-    expenses: JSON.parse(localStorage.getItem('expenses')) || [],
-    debts: JSON.parse(localStorage.getItem('debts')) || [],
-    investments: JSON.parse(localStorage.getItem('investments')) || [],
-    incomes: JSON.parse(localStorage.getItem('incomes')) || [],
-    uploads: JSON.parse(localStorage.getItem('uploads')) || [],
-    investmentProfile: JSON.parse(localStorage.getItem('investmentProfile')) || null
+    expenses: safeParse('expenses', []),
+    debts: safeParse('debts', []),
+    investments: safeParse('investments', []),
+    incomes: safeParse('incomes', []),
+    uploads: safeParse('uploads', []),
+    investmentProfile: safeParse('investmentProfile', null)
 };
 
 // Utility functions
@@ -26,7 +36,14 @@ const formatDate = (dateStr) => {
 };
 
 const generateId = () => {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+    return Date.now().toString(36) + Math.random().toString(36).substring(2);
+};
+
+// Escape HTML to prevent XSS
+const escapeHtml = (str) => {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
 };
 
 const saveState = () => {
@@ -61,13 +78,11 @@ document.getElementById('expense-date').valueAsDate = new Date();
 
 const renderExpenses = (filter = 'all') => {
     const container = document.getElementById('expense-list');
-    let filteredExpenses = state.expenses;
+    let filteredExpenses = filter !== 'all'
+        ? state.expenses.filter(e => e.category === filter)
+        : [...state.expenses];
 
-    if (filter !== 'all') {
-        filteredExpenses = state.expenses.filter(e => e.category === filter);
-    }
-
-    // Sort by date (newest first)
+    // Sort by date (newest first) - uses a copy so state is not mutated
     filteredExpenses.sort((a, b) => new Date(b.date) - new Date(a.date));
 
     if (filteredExpenses.length === 0) {
@@ -76,14 +91,14 @@ const renderExpenses = (filter = 'all') => {
     }
 
     container.innerHTML = filteredExpenses.map(expense => `
-        <div class="expense-item" data-id="${expense.id}">
+        <div class="expense-item" data-id="${escapeHtml(expense.id)}">
             <div class="item-info">
-                <h4>${expense.description}</h4>
+                <h4>${escapeHtml(expense.description)}</h4>
                 <p>${formatDate(expense.date)}</p>
-                <span class="category-tag ${expense.category}">${expense.category}</span>
+                <span class="category-tag ${escapeHtml(expense.category)}">${escapeHtml(expense.category)}</span>
             </div>
             <span class="item-amount expense">-${formatCurrency(expense.amount)}</span>
-            <button class="delete-btn" onclick="deleteExpense('${expense.id}')">🗑️</button>
+            <button class="delete-btn" onclick="deleteExpense('${escapeHtml(expense.id)}')">🗑️</button>
         </div>
     `).join('');
 };
@@ -130,14 +145,14 @@ const renderDebts = () => {
     }
 
     container.innerHTML = state.debts.map(debt => `
-        <div class="debt-item" data-id="${debt.id}">
+        <div class="debt-item" data-id="${escapeHtml(debt.id)}">
             <div class="item-info">
-                <h4>${debt.name}</h4>
+                <h4>${escapeHtml(debt.name)}</h4>
                 <p>Interest: ${debt.rate}% | Min Payment: ${formatCurrency(debt.minimum)}</p>
-                <span class="category-tag ${debt.type}">${debt.type}</span>
+                <span class="category-tag ${escapeHtml(debt.type)}">${escapeHtml(debt.type)}</span>
             </div>
             <span class="item-amount debt">${formatCurrency(debt.balance)}</span>
-            <button class="delete-btn" onclick="deleteDebt('${debt.id}')">🗑️</button>
+            <button class="delete-btn" onclick="deleteDebt('${escapeHtml(debt.id)}')">🗑️</button>
         </div>
     `).join('');
 
@@ -217,7 +232,7 @@ const updatePayoffPlan = () => {
         <div class="payoff-item">
             <span class="payoff-order">${index + 1}</span>
             <div class="payoff-details">
-                <h4>${debt.name}</h4>
+                <h4>${escapeHtml(debt.name)}</h4>
                 <p>Balance: ${formatCurrency(debt.balance)} | Interest: ${debt.rate}%</p>
             </div>
         </div>
@@ -249,12 +264,19 @@ const calculatePayoffTimeline = (extraPayment) => {
     }
 
     let totalInterestPaid = 0;
+    let totalAmountPaid = 0;
     let months = 0;
     const maxMonths = 360; // 30 years max
 
+    // Check if any debt is unpayable (minimum payment < monthly interest)
+    const unpayableDebts = debts.filter(d => {
+        const monthlyInterest = (d.balance * d.rate / 100) / 12;
+        return d.minimum < monthlyInterest && d.balance > 0;
+    });
+
     while (debts.some(d => d.balance > 0) && months < maxMonths) {
         months++;
-        let extraThisMonth = extraPayment;
+        const targetIndex = debts.findIndex(d => d.balance > 0);
 
         for (let i = 0; i < debts.length; i++) {
             if (debts[i].balance <= 0) continue;
@@ -264,39 +286,43 @@ const calculatePayoffTimeline = (extraPayment) => {
             totalInterestPaid += monthlyInterest;
             debts[i].balance += monthlyInterest;
 
-            // Apply minimum payment
+            // Apply minimum payment + extra to priority debt
             let payment = debts[i].minimum;
-
-            // Apply extra payment to first debt with balance
-            if (i === debts.findIndex(d => d.balance > 0)) {
-                payment += extraThisMonth;
+            if (i === targetIndex) {
+                payment += extraPayment;
             }
 
+            // Don't overpay - cap at remaining balance
+            payment = Math.min(payment, debts[i].balance);
+            totalAmountPaid += payment;
             debts[i].balance = Math.max(0, debts[i].balance - payment);
-        }
-
-        // Re-sort after each payment
-        if (activeStrategy === 'avalanche') {
-            debts.sort((a, b) => b.rate - a.rate);
-        } else {
-            debts.sort((a, b) => a.balance - b.balance);
         }
     }
 
     const years = Math.floor(months / 12);
     const remainingMonths = months % 12;
-
-    const totalOriginalDebt = state.debts.reduce((sum, d) => sum + d.balance, 0);
     const totalMinPayments = state.debts.reduce((sum, d) => sum + d.minimum, 0);
+    const hitMax = months >= maxMonths && debts.some(d => d.balance > 0);
 
-    summaryContainer.innerHTML = `
-        <h4>Payoff Summary</h4>
-        <p><strong>Payoff Time:</strong> ${years > 0 ? years + ' years ' : ''}${remainingMonths} months</p>
+    let html = '<h4>Payoff Summary</h4>';
+
+    if (hitMax) {
+        html += `<p style="color: var(--danger-color);"><strong>Warning:</strong> With current payments, some debts will not be paid off within 30 years. Consider increasing your monthly payments.</p>`;
+    }
+
+    if (unpayableDebts.length > 0 && extraPayment === 0) {
+        html += `<p style="color: var(--warning-color);"><strong>Note:</strong> ${unpayableDebts.map(d => escapeHtml(d.name)).join(', ')} - minimum payment is less than monthly interest. Extra payments are needed.</p>`;
+    }
+
+    html += `
+        <p><strong>Payoff Time:</strong> ${hitMax ? '30+ years' : `${years > 0 ? years + ' years ' : ''}${remainingMonths} months`}</p>
         <p><strong>Total Interest Paid:</strong> ${formatCurrency(totalInterestPaid)}</p>
-        <p><strong>Total Amount Paid:</strong> ${formatCurrency(totalOriginalDebt + totalInterestPaid)}</p>
+        <p><strong>Total Amount Paid:</strong> ${formatCurrency(totalAmountPaid)}</p>
         <p><strong>Monthly Payment:</strong> ${formatCurrency(totalMinPayments + extraPayment)}</p>
         ${extraPayment > 0 ? `<p><strong>Savings from Extra Payment:</strong> By paying an extra ${formatCurrency(extraPayment)}/month, you could save significantly on interest!</p>` : ''}
     `;
+
+    summaryContainer.innerHTML = html;
 };
 
 // ==================== INVESTMENT MANAGEMENT ====================
@@ -315,13 +341,13 @@ const renderInvestments = () => {
     totalElement.textContent = formatCurrency(total);
 
     container.innerHTML = state.investments.map(inv => `
-        <div class="investment-item" data-id="${inv.id}">
+        <div class="investment-item" data-id="${escapeHtml(inv.id)}">
             <div class="item-info">
-                <h4>${inv.name}</h4>
-                <span class="category-tag other">${inv.type}</span>
+                <h4>${escapeHtml(inv.name)}</h4>
+                <span class="category-tag other">${escapeHtml(inv.type)}</span>
             </div>
             <span class="item-amount investment">${formatCurrency(inv.value)}</span>
-            <button class="delete-btn" onclick="deleteInvestment('${inv.id}')">🗑️</button>
+            <button class="delete-btn" onclick="deleteInvestment('${escapeHtml(inv.id)}')">🗑️</button>
         </div>
     `).join('');
 };
@@ -389,15 +415,17 @@ const generateInvestmentRecommendations = () => {
         expectedReturn = 9;
     }
 
-    // Adjust for timeline
+    // Adjust for timeline (ensure total stays at 100%)
     if (profile.timeline < 5) {
-        allocation.stocks = Math.max(20, allocation.stocks - 20);
-        allocation.bonds += 10;
-        allocation.cash += 10;
+        const stockReduction = allocation.stocks - Math.max(20, allocation.stocks - 20);
+        allocation.stocks -= stockReduction;
+        allocation.bonds += Math.round(stockReduction * 0.6);
+        allocation.cash = 100 - allocation.stocks - allocation.bonds;
     } else if (profile.timeline > 15) {
-        allocation.stocks = Math.min(90, allocation.stocks + 10);
-        allocation.bonds -= 5;
-        allocation.cash -= 5;
+        const stockIncrease = Math.min(90, allocation.stocks + 10) - allocation.stocks;
+        allocation.stocks += stockIncrease;
+        allocation.bonds -= Math.round(stockIncrease * 0.6);
+        allocation.cash = 100 - allocation.stocks - allocation.bonds;
     }
 
     // Generate specific recommendations based on goal
@@ -615,13 +643,13 @@ const renderIncomes = () => {
     }
 
     container.innerHTML = state.incomes.map(income => `
-        <div class="income-item" data-id="${income.id}">
+        <div class="income-item" data-id="${escapeHtml(income.id)}">
             <div class="item-info">
-                <h4>${income.source}</h4>
-                <span class="category-tag other">${income.type}</span>
+                <h4>${escapeHtml(income.source)}</h4>
+                <span class="category-tag other">${escapeHtml(income.type)}</span>
             </div>
             <span class="item-amount income">${formatCurrency(income.amount)}</span>
-            <button class="delete-btn" onclick="deleteIncome('${income.id}')">🗑️</button>
+            <button class="delete-btn" onclick="deleteIncome('${escapeHtml(income.id)}')">🗑️</button>
         </div>
     `).join('');
 };
@@ -687,7 +715,8 @@ const setupUploadZone = (zoneId, inputId, previewId, type) => {
     });
 
     zone.addEventListener('click', (e) => {
-        if (!e.target.closest('.upload-btn')) {
+        // Avoid double-trigger: labels already open the file dialog natively
+        if (!e.target.closest('.upload-btn') && e.target.tagName !== 'INPUT') {
             input.click();
         }
     });
@@ -709,12 +738,14 @@ const processFile = (file, type, previewContainer) => {
         status: 'processing'
     };
 
+    const safeName = escapeHtml(file.name);
+
     // Show processing preview
     previewContainer.innerHTML = `
         <div class="upload-preview-item">
             <span class="file-icon">${type === 'expense' ? '📄' : '💵'}</span>
             <div class="file-info">
-                <span class="file-name">${file.name}</span>
+                <span class="file-name">${safeName}</span>
                 <span class="file-size">${formatFileSize(file.size)}</span>
             </div>
             <span class="file-status processing">Processing...</span>
@@ -731,7 +762,7 @@ const processFile = (file, type, previewContainer) => {
             <div class="upload-preview-item">
                 <span class="file-icon">${type === 'expense' ? '📄' : '💵'}</span>
                 <div class="file-info">
-                    <span class="file-name">${file.name}</span>
+                    <span class="file-name">${safeName}</span>
                     <span class="file-size">${formatFileSize(file.size)}</span>
                 </div>
                 <span class="file-status success">Uploaded</span>
@@ -769,7 +800,7 @@ const renderUploadHistory = () => {
         <div class="history-item">
             <span class="file-icon">${upload.type === 'expense' ? '📄' : '💵'}</span>
             <div class="file-info">
-                <span class="file-name">${upload.name}</span>
+                <span class="file-name">${escapeHtml(upload.name)}</span>
                 <span class="file-date">${formatDate(upload.date)}</span>
             </div>
             <span class="file-status success">Processed</span>
@@ -778,13 +809,21 @@ const renderUploadHistory = () => {
 };
 
 // Sample data functions (simulating file parsing)
+// Track whether sample data has been added to avoid duplicates
+let sampleExpensesAdded = false;
+let sampleIncomeAdded = false;
+
 const addSampleExpenses = () => {
+    if (sampleExpensesAdded) return;
+    sampleExpensesAdded = true;
+
+    const today = new Date().toISOString().split('T')[0];
     const sampleExpenses = [
-        { description: 'Rent Payment', amount: 1500, category: 'housing', date: new Date().toISOString().split('T')[0] },
-        { description: 'Grocery Shopping', amount: 250, category: 'food', date: new Date().toISOString().split('T')[0] },
-        { description: 'Electric Bill', amount: 120, category: 'utilities', date: new Date().toISOString().split('T')[0] },
-        { description: 'Gas', amount: 80, category: 'transportation', date: new Date().toISOString().split('T')[0] },
-        { description: 'Internet', amount: 60, category: 'utilities', date: new Date().toISOString().split('T')[0] }
+        { description: 'Rent Payment', amount: 1500, category: 'housing', date: today },
+        { description: 'Grocery Shopping', amount: 250, category: 'food', date: today },
+        { description: 'Electric Bill', amount: 120, category: 'utilities', date: today },
+        { description: 'Gas', amount: 80, category: 'transportation', date: today },
+        { description: 'Internet', amount: 60, category: 'utilities', date: today }
     ];
 
     sampleExpenses.forEach(expense => {
@@ -797,6 +836,9 @@ const addSampleExpenses = () => {
 };
 
 const addSampleIncome = () => {
+    if (sampleIncomeAdded) return;
+    sampleIncomeAdded = true;
+
     const sampleIncome = {
         id: generateId(),
         source: 'Primary Job',

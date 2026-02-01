@@ -186,7 +186,7 @@ h2 {
 /* Charts Container */
 .charts-container {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(400px, 100%), 1fr));
     gap: 1.5rem;
 }
 
@@ -330,7 +330,7 @@ h2 {
 .investment-container,
 .upload-container {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(400px, 100%), 1fr));
     gap: 1.5rem;
 }
 

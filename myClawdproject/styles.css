@@ -1135,6 +1135,57 @@ h2 {
     color: #3730a3;
 }
 
+/* Parsed Transactions Card */
+.parsed-transactions-card {
+    grid-column: 1 / -1;
+}
+
+.parsed-table-wrapper {
+    overflow-x: auto;
+    max-height: 400px;
+    overflow-y: auto;
+    margin-bottom: 1rem;
+}
+
+.parsed-table td.expense {
+    color: var(--danger-color);
+    font-weight: 600;
+}
+
+.parsed-table input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--primary-color);
+}
+
+.parsed-category {
+    padding: 0.3rem 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.85rem;
+    background: white;
+    cursor: pointer;
+}
+
+.parsed-category:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+.parsed-actions {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.parsed-count {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-left: auto;
+}
+
 /* Footer */
 footer {
     text-align: center;

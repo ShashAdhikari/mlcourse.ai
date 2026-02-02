@@ -831,6 +831,271 @@ const handleFiles = (files, type, previewContainer) => {
     });
 };
 
+// ==================== FILE PARSING ENGINE ====================
+
+let pendingParsedTransactions = [];
+
+const parseDate = (value) => {
+    if (!value) return null;
+    const str = String(value).trim();
+    // Try common date formats
+    // MM/DD/YYYY or M/D/YYYY
+    let m = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (m) return `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;
+    // YYYY-MM-DD or YYYY/MM/DD
+    m = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+    if (m) return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+    // DD-Mon-YYYY (e.g., 15-Jan-2024)
+    const monthMap = {jan:'01',feb:'02',mar:'03',apr:'04',may:'05',jun:'06',jul:'07',aug:'08',sep:'09',oct:'10',nov:'11',dec:'12'};
+    m = str.match(/^(\d{1,2})[\/\-\s]([A-Za-z]{3})[\/\-\s](\d{4})$/);
+    if (m && monthMap[m[2].toLowerCase()]) {
+        return `${m[3]}-${monthMap[m[2].toLowerCase()]}-${m[1].padStart(2,'0')}`;
+    }
+    // Excel serial date number
+    if (/^\d{5}$/.test(str)) {
+        const d = new Date((parseInt(str) - 25569) * 86400000);
+        if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
+    }
+    // Last resort: native Date parse
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
+    return null;
+};
+
+const parseAmount = (value) => {
+    if (value === null || value === undefined) return null;
+    if (typeof value === 'number') return Math.abs(value);
+    const str = String(value).trim();
+    // Remove currency symbols and thousands separators, keep decimals
+    const cleaned = str.replace(/[^0-9.\-]/g, '');
+    const num = parseFloat(cleaned);
+    return isNaN(num) ? null : Math.abs(num);
+};
+
+const autoCategorize = (description) => {
+    const matches = suggestCategory(description);
+    return matches.length > 0 ? matches[0].category : 'other';
+};
+
+const detectColumns = (headers) => {
+    const lower = headers.map(h => String(h).toLowerCase().trim());
+    const result = { date: -1, description: -1, amount: -1 };
+
+    for (let i = 0; i < lower.length; i++) {
+        const h = lower[i];
+        if (result.date === -1 && /date|trans.*date|post.*date|value.*date/.test(h)) result.date = i;
+        if (result.description === -1 && /desc|narration|particular|detail|memo|payee|merchant|transaction|reference/.test(h)) result.description = i;
+        if (result.amount === -1 && /debit|amount|withdrawal|expense|charge|payment|money.*out/.test(h)) result.amount = i;
+    }
+
+    // Fallback: if no amount column but there's a generic "amount", use it
+    if (result.amount === -1) {
+        for (let i = 0; i < lower.length; i++) {
+            if (/amount|sum|total|value/.test(lower[i])) { result.amount = i; break; }
+        }
+    }
+
+    return result;
+};
+
+const parseCSVText = (text) => {
+    const lines = text.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length < 2) return [];
+
+    // Detect delimiter
+    const firstLine = lines[0];
+    const delim = firstLine.split('\t').length > firstLine.split(',').length ? '\t' : ',';
+
+    const splitRow = (line) => {
+        const fields = [];
+        let current = '';
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+            const ch = line[i];
+            if (ch === '"') { inQuotes = !inQuotes; continue; }
+            if (ch === delim && !inQuotes) { fields.push(current.trim()); current = ''; continue; }
+            current += ch;
+        }
+        fields.push(current.trim());
+        return fields;
+    };
+
+    const headers = splitRow(lines[0]);
+    const cols = detectColumns(headers);
+
+    // If we couldn't detect columns, try positional heuristic (date, desc, amount in first 3-5 cols)
+    if (cols.date === -1 && cols.description === -1 && cols.amount === -1) {
+        if (headers.length >= 3) {
+            cols.date = 0; cols.description = 1; cols.amount = 2;
+        } else { return []; }
+    }
+
+    const transactions = [];
+    for (let i = 1; i < lines.length; i++) {
+        const fields = splitRow(lines[i]);
+        if (fields.length < 2) continue;
+
+        const date = cols.date >= 0 ? parseDate(fields[cols.date]) : new Date().toISOString().split('T')[0];
+        const desc = cols.description >= 0 ? fields[cols.description] : '';
+        const amount = cols.amount >= 0 ? parseAmount(fields[cols.amount]) : null;
+
+        if (!desc && !amount) continue;
+        if (amount === null || amount === 0) continue;
+
+        transactions.push({
+            id: generateId(),
+            date: date || new Date().toISOString().split('T')[0],
+            description: desc || 'Unnamed Transaction',
+            amount: amount,
+            category: autoCategorize(desc),
+            selected: true
+        });
+    }
+    return transactions;
+};
+
+const parseExcelFile = (arrayBuffer) => {
+    try {
+        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
+
+        if (rows.length < 2) return [];
+
+        const headers = rows[0].map(h => String(h));
+        const cols = detectColumns(headers);
+
+        if (cols.date === -1 && cols.description === -1 && cols.amount === -1) {
+            if (headers.length >= 3) {
+                cols.date = 0; cols.description = 1; cols.amount = 2;
+            } else { return []; }
+        }
+
+        const transactions = [];
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            if (!row || row.length < 2) continue;
+
+            const date = cols.date >= 0 ? parseDate(row[cols.date]) : new Date().toISOString().split('T')[0];
+            const desc = cols.description >= 0 ? String(row[cols.description]).trim() : '';
+            const amount = cols.amount >= 0 ? parseAmount(row[cols.amount]) : null;
+
+            if (!desc && !amount) continue;
+            if (amount === null || amount === 0) continue;
+
+            transactions.push({
+                id: generateId(),
+                date: date || new Date().toISOString().split('T')[0],
+                description: desc || 'Unnamed Transaction',
+                amount: amount,
+                category: autoCategorize(desc),
+                selected: true
+            });
+        }
+        return transactions;
+    } catch (e) {
+        return [];
+    }
+};
+
+const renderParsedTransactions = (transactions) => {
+    pendingParsedTransactions = transactions;
+    const card = document.getElementById('parsed-transactions-card');
+    const table = document.getElementById('parsed-transactions-table');
+    const count = document.getElementById('parsed-count');
+
+    if (!transactions.length) {
+        card.style.display = 'none';
+        return;
+    }
+
+    card.style.display = 'block';
+    count.textContent = `${transactions.length} transaction${transactions.length !== 1 ? 's' : ''} found`;
+
+    const categories = ['housing', 'transportation', 'food', 'utilities', 'healthcare', 'entertainment', 'shopping', 'education', 'personal', 'other'];
+    const catOptions = categories.map(c => `<option value="${c}">${capitalizeFirst(c)}</option>`).join('');
+
+    table.innerHTML = `
+        <div class="parsed-table-wrapper">
+            <table class="analytics-table parsed-table">
+                <thead><tr>
+                    <th><input type="checkbox" id="select-all-parsed" checked></th>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th>Amount</th>
+                    <th>Category</th>
+                </tr></thead>
+                <tbody>
+                    ${transactions.map((t, i) => `
+                        <tr data-idx="${i}">
+                            <td><input type="checkbox" class="parsed-check" data-idx="${i}" ${t.selected ? 'checked' : ''}></td>
+                            <td>${escapeHtml(t.date)}</td>
+                            <td>${escapeHtml(t.description)}</td>
+                            <td class="expense">${formatCurrency(t.amount)}</td>
+                            <td>
+                                <select class="parsed-category" data-idx="${i}">
+                                    ${catOptions.replace(`value="${t.category}"`, `value="${t.category}" selected`)}
+                                </select>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    // Wire up select-all checkbox
+    document.getElementById('select-all-parsed').addEventListener('change', (e) => {
+        const checked = e.target.checked;
+        document.querySelectorAll('.parsed-check').forEach(cb => {
+            cb.checked = checked;
+            pendingParsedTransactions[parseInt(cb.dataset.idx)].selected = checked;
+        });
+    });
+
+    // Wire up individual checkboxes
+    table.querySelectorAll('.parsed-check').forEach(cb => {
+        cb.addEventListener('change', (e) => {
+            pendingParsedTransactions[parseInt(e.target.dataset.idx)].selected = e.target.checked;
+        });
+    });
+
+    // Wire up category selects
+    table.querySelectorAll('.parsed-category').forEach(sel => {
+        sel.addEventListener('change', (e) => {
+            pendingParsedTransactions[parseInt(e.target.dataset.idx)].category = e.target.value;
+        });
+    });
+};
+
+const importParsedTransactions = () => {
+    const toImport = pendingParsedTransactions.filter(t => t.selected);
+    if (toImport.length === 0) return;
+
+    toImport.forEach(t => {
+        state.expenses.push({
+            id: generateId(),
+            description: t.description,
+            amount: t.amount,
+            category: t.category,
+            date: t.date
+        });
+    });
+
+    saveState();
+    renderExpenses();
+    updateDashboard();
+
+    // Hide the parsed card
+    document.getElementById('parsed-transactions-card').style.display = 'none';
+    pendingParsedTransactions = [];
+};
+
+const discardParsedTransactions = () => {
+    pendingParsedTransactions = [];
+    document.getElementById('parsed-transactions-card').style.display = 'none';
+};
+
 const processFile = (file, type, previewContainer) => {
     const upload = {
         id: generateId(),
@@ -842,8 +1107,9 @@ const processFile = (file, type, previewContainer) => {
     };
 
     const safeName = escapeHtml(file.name);
+    const isCSV = file.name.endsWith('.csv') || file.type === 'text/csv' || file.type === 'text/plain';
+    const isExcel = /\.(xlsx|xls)$/i.test(file.name);
 
-    // Show processing preview
     previewContainer.innerHTML = `
         <div class="upload-preview-item">
             <span class="file-icon">${type === 'expense' ? '📄' : '💵'}</span>
@@ -851,36 +1117,60 @@ const processFile = (file, type, previewContainer) => {
                 <span class="file-name">${safeName}</span>
                 <span class="file-size">${formatFileSize(file.size)}</span>
             </div>
-            <span class="file-status processing">Processing...</span>
+            <span class="file-status processing">Parsing...</span>
         </div>
     `;
 
-    // Simulate processing (in real app, this would parse the file)
-    setTimeout(() => {
+    const finalizeUpload = (transactions) => {
         upload.status = 'success';
+        upload.transactionCount = transactions.length;
         state.uploads.push(upload);
         saveState();
+
+        const statusMsg = transactions.length > 0
+            ? `${transactions.length} transaction${transactions.length !== 1 ? 's' : ''} found`
+            : 'No transactions detected';
 
         previewContainer.innerHTML = `
             <div class="upload-preview-item">
                 <span class="file-icon">${type === 'expense' ? '📄' : '💵'}</span>
                 <div class="file-info">
                     <span class="file-name">${safeName}</span>
-                    <span class="file-size">${formatFileSize(file.size)}</span>
+                    <span class="file-size">${formatFileSize(file.size)} &middot; ${statusMsg}</span>
                 </div>
-                <span class="file-status success">Uploaded</span>
+                <span class="file-status success">Parsed</span>
             </div>
         `;
 
         renderUploadHistory();
 
-        // For demo purposes, add some sample data
-        if (type === 'expense') {
-            addSampleExpenses();
-        } else {
+        if (transactions.length > 0 && type === 'expense') {
+            renderParsedTransactions(transactions);
+        } else if (type !== 'expense') {
             addSampleIncome();
         }
-    }, 1500);
+    };
+
+    if (isCSV) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const transactions = parseCSVText(e.target.result);
+            finalizeUpload(transactions);
+        };
+        reader.onerror = () => finalizeUpload([]);
+        reader.readAsText(file);
+    } else if (isExcel) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const transactions = parseExcelFile(e.target.result);
+            finalizeUpload(transactions);
+        };
+        reader.onerror = () => finalizeUpload([]);
+        reader.readAsArrayBuffer(file);
+    } else {
+        // PDF or unsupported: can't parse client-side, record upload only
+        setTimeout(() => finalizeUpload([]), 500);
+    }
 };
 
 const formatFileSize = (bytes) => {
@@ -900,15 +1190,22 @@ const renderUploadHistory = () => {
     }
 
     container.innerHTML = state.uploads.map(upload => `
-        <div class="history-item">
+        <div class="history-item" data-id="${escapeHtml(upload.id)}">
             <span class="file-icon">${upload.type === 'expense' ? '📄' : '💵'}</span>
             <div class="file-info">
                 <span class="file-name">${escapeHtml(upload.name)}</span>
-                <span class="file-date">${formatDate(upload.date)}</span>
+                <span class="file-date">${formatDate(upload.date)}${upload.transactionCount ? ` &middot; ${upload.transactionCount} transactions` : ''}</span>
             </div>
             <span class="file-status success">Processed</span>
+            <button class="delete-btn" onclick="deleteUpload('${escapeHtml(upload.id)}')">🗑️</button>
         </div>
     `).join('');
+};
+
+const deleteUpload = (id) => {
+    state.uploads = state.uploads.filter(u => u.id !== id);
+    saveState();
+    renderUploadHistory();
 };
 
 // Sample data functions (simulating file parsing)
@@ -1656,6 +1953,12 @@ const init = () => {
     setupTagSuggestions();
     setupDashboardUpload();
 
+    // Wire up parsed transactions import/discard buttons
+    const importBtn = document.getElementById('import-all-btn');
+    const discardBtn = document.getElementById('discard-parsed-btn');
+    if (importBtn) importBtn.addEventListener('click', importParsedTransactions);
+    if (discardBtn) discardBtn.addEventListener('click', discardParsedTransactions);
+
     renderExpenses();
     renderDebts();
     renderInvestments();
@@ -1681,6 +1984,7 @@ window.cancelExpenseEdit = cancelExpenseEdit;
 window.deleteDebt = deleteDebt;
 window.deleteInvestment = deleteInvestment;
 window.deleteIncome = deleteIncome;
+window.deleteUpload = deleteUpload;
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', init);

@@ -412,6 +412,17 @@
                     <div class="upload-preview" id="payslip-upload-preview"></div>
                 </div>
 
+                <div class="card parsed-transactions-card" id="parsed-transactions-card" style="display:none;">
+                    <h3>Parsed Transactions</h3>
+                    <p class="upload-description">Review the transactions detected from your file. Edit categories before importing.</p>
+                    <div id="parsed-transactions-table"></div>
+                    <div class="parsed-actions">
+                        <button class="btn btn-primary" id="import-all-btn">Import All to Expenses</button>
+                        <button class="btn btn-secondary" id="discard-parsed-btn">Discard</button>
+                        <span class="parsed-count" id="parsed-count"></span>
+                    </div>
+                </div>
+
                 <div class="card upload-history-card">
                     <h3>Upload History</h3>
                     <div class="upload-history" id="upload-history">
@@ -461,6 +472,7 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

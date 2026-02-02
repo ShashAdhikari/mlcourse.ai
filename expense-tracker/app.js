@@ -865,9 +865,22 @@ const parseDate = (value) => {
 const parseAmount = (value) => {
     if (value === null || value === undefined) return null;
     if (typeof value === 'number') return Math.abs(value);
-    const str = String(value).trim();
-    // Remove currency symbols and thousands separators, keep decimals
-    const cleaned = str.replace(/[^0-9.\-]/g, '');
+    let str = String(value).trim();
+    // Handle parenthetical negatives: (45.00) → -45.00
+    const isParenNeg = /^\(.*\)$/.test(str);
+    if (isParenNeg) str = str.slice(1, -1);
+    // Detect European format: "1.234,56" (dot=thousands, comma=decimal)
+    // Heuristic: if comma appears after last dot, treat comma as decimal separator
+    const lastDot = str.lastIndexOf('.');
+    const lastComma = str.lastIndexOf(',');
+    let cleaned;
+    if (lastComma > lastDot && lastComma !== -1) {
+        // European: remove dots (thousands), replace comma with dot (decimal)
+        cleaned = str.replace(/[^0-9,\-]/g, '').replace(',', '.');
+    } else {
+        // Standard: remove everything except digits, dots, hyphens
+        cleaned = str.replace(/[^0-9.\-]/g, '');
+    }
     const num = parseFloat(cleaned);
     return isNaN(num) ? null : Math.abs(num);
 };
@@ -880,18 +893,46 @@ const autoCategorize = (description) => {
 const detectColumns = (headers) => {
     const lower = headers.map(h => String(h).toLowerCase().trim());
     const result = { date: -1, description: -1, amount: -1 };
+    const assigned = new Set();
 
+    // Pass 1: date detection (highest priority - avoids "Transaction Date" being claimed by description)
     for (let i = 0; i < lower.length; i++) {
-        const h = lower[i];
-        if (result.date === -1 && /date|trans.*date|post.*date|value.*date/.test(h)) result.date = i;
-        if (result.description === -1 && /desc|narration|particular|detail|memo|payee|merchant|transaction|reference/.test(h)) result.description = i;
-        if (result.amount === -1 && /debit|amount|withdrawal|expense|charge|payment|money.*out/.test(h)) result.amount = i;
+        if (result.date === -1 && /date|trans.*date|post.*date|value.*date/.test(lower[i])) {
+            result.date = i;
+            assigned.add(i);
+            break;
+        }
     }
 
-    // Fallback: if no amount column but there's a generic "amount", use it
+    // Pass 2: amount detection
+    for (let i = 0; i < lower.length; i++) {
+        if (assigned.has(i)) continue;
+        if (result.amount === -1 && /debit|withdrawal|expense|charge|payment|money.*out/.test(lower[i])) {
+            result.amount = i;
+            assigned.add(i);
+            break;
+        }
+    }
+
+    // Pass 3: description detection (skip columns already assigned)
+    for (let i = 0; i < lower.length; i++) {
+        if (assigned.has(i)) continue;
+        if (result.description === -1 && /desc|narration|particular|detail|memo|payee|merchant|transaction|reference/.test(lower[i])) {
+            result.description = i;
+            assigned.add(i);
+            break;
+        }
+    }
+
+    // Fallback: if no amount column, try generic amount keywords on unassigned columns
     if (result.amount === -1) {
         for (let i = 0; i < lower.length; i++) {
-            if (/amount|sum|total|value/.test(lower[i])) { result.amount = i; break; }
+            if (assigned.has(i)) continue;
+            if (/amount|sum|total|value/.test(lower[i])) {
+                result.amount = i;
+                assigned.add(i);
+                break;
+            }
         }
     }
 
@@ -912,7 +953,16 @@ const parseCSVText = (text) => {
         let inQuotes = false;
         for (let i = 0; i < line.length; i++) {
             const ch = line[i];
-            if (ch === '"') { inQuotes = !inQuotes; continue; }
+            if (ch === '"') {
+                if (inQuotes && i + 1 < line.length && line[i + 1] === '"') {
+                    // Escaped quote ("") inside quoted field → literal quote
+                    current += '"';
+                    i++;
+                } else {
+                    inQuotes = !inQuotes;
+                }
+                continue;
+            }
             if (ch === delim && !inQuotes) { fields.push(current.trim()); current = ''; continue; }
             current += ch;
         }
@@ -956,6 +1006,7 @@ const parseCSVText = (text) => {
 
 const parseExcelFile = (arrayBuffer) => {
     try {
+        if (typeof XLSX === 'undefined') return [];
         const workbook = XLSX.read(arrayBuffer, { type: 'array' });
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
         const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
@@ -1086,8 +1137,16 @@ const importParsedTransactions = () => {
     renderExpenses();
     updateDashboard();
 
-    // Hide the parsed card
-    document.getElementById('parsed-transactions-card').style.display = 'none';
+    // Show success feedback then hide the parsed card
+    const card = document.getElementById('parsed-transactions-card');
+    const count = toImport.length;
+    card.innerHTML = `
+        <div class="empty-state" style="color: var(--success-color); padding: 1.5rem;">
+            <strong>${count} transaction${count !== 1 ? 's' : ''} imported successfully!</strong>
+            <p style="color: var(--text-secondary); margin-top: 0.5rem;">Check the Expenses tab to review your imported transactions.</p>
+        </div>
+    `;
+    setTimeout(() => { card.style.display = 'none'; }, 3000);
     pendingParsedTransactions = [];
 };
 
@@ -1107,7 +1166,7 @@ const processFile = (file, type, previewContainer) => {
     };
 
     const safeName = escapeHtml(file.name);
-    const isCSV = file.name.endsWith('.csv') || file.type === 'text/csv' || file.type === 'text/plain';
+    const isCSV = /\.csv$/i.test(file.name) || file.type === 'text/csv' || (/\.(tsv|txt)$/i.test(file.name) && file.type === 'text/plain');
     const isExcel = /\.(xlsx|xls)$/i.test(file.name);
 
     previewContainer.innerHTML = `

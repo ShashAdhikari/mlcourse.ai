@@ -42,6 +42,40 @@ The `anonymizeText()` function applies regex replacements sequentially. **Order 
 7. **Names** - only after labeled prefixes (`Name:`, `Account Holder:`, etc.)
 8. **Addresses** - street number + name + recognized suffix (`St`, `Ave`, `Blvd`, etc.)
 
+### File Parsing Engine
+
+The app parses CSV and Excel files client-side to extract expense transactions. The pipeline:
+
+```
+File Upload → Type Detection → FileReader → Parser → Column Detection → Row Extraction → Auto-Categorize → Review UI → Import
+```
+
+**Supported formats:**
+
+| Format | Detection | Reader | Parser |
+|---|---|---|---|
+| CSV (`.csv`, `text/csv`) | Extension or MIME | `readAsText` | `parseCSVText()` |
+| TSV/TXT (`.tsv`, `.txt`) | Extension + `text/plain` MIME | `readAsText` | `parseCSVText()` (auto-detects tab delimiter) |
+| Excel (`.xlsx`, `.xls`) | Extension regex | `readAsArrayBuffer` | `parseExcelFile()` via SheetJS CDN |
+| PDF | Fallback | N/A | Not parsed (recorded as upload only) |
+
+**Column Detection** (`detectColumns`): Three-pass priority system to avoid column collisions:
+1. **Pass 1 - Date** (highest priority): `/date|trans.*date|post.*date|value.*date/`
+2. **Pass 2 - Amount**: `/debit|withdrawal|expense|charge|payment|money.*out/` (then fallback to `/amount|sum|total|value/`)
+3. **Pass 3 - Description**: `/desc|narration|particular|detail|memo|payee|merchant|transaction|reference/`
+
+Each pass uses a `Set` of assigned column indices to prevent the same column being claimed by multiple roles (e.g., "Transaction Date" matching both date and description).
+
+**Positional fallback**: If zero columns detected, assumes `[date=0, description=1, amount=2]` for files with 3+ columns.
+
+**Amount parsing** (`parseAmount`): Handles US format (`1,234.56`), European format (`1.234,56`), parenthetical negatives (`(45.00)`), and currency symbols. Uses a heuristic: if the last comma comes after the last dot, treat comma as decimal separator.
+
+**Date parsing** (`parseDate`): Tries formats in order: MM/DD/YYYY → YYYY-MM-DD → DD-Mon-YYYY → Excel serial date → native `Date()` fallback.
+
+**Auto-categorization** (`autoCategorize`): Passes each description through the existing `suggestCategory()` keyword-scoring engine (100+ keywords across 9 categories).
+
+**Transaction Review UI** (`renderParsedTransactions`): Shows a table with checkboxes for selective import and dropdown category overrides. Select-all toggle, per-row checkboxes, and per-row category selects all update `pendingParsedTransactions` in-place.
+
 ### Key Technical Decisions
 1. **XSS prevention**: All user input rendered via `innerHTML` must go through `escapeHtml()`. This includes file content from FileReader - `renderAnonymizedPreview` must escape text BEFORE inserting `[REDACTED]` highlight spans.
 2. **localStorage safety**: Always use `safeParse()` wrapper around `JSON.parse()` to handle corrupted data gracefully.
@@ -53,6 +87,11 @@ The `anonymizeText()` function applies regex replacements sequentially. **Order 
 8. **Persisted flags**: Any boolean flag that controls one-time behavior (like sample data insertion) must be stored in `localStorage`, not in-memory variables. In-memory flags reset on every page reload.
 9. **Anonymization regex ordering**: SSN must require separators (`[-\s]` not `[-\s]?`) to avoid matching 9-digit routing numbers. Routing must run before Account. Account must skip 9-digit numbers (`\d{8}|\d{10,17}` not `\d{8,17}`).
 10. **HTML escaping in anonymized previews**: `renderAnonymizedPreview` must call `escapeHtml()` on text BEFORE replacing `[...REDACTED]` markers with `<span>` tags. Otherwise malicious file content or filenames inject HTML.
+11. **Column detection must be multi-pass**: `detectColumns` uses separate passes for date→amount→description with a `Set` of assigned indices. A single-pass loop causes column collisions (e.g., "Transaction Date" matches both date regex via `date` and description regex via `transaction`).
+12. **European number format detection**: `parseAmount` uses the last-comma-after-last-dot heuristic to distinguish `1,234.56` (US) from `1.234,56` (EU). This covers the two most common formats without requiring locale config.
+13. **CSV escaped quotes**: RFC 4180 uses `""` inside quoted fields for literal quote characters. The CSV `splitRow` parser must check for consecutive `""` and emit a single `"` instead of toggling quote state.
+14. **SheetJS CDN guard**: Always check `typeof XLSX !== 'undefined'` before calling `XLSX.read()`. CDN failures should gracefully return an empty array, not throw a ReferenceError.
+15. **File type detection tightness**: Don't treat all `text/plain` MIME type files as CSV. Require `.csv`, `.tsv`, or `.txt` extension alongside the MIME check to avoid parsing random text files as tabular data.
 
 ### Features
 - Expense tracking with add/edit/delete, category filtering, date sorting
@@ -60,7 +99,9 @@ The `anonymizeText()` function applies regex replacements sequentially. **Order 
 - Smart category suggestions based on keyword scoring (100+ keywords mapped to 9 categories)
 - Debt analysis with avalanche and snowball payoff strategy comparison
 - Investment profiling with risk assessment and compound growth projections
-- File upload (CSV) with drag-and-drop support on both Dashboard and Upload tabs
+- **File parsing engine** - CSV and Excel file parsing with smart column detection, auto-categorization, and transaction review UI with selective import
+- **Upload history management** - view upload history with delete capability; file uploads tracked with transaction counts
+- File upload (CSV, Excel) with drag-and-drop support on both Dashboard and Upload tabs
 - PII anonymization engine (SSN, credit cards, routing numbers, bank accounts, emails, phones, names, addresses)
 - Multi-currency support with auto-detection from browser locale
 - **Monthly analytics** - average monthly expense vs income comparison with expense-to-income ratio bar and per-month breakdown table
@@ -82,8 +123,16 @@ The `anonymizeText()` function applies regex replacements sequentially. **Order 
 13. **XSS via binary file simulated content** - the binary-file fallback path must use `safeName` (HTML-escaped), not raw `file.name`, when building `simulatedContent`.
 14. **Regex ordering for PII** - SSN regex must require separators to avoid false-positiving on 9-digit routing numbers. Routing regex must run BEFORE account regex. Account regex must exclude 9-digit numbers.
 15. **Multi-file drop feedback** - dashboard zone only processes the first file. Must show a warning note when additional files are silently dropped.
+16. **Column detection collisions** - `detectColumns` must use separate passes with an `assigned` Set. A single-pass loop assigns "Transaction Date" to both `result.date` and `result.description` because `transaction` matches the description regex and `date` matches the date regex in the same iteration.
+17. **European number parsing** - `parseAmount("1.234,56")` must detect that comma is the decimal separator (last comma after last dot heuristic). Without this, the regex strips commas and produces `1.23456` instead of `1234.56`.
+18. **CSV escaped quotes** - `"He said ""hello"""` must parse as `He said "hello"`. The CSV `splitRow` function must check `line[i+1] === '"'` before toggling quote state, and emit a literal `"` for the `""` pair.
+19. **SheetJS CDN dependency** - `parseExcelFile` must guard with `typeof XLSX === 'undefined'` check before calling `XLSX.read()`. CDN failures or ad-blockers may prevent the library from loading.
+20. **Import feedback** - after `importParsedTransactions`, show a success message with the count before hiding the parsed-transactions card. Otherwise the card just disappears with no confirmation.
+21. **text/plain false positive** - file type detection must require a recognized extension (`.csv`, `.tsv`, `.txt`) alongside `text/plain` MIME check. Otherwise any text file dropped on the upload zone gets parsed as CSV.
 
 ### QA Test Results (Agent-Automated)
+
+**Upload System Tests:**
 
 | Scenario | Result |
 |---|---|
@@ -96,11 +145,26 @@ The `anonymizeText()` function applies regex replacements sequentially. **Order 
 | PII anonymization accuracy | PASS (after regex reorder) |
 | Click zone double-trigger | PASS |
 
+**File Parsing Engine Tests:**
+
+| Scenario | Result |
+|---|---|
+| CSV with "Transaction Date" header (column collision) | PASS (after multi-pass fix) |
+| European number format `1.234,56` | PASS (after heuristic fix) |
+| Parenthetical negatives `(45.00)` | PASS (after parseAmount fix) |
+| CSV with escaped quotes `""` | PASS (after splitRow fix) |
+| XLSX with missing SheetJS library | PASS (after guard added) |
+| Partial column detection (date only found) | WARN (returns empty - no error feedback) |
+| Import success feedback | PASS (after feedback message added) |
+| text/plain file without CSV extension | PASS (after detection tightened) |
+| Delete upload history entry | PASS |
+| Excel serial date parsing (44927) | PASS |
+
 ### File Structure
 ```
-app.js    (~1680 lines) - All application logic, state management, rendering
-index.html (~467 lines) - HTML structure, Chart.js CDN, tab layout
-styles.css (~1258 lines) - CSS variables, responsive grid, animations
+app.js    (~1990 lines) - All application logic, state management, file parsing, rendering
+index.html (~478 lines) - HTML structure, Chart.js + SheetJS CDNs, tab layout
+styles.css (~1307 lines) - CSS variables, responsive grid, animations, parsed table styles
 ```
 
 ### Development Notes
@@ -113,3 +177,7 @@ styles.css (~1258 lines) - CSS variables, responsive grid, animations
 - When displaying positive/negative financial values, use dynamic CSS classes (`positive`/`negative`) and inline `style.color` where static CSS classes won't cover both states
 - When building text that flows into innerHTML (even indirectly through helper functions), trace the full data path to confirm HTML escaping happens before the final `.innerHTML =` assignment
 - When adding PII regex patterns to `anonymizeText`, always check whether existing patterns consume the same digit sequences first. Test with the exact input from QA Scenario 7.
+- When adding new column-detection regex patterns to `detectColumns`, verify they don't match headers that belong to other column roles. Use the three-pass priority system and `assigned` Set.
+- When parsing amounts from CSV/Excel, never assume US number format. Use the last-comma-after-last-dot heuristic to auto-detect European format.
+- When parsing CSV quoted fields, always handle RFC 4180 escaped quotes (`""` → single `"`). Test with descriptions containing commas and literal quotes.
+- SheetJS is loaded from CDN. Any code calling `XLSX.*` must be wrapped in a `typeof XLSX !== 'undefined'` guard. Do not assume the library is always available.

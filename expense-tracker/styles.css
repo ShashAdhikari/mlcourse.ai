@@ -140,14 +140,14 @@ h2 {
 /* Dashboard Grid */
 .dashboard-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 1.5rem;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
 }
 
 .summary-card {
     position: relative;
     overflow: hidden;
+    padding: 1.25rem;
 }
 
 .summary-card::before {
@@ -165,9 +165,9 @@ h2 {
 .summary-card.savings::before { background: var(--primary-color); }
 
 .summary-card .amount {
-    font-size: 2rem;
+    font-size: 1.6rem;
     font-weight: 700;
-    margin: 0.5rem 0;
+    margin: 0.4rem 0;
 }
 
 .summary-card.income .amount { color: var(--success-color); }
@@ -188,10 +188,44 @@ h2 {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(400px, 100%), 1fr));
     gap: 1.5rem;
+    margin-top: 1.5rem;
 }
 
-.chart-card {
-    min-height: 350px;
+/* Remove double spacing: grid gap handles margins, not margin-bottom */
+.charts-container > .card,
+.dashboard-grid > .card,
+.analytics-row > .card {
+    margin-bottom: 0;
+}
+
+.chart-card,
+.projection-card {
+    min-height: 300px;
+    max-height: 400px;
+    display: flex;
+    flex-direction: column;
+}
+
+.chart-card h3,
+.projection-card h3 {
+    flex-shrink: 0;
+}
+
+/* Prevent Chart.js infinite resize: wrapper has explicit height + position: relative,
+   canvas fills it absolutely so it can't push the parent taller */
+.chart-wrapper {
+    position: relative;
+    flex: 1 1 0;
+    min-height: 0;
+    max-height: 300px;
+}
+
+.chart-wrapper canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100% !important;
 }
 
 /* Health Score */
@@ -200,6 +234,8 @@ h2 {
     align-items: center;
     gap: 2rem;
     padding: 1rem;
+    flex: 1 1 0;
+    min-height: 0;
 }
 
 .score-circle {
@@ -991,20 +1027,33 @@ h2 {
 
 .analytics-card {
     overflow: hidden;
+    max-height: 520px;
+    display: flex;
+    flex-direction: column;
+}
+
+.analytics-card h3 {
+    flex-shrink: 0;
+}
+
+.analytics-card > div {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-y: auto;
 }
 
 .analytics-summary,
 .projection-summary {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 1rem;
-    margin-bottom: 1.25rem;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1rem;
 }
 
 .analytics-stat,
 .projection-stat {
     background: var(--background-color);
-    padding: 1rem;
+    padding: 0.6rem 0.75rem;
     border-radius: 8px;
     text-align: center;
 }
@@ -1021,7 +1070,7 @@ h2 {
 .analytics-value,
 .projection-value {
     display: block;
-    font-size: 1.25rem;
+    font-size: 1.1rem;
     font-weight: 700;
 }
 
@@ -1071,7 +1120,7 @@ h2 {
 
 .analytics-table-wrapper {
     overflow-x: auto;
-    max-height: 320px;
+    max-height: 260px;
     overflow-y: auto;
 }
 
@@ -1226,6 +1275,10 @@ footer {
     .investment-container,
     .upload-container {
         grid-template-columns: 1fr;
+    }
+
+    .dashboard-grid {
+        grid-template-columns: repeat(2, 1fr);
     }
 
     .charts-container {

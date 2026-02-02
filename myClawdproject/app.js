@@ -1066,6 +1066,19 @@ const renderParsedTransactions = (transactions) => {
     card.style.display = 'block';
     count.textContent = `${transactions.length} transaction${transactions.length !== 1 ? 's' : ''} found`;
 
+    // If Upload section is hidden (user uploaded from Dashboard), switch to it
+    const uploadSection = document.getElementById('upload');
+    if (uploadSection && !uploadSection.classList.contains('active')) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        uploadSection.classList.add('active');
+        document.querySelectorAll('.nav-links a').forEach(a => {
+            a.classList.toggle('active', a.getAttribute('href') === '#upload');
+        });
+    }
+
+    // Scroll card into view so it's not hidden below the upload zones
+    setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+
     const categories = ['housing', 'transportation', 'food', 'utilities', 'healthcare', 'entertainment', 'shopping', 'education', 'personal', 'other'];
     const catOptions = categories.map(c => `<option value="${c}">${capitalizeFirst(c)}</option>`).join('');
 
@@ -1149,6 +1162,7 @@ const importParsedTransactions = () => {
             <p style="color: var(--text-secondary); margin-top: 0.5rem;">Check the Expenses tab to review your imported transactions.</p>
         </div>
     `;
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
     setTimeout(() => { card.style.display = 'none'; }, 3000);
     pendingParsedTransactions = [];
 };

@@ -194,7 +194,8 @@ h2 {
 /* Remove double spacing: grid gap handles margins, not margin-bottom */
 .charts-container > .card,
 .dashboard-grid > .card,
-.analytics-row > .card {
+.analytics-row > .card,
+.upload-container > .card {
     margin-bottom: 0;
 }
 

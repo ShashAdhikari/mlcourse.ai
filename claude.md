@@ -92,6 +92,8 @@ Each pass uses a `Set` of assigned column indices to prevent the same column bei
 13. **CSV escaped quotes**: RFC 4180 uses `""` inside quoted fields for literal quote characters. The CSV `splitRow` parser must check for consecutive `""` and emit a single `"` instead of toggling quote state.
 14. **SheetJS CDN guard**: Always check `typeof XLSX !== 'undefined'` before calling `XLSX.read()`. CDN failures should gracefully return an empty array, not throw a ReferenceError.
 15. **File type detection tightness**: Don't treat all `text/plain` MIME type files as CSV. Require `.csv`, `.tsv`, or `.txt` extension alongside the MIME check to avoid parsing random text files as tabular data.
+16. **Chart.js infinite resize fix**: Chart.js canvases inside flex or grid containers cause an infinite resize loop because the canvas reports its own size to the parent, which re-layouts, which re-triggers `onResize`. Fix: wrap each `<canvas>` in a `.chart-wrapper` div with `position: relative; flex: 1 1 0; min-height: 0` and set the canvas to `position: absolute; top: 0; left: 0; width: 100% !important; height: 100% !important`. The absolute positioning takes the canvas out of the flex flow so it can't inflate its parent.
+17. **European number format comma count**: `parseAmount` must count commas before applying the European heuristic. Multiple commas (e.g., `1,234,567`) are US thousands separators, not European decimals. Only a single comma after the last dot should trigger European mode.
 
 ### Features
 - Expense tracking with add/edit/delete, category filtering, date sorting
@@ -129,6 +131,11 @@ Each pass uses a `Set` of assigned column indices to prevent the same column bei
 19. **SheetJS CDN dependency** - `parseExcelFile` must guard with `typeof XLSX === 'undefined'` check before calling `XLSX.read()`. CDN failures or ad-blockers may prevent the library from loading.
 20. **Import feedback** - after `importParsedTransactions`, show a success message with the count before hiding the parsed-transactions card. Otherwise the card just disappears with no confirmation.
 21. **text/plain false positive** - file type detection must require a recognized extension (`.csv`, `.tsv`, `.txt`) alongside `text/plain` MIME check. Otherwise any text file dropped on the upload zone gets parsed as CSV.
+22. **Chart.js infinite resize in flex/grid** - a Chart.js canvas directly inside a flex or grid child will grow by 1-2px every frame, causing the card to expand infinitely and the page to scroll endlessly. The canvas must be wrapped in a `.chart-wrapper` div that uses `position: relative` with the canvas set to `position: absolute`. Applies to every Chart.js canvas in the app.
+23. **Grid `auto-fit` causing uneven 3+1 layouts** - `repeat(auto-fit, minmax(250px, 1fr))` on the dashboard summary grid causes 3+1 card layout at common viewport widths (~1100px). Fix: use fixed `repeat(4, 1fr)` with `repeat(2, 1fr)` at tablet/mobile breakpoints.
+24. **Currency change doesn't update parsed transactions** - the currency change handler must re-render the parsed transactions card if it's visible (`pendingParsedTransactions.length > 0`). Otherwise amounts display with the old currency symbol.
+25. **parseAmount multi-comma misclassification** - `"1,234,567"` (US, no decimal) was misclassified as European because `lastComma > lastDot` when there's no dot. Fix: require exactly 1 comma for European detection (`commaCount === 1`).
+26. **Investment chart missing `maintainAspectRatio: false`** - the investment projection chart (line type) must set `maintainAspectRatio: false` like the expense doughnut chart. Without it, the canvas ignores the `.chart-wrapper` absolute positioning constraints.
 
 ### QA Test Results (Agent-Automated)
 
@@ -160,11 +167,26 @@ Each pass uses a `Set` of assigned column indices to prevent the same column bei
 | Delete upload history entry | PASS |
 | Excel serial date parsing (44927) | PASS |
 
+**Dashboard & Layout Tests:**
+
+| Scenario | Result |
+|---|---|
+| Chart.js canvas finds element inside `.chart-wrapper` | PASS |
+| Health score circle (150x150px) fits in chart-card | PASS |
+| Dashboard grid at 769-850px viewport | PASS (after tablet breakpoint added) |
+| Analytics card with 24 months of data scrolls | PASS |
+| Quick upload card retains margin outside grid | PASS |
+| Imported transactions appear in analytics immediately | PASS |
+| Parsed transactions card persists across tab switches | PASS |
+| Delete upload leaves imported expenses (no warning) | WARN (by design - no foreign key) |
+| Empty expenses with populated incomes shows analytics | PASS |
+| Currency change updates parsed transactions amounts | PASS (after re-render fix) |
+
 ### File Structure
 ```
-app.js    (~1990 lines) - All application logic, state management, file parsing, rendering
-index.html (~478 lines) - HTML structure, Chart.js + SheetJS CDNs, tab layout
-styles.css (~1307 lines) - CSS variables, responsive grid, animations, parsed table styles
+app.js    (~2000 lines) - All application logic, state management, file parsing, rendering
+index.html (~483 lines) - HTML structure, Chart.js + SheetJS CDNs, tab layout
+styles.css (~1325 lines) - CSS variables, responsive grid, chart wrappers, parsed table styles
 ```
 
 ### Development Notes
@@ -181,3 +203,5 @@ styles.css (~1307 lines) - CSS variables, responsive grid, animations, parsed ta
 - When parsing amounts from CSV/Excel, never assume US number format. Use the last-comma-after-last-dot heuristic to auto-detect European format.
 - When parsing CSV quoted fields, always handle RFC 4180 escaped quotes (`""` → single `"`). Test with descriptions containing commas and literal quotes.
 - SheetJS is loaded from CDN. Any code calling `XLSX.*` must be wrapped in a `typeof XLSX !== 'undefined'` guard. Do not assume the library is always available.
+- When adding a Chart.js canvas, always wrap it in a `.chart-wrapper` div. Never place a `<canvas>` directly inside a flex or grid child. Both `.chart-card` and `.projection-card` expect this wrapper structure.
+- Dashboard uses `repeat(4, 1fr)` → `repeat(2, 1fr)` at ≤1024px → `repeat(2, 1fr)` at ≤768px. Avoid `auto-fit` for the summary grid to prevent uneven layouts.

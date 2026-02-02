@@ -697,6 +697,7 @@ const generateInvestmentProjection = () => {
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: {
                 legend: {
                     position: 'bottom'
@@ -870,12 +871,14 @@ const parseAmount = (value) => {
     const isParenNeg = /^\(.*\)$/.test(str);
     if (isParenNeg) str = str.slice(1, -1);
     // Detect European format: "1.234,56" (dot=thousands, comma=decimal)
-    // Heuristic: if comma appears after last dot, treat comma as decimal separator
+    // Heuristic: exactly one comma after the last dot → European decimal separator
+    // Multiple commas (e.g. "1,234,567") → US thousands separators
+    const commaCount = (str.match(/,/g) || []).length;
     const lastDot = str.lastIndexOf('.');
     const lastComma = str.lastIndexOf(',');
     let cleaned;
-    if (lastComma > lastDot && lastComma !== -1) {
-        // European: remove dots (thousands), replace comma with dot (decimal)
+    if (commaCount === 1 && lastComma > lastDot) {
+        // European: remove dots (thousands), replace single comma with dot (decimal)
         cleaned = str.replace(/[^0-9,\-]/g, '').replace(',', '.');
     } else {
         // Standard: remove everything except digits, dots, hyphens
@@ -2001,6 +2004,10 @@ const setupCurrencySelector = () => {
         if (state.investmentProfile) {
             generateInvestmentRecommendations();
             generateInvestmentProjection();
+        }
+        // Re-render parsed transactions card if visible
+        if (pendingParsedTransactions.length > 0) {
+            renderParsedTransactions(pendingParsedTransactions);
         }
     });
 };

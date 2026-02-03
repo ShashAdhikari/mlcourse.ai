@@ -1207,6 +1207,23 @@ h2 {
     font-weight: 600;
 }
 
+.parsed-table td.income {
+    color: var(--success-color);
+    font-weight: 600;
+}
+
+.parsed-table td.balance-col {
+    color: var(--text-secondary);
+}
+
+.parsed-table tr.credit-row {
+    opacity: 0.55;
+}
+
+.parsed-table tr.credit-row:hover {
+    opacity: 0.85;
+}
+
 .parsed-table input[type="checkbox"] {
     width: 16px;
     height: 16px;

@@ -835,6 +835,7 @@ const handleFiles = (files, type, previewContainer) => {
 // ==================== FILE PARSING ENGINE ====================
 
 let pendingParsedTransactions = [];
+let parsedColumnInfo = null;
 
 const parseDate = (value) => {
     if (!value) return null;
@@ -851,6 +852,12 @@ const parseDate = (value) => {
     m = str.match(/^(\d{1,2})[\/\-\s]([A-Za-z]{3})[\/\-\s](\d{4})$/);
     if (m && monthMap[m[2].toLowerCase()]) {
         return `${m[3]}-${monthMap[m[2].toLowerCase()]}-${m[1].padStart(2,'0')}`;
+    }
+    // DD/MM/YY (2-digit year, common in Indian bank statements)
+    m = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2})$/);
+    if (m) {
+        const year = parseInt(m[3]) + (parseInt(m[3]) > 50 ? 1900 : 2000);
+        return `${year}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
     }
     // Excel serial date number
     if (/^\d{5}$/.test(str)) {
@@ -895,10 +902,10 @@ const autoCategorize = (description) => {
 
 const detectColumns = (headers) => {
     const lower = headers.map(h => String(h).toLowerCase().trim());
-    const result = { date: -1, description: -1, amount: -1 };
+    const result = { date: -1, description: -1, debit: -1, credit: -1, balance: -1 };
     const assigned = new Set();
 
-    // Pass 1: date detection (highest priority - avoids "Transaction Date" being claimed by description)
+    // Pass 1: date detection (highest priority)
     for (let i = 0; i < lower.length; i++) {
         if (result.date === -1 && /date|trans.*date|post.*date|value.*date/.test(lower[i])) {
             result.date = i;
@@ -907,17 +914,37 @@ const detectColumns = (headers) => {
         }
     }
 
-    // Pass 2: amount detection
+    // Pass 2: debit/withdrawal detection
     for (let i = 0; i < lower.length; i++) {
         if (assigned.has(i)) continue;
-        if (result.amount === -1 && /debit|withdrawal|expense|charge|payment|money.*out/.test(lower[i])) {
-            result.amount = i;
+        if (result.debit === -1 && /\bdebit\b|\bdr\b|withdrawal|money\s*out|paid\s*out|expenses?|charges?|payment/.test(lower[i])) {
+            result.debit = i;
             assigned.add(i);
             break;
         }
     }
 
-    // Pass 3: description detection (skip columns already assigned)
+    // Pass 3: credit/deposit detection
+    for (let i = 0; i < lower.length; i++) {
+        if (assigned.has(i)) continue;
+        if (result.credit === -1 && /\bcredit\b|\bcr\b|deposit|money\s*in|paid\s*in|income|received/.test(lower[i])) {
+            result.credit = i;
+            assigned.add(i);
+            break;
+        }
+    }
+
+    // Pass 4: balance detection
+    for (let i = 0; i < lower.length; i++) {
+        if (assigned.has(i)) continue;
+        if (result.balance === -1 && /balance|closing\s*bal|running\s*bal|available\s*bal|ledger\s*bal/.test(lower[i])) {
+            result.balance = i;
+            assigned.add(i);
+            break;
+        }
+    }
+
+    // Pass 5: description detection (skip columns already assigned)
     for (let i = 0; i < lower.length; i++) {
         if (assigned.has(i)) continue;
         if (result.description === -1 && /desc|narration|particular|detail|memo|payee|merchant|transaction|reference/.test(lower[i])) {
@@ -927,12 +954,12 @@ const detectColumns = (headers) => {
         }
     }
 
-    // Fallback: if no amount column, try generic amount keywords on unassigned columns
-    if (result.amount === -1) {
+    // Fallback: if no debit or credit column, try generic amount keywords → assign to debit
+    if (result.debit === -1 && result.credit === -1) {
         for (let i = 0; i < lower.length; i++) {
             if (assigned.has(i)) continue;
             if (/amount|sum|total|value/.test(lower[i])) {
-                result.amount = i;
+                result.debit = i;
                 assigned.add(i);
                 break;
             }
@@ -973,27 +1000,62 @@ const parseCSVText = (text) => {
         return fields;
     };
 
-    const headers = splitRow(lines[0]);
-    const cols = detectColumns(headers);
+    let headerRow = splitRow(lines[0]);
+    let cols = detectColumns(headerRow);
+    let dataStartIdx = 1;
 
-    // If we couldn't detect columns, try positional heuristic (date, desc, amount in first 3-5 cols)
-    if (cols.date === -1 && cols.description === -1 && cols.amount === -1) {
-        if (headers.length >= 3) {
-            cols.date = 0; cols.description = 1; cols.amount = 2;
+    // If first row didn't detect as headers, try second row (some statements have a title row)
+    if (cols.date === -1 && cols.description === -1 && cols.debit === -1 && cols.credit === -1) {
+        if (lines.length >= 3) {
+            const altHeaders = splitRow(lines[1]);
+            const altCols = detectColumns(altHeaders);
+            if (altCols.date !== -1 || altCols.description !== -1 || altCols.debit !== -1) {
+                cols = altCols;
+                headerRow = altHeaders;
+                dataStartIdx = 2;
+            }
+        }
+    }
+
+    // Positional fallback: assume [date, description, debit] in first 3 columns
+    if (cols.date === -1 && cols.description === -1 && cols.debit === -1 && cols.credit === -1) {
+        if (headerRow.length >= 3) {
+            cols.date = 0; cols.description = 1; cols.debit = 2;
         } else { return []; }
     }
 
+    // Store column info for rendering
+    parsedColumnInfo = {
+        hasDebit: cols.debit >= 0,
+        hasCredit: cols.credit >= 0,
+        hasBalance: cols.balance >= 0
+    };
+
     const transactions = [];
-    for (let i = 1; i < lines.length; i++) {
+    for (let i = dataStartIdx; i < lines.length; i++) {
         const fields = splitRow(lines[i]);
         if (fields.length < 2) continue;
 
         const date = cols.date >= 0 ? parseDate(fields[cols.date]) : new Date().toISOString().split('T')[0];
         const desc = cols.description >= 0 ? fields[cols.description] : '';
-        const amount = cols.amount >= 0 ? parseAmount(fields[cols.amount]) : null;
+
+        const debitRaw = cols.debit >= 0 ? parseAmount(fields[cols.debit]) : null;
+        const creditRaw = cols.credit >= 0 ? parseAmount(fields[cols.credit]) : null;
+        const balanceRaw = cols.balance >= 0 ? parseAmount(fields[cols.balance]) : null;
+
+        // Determine row type: debit (expense) or credit (income)
+        let rowType, amount;
+        if (debitRaw !== null && debitRaw > 0) {
+            rowType = 'debit';
+            amount = debitRaw;
+        } else if (creditRaw !== null && creditRaw > 0) {
+            rowType = 'credit';
+            amount = creditRaw;
+        } else {
+            continue; // Skip rows with no financial data
+        }
 
         if (!desc && !amount) continue;
-        if (amount === null || amount === 0) continue;
 
         transactions.push({
             id: generateId(),
@@ -1001,7 +1063,11 @@ const parseCSVText = (text) => {
             description: desc || 'Unnamed Transaction',
             amount: amount,
             category: autoCategorize(desc),
-            selected: true
+            selected: rowType === 'debit',
+            rowType: rowType,
+            debitRaw: debitRaw,
+            creditRaw: creditRaw,
+            balanceRaw: balanceRaw
         });
     }
     return transactions;
@@ -1016,26 +1082,62 @@ const parseExcelFile = (arrayBuffer) => {
 
         if (rows.length < 2) return [];
 
-        const headers = rows[0].map(h => String(h));
-        const cols = detectColumns(headers);
+        let headerRow = rows[0].map(h => String(h));
+        let cols = detectColumns(headerRow);
+        let dataStartIdx = 1;
 
-        if (cols.date === -1 && cols.description === -1 && cols.amount === -1) {
-            if (headers.length >= 3) {
-                cols.date = 0; cols.description = 1; cols.amount = 2;
+        // If first row didn't detect as headers, try second row (some statements have a title row)
+        if (cols.date === -1 && cols.description === -1 && cols.debit === -1 && cols.credit === -1) {
+            if (rows.length >= 3) {
+                const altHeaders = rows[1].map(h => String(h));
+                const altCols = detectColumns(altHeaders);
+                if (altCols.date !== -1 || altCols.description !== -1 || altCols.debit !== -1) {
+                    cols = altCols;
+                    headerRow = altHeaders;
+                    dataStartIdx = 2;
+                }
+            }
+        }
+
+        // Positional fallback: assume [date, description, debit] in first 3 columns
+        if (cols.date === -1 && cols.description === -1 && cols.debit === -1 && cols.credit === -1) {
+            if (headerRow.length >= 3) {
+                cols.date = 0; cols.description = 1; cols.debit = 2;
             } else { return []; }
         }
 
+        // Store column info for rendering
+        parsedColumnInfo = {
+            hasDebit: cols.debit >= 0,
+            hasCredit: cols.credit >= 0,
+            hasBalance: cols.balance >= 0
+        };
+
         const transactions = [];
-        for (let i = 1; i < rows.length; i++) {
+        for (let i = dataStartIdx; i < rows.length; i++) {
             const row = rows[i];
             if (!row || row.length < 2) continue;
 
             const date = cols.date >= 0 ? parseDate(row[cols.date]) : new Date().toISOString().split('T')[0];
             const desc = cols.description >= 0 ? String(row[cols.description]).trim() : '';
-            const amount = cols.amount >= 0 ? parseAmount(row[cols.amount]) : null;
+
+            const debitRaw = cols.debit >= 0 ? parseAmount(row[cols.debit]) : null;
+            const creditRaw = cols.credit >= 0 ? parseAmount(row[cols.credit]) : null;
+            const balanceRaw = cols.balance >= 0 ? parseAmount(row[cols.balance]) : null;
+
+            // Determine row type: debit (expense) or credit (income)
+            let rowType, amount;
+            if (debitRaw !== null && debitRaw > 0) {
+                rowType = 'debit';
+                amount = debitRaw;
+            } else if (creditRaw !== null && creditRaw > 0) {
+                rowType = 'credit';
+                amount = creditRaw;
+            } else {
+                continue; // Skip rows with no financial data
+            }
 
             if (!desc && !amount) continue;
-            if (amount === null || amount === 0) continue;
 
             transactions.push({
                 id: generateId(),
@@ -1043,7 +1145,11 @@ const parseExcelFile = (arrayBuffer) => {
                 description: desc || 'Unnamed Transaction',
                 amount: amount,
                 category: autoCategorize(desc),
-                selected: true
+                selected: rowType === 'debit',
+                rowType: rowType,
+                debitRaw: debitRaw,
+                creditRaw: creditRaw,
+                balanceRaw: balanceRaw
             });
         }
         return transactions;
@@ -1064,7 +1170,15 @@ const renderParsedTransactions = (transactions) => {
     }
 
     card.style.display = 'block';
-    count.textContent = `${transactions.length} transaction${transactions.length !== 1 ? 's' : ''} found`;
+
+    // Count debits and credits separately
+    const debitCount = transactions.filter(t => t.rowType === 'debit').length;
+    const creditCount = transactions.filter(t => t.rowType === 'credit').length;
+    if (creditCount > 0) {
+        count.textContent = `${transactions.length} transaction${transactions.length !== 1 ? 's' : ''} found (${debitCount} debit${debitCount !== 1 ? 's' : ''}, ${creditCount} credit${creditCount !== 1 ? 's' : ''})`;
+    } else {
+        count.textContent = `${transactions.length} transaction${transactions.length !== 1 ? 's' : ''} found`;
+    }
 
     // If Upload section is hidden (user uploaded from Dashboard), switch to it
     const uploadSection = document.getElementById('upload');
@@ -1082,23 +1196,32 @@ const renderParsedTransactions = (transactions) => {
     const categories = ['housing', 'transportation', 'food', 'utilities', 'healthcare', 'entertainment', 'shopping', 'education', 'personal', 'other'];
     const catOptions = categories.map(c => `<option value="${c}">${capitalizeFirst(c)}</option>`).join('');
 
+    // Determine which columns to show based on parsed file structure
+    const showCredit = parsedColumnInfo && parsedColumnInfo.hasCredit;
+    const showBalance = parsedColumnInfo && parsedColumnInfo.hasBalance;
+    const debitLabel = showCredit ? 'Debit' : 'Amount';
+
     table.innerHTML = `
         <div class="parsed-table-wrapper">
             <table class="analytics-table parsed-table">
                 <thead><tr>
-                    <th><input type="checkbox" id="select-all-parsed" checked></th>
+                    <th><input type="checkbox" id="select-all-parsed"></th>
                     <th>Date</th>
                     <th>Description</th>
-                    <th>Amount</th>
+                    <th>${debitLabel}</th>
+                    ${showCredit ? '<th>Credit</th>' : ''}
+                    ${showBalance ? '<th>Balance</th>' : ''}
                     <th>Category</th>
                 </tr></thead>
                 <tbody>
                     ${transactions.map((t, i) => `
-                        <tr data-idx="${i}">
+                        <tr data-idx="${i}" class="${t.rowType === 'credit' ? 'credit-row' : ''}">
                             <td><input type="checkbox" class="parsed-check" data-idx="${i}" ${t.selected ? 'checked' : ''}></td>
                             <td>${escapeHtml(t.date)}</td>
                             <td>${escapeHtml(t.description)}</td>
-                            <td class="expense">${formatCurrency(t.amount)}</td>
+                            <td class="${t.rowType === 'debit' ? 'expense' : ''}">${t.rowType === 'debit' && t.debitRaw ? formatCurrency(t.debitRaw) : ''}</td>
+                            ${showCredit ? `<td class="${t.rowType === 'credit' ? 'income' : ''}">${t.creditRaw ? formatCurrency(t.creditRaw) : ''}</td>` : ''}
+                            ${showBalance ? `<td class="balance-col">${t.balanceRaw !== null ? formatCurrency(t.balanceRaw) : ''}</td>` : ''}
                             <td>
                                 <select class="parsed-category" data-idx="${i}">
                                     ${catOptions.replace(`value="${t.category}"`, `value="${t.category}" selected`)}
@@ -1111,8 +1234,15 @@ const renderParsedTransactions = (transactions) => {
         </div>
     `;
 
+    // Set select-all checkbox state (indeterminate if mixed debit/credit selection)
+    const selectAll = document.getElementById('select-all-parsed');
+    const allChecked = transactions.every(t => t.selected);
+    const someChecked = transactions.some(t => t.selected);
+    selectAll.checked = allChecked;
+    selectAll.indeterminate = someChecked && !allChecked;
+
     // Wire up select-all checkbox
-    document.getElementById('select-all-parsed').addEventListener('change', (e) => {
+    selectAll.addEventListener('change', (e) => {
         const checked = e.target.checked;
         document.querySelectorAll('.parsed-check').forEach(cb => {
             cb.checked = checked;
@@ -1124,6 +1254,11 @@ const renderParsedTransactions = (transactions) => {
     table.querySelectorAll('.parsed-check').forEach(cb => {
         cb.addEventListener('change', (e) => {
             pendingParsedTransactions[parseInt(e.target.dataset.idx)].selected = e.target.checked;
+            // Update select-all state
+            const all = pendingParsedTransactions.every(t => t.selected);
+            const some = pendingParsedTransactions.some(t => t.selected);
+            selectAll.checked = all;
+            selectAll.indeterminate = some && !all;
         });
     });
 
@@ -1165,10 +1300,12 @@ const importParsedTransactions = () => {
     card.scrollIntoView({ behavior: 'smooth', block: 'center' });
     setTimeout(() => { card.style.display = 'none'; }, 3000);
     pendingParsedTransactions = [];
+    parsedColumnInfo = null;
 };
 
 const discardParsedTransactions = () => {
     pendingParsedTransactions = [];
+    parsedColumnInfo = null;
     document.getElementById('parsed-transactions-card').style.display = 'none';
 };
 

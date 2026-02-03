@@ -59,22 +59,41 @@ File Upload → Type Detection → FileReader → Parser → Column Detection �
 | Excel (`.xlsx`, `.xls`) | Extension regex | `readAsArrayBuffer` | `parseExcelFile()` via SheetJS CDN |
 | PDF | Fallback | N/A | Not parsed (recorded as upload only) |
 
-**Column Detection** (`detectColumns`): Three-pass priority system to avoid column collisions:
+**Column Detection** (`detectColumns`): Five-pass priority system to avoid column collisions:
 1. **Pass 1 - Date** (highest priority): `/date|trans.*date|post.*date|value.*date/`
-2. **Pass 2 - Amount**: `/debit|withdrawal|expense|charge|payment|money.*out/` (then fallback to `/amount|sum|total|value/`)
-3. **Pass 3 - Description**: `/desc|narration|particular|detail|memo|payee|merchant|transaction|reference/`
+2. **Pass 2 - Debit/Withdrawal**: `/debit|withdrawal|withdraw|money.*out/`
+3. **Pass 3 - Credit/Deposit**: `/credit|deposit|money.*in/`
+4. **Pass 4 - Balance**: `/balance|closing.*bal|running.*bal/`
+5. **Pass 5 - Description**: `/desc|narration|particular|detail|memo|payee|merchant|transaction|reference/`
 
 Each pass uses a `Set` of assigned column indices to prevent the same column being claimed by multiple roles (e.g., "Transaction Date" matching both date and description).
 
-**Positional fallback**: If zero columns detected, assumes `[date=0, description=1, amount=2]` for files with 3+ columns.
+**Return shape**: `{ date, description, debit, credit, balance }` — replaces the old `{ date, description, amount }` shape. A generic "Amount" column (matching `/amount|sum|total|value|expense|charge|payment/`) maps to the `debit` index for backward compatibility.
+
+**Multi-header detection**: If row 1 (index 0) fails to match any column headers, the parser retries with row 2 (index 1) as the header row. This handles bank statements with a title/metadata row above the actual headers.
+
+**`parsedColumnInfo`**: Module-level variable set by `detectColumns` that tracks which columns (debit, credit, balance) exist in the parsed file. Used by `renderParsedTransactions` for dynamic table column rendering.
+
+**Positional fallback**: If zero columns detected, assumes `[date=0, description=1, debit=2]` for files with 3+ columns.
+
+**Bank statement headers supported:**
+```
+Date | Narration | Chq./Ref.No. | Value Dt | Withdrawal Amt. | Deposit Amt. | Closing Balance
+```
 
 **Amount parsing** (`parseAmount`): Handles US format (`1,234.56`), European format (`1.234,56`), parenthetical negatives (`(45.00)`), and currency symbols. Uses a heuristic: if the last comma comes after the last dot, treat comma as decimal separator.
 
-**Date parsing** (`parseDate`): Tries formats in order: MM/DD/YYYY → YYYY-MM-DD → DD-Mon-YYYY → Excel serial date → native `Date()` fallback.
+**Date parsing** (`parseDate`): Tries formats in order: MM/DD/YYYY → YYYY-MM-DD → DD-Mon-YYYY → DD/MM/YY (2-digit year with 50-year pivot for Indian bank statements) → Excel serial date → native `Date()` fallback.
 
 **Auto-categorization** (`autoCategorize`): Passes each description through the existing `suggestCategory()` keyword-scoring engine (100+ keywords across 9 categories).
 
 **Transaction Review UI** (`renderParsedTransactions`): Shows a table with checkboxes for selective import and dropdown category overrides. Select-all toggle, per-row checkboxes, and per-row category selects all update `pendingParsedTransactions` in-place.
+
+**Row processing**: Debit rows (withdrawal) are marked as expenses with `selected: true`. Credit rows (deposit) are shown dimmed with `selected: false`. The select-all checkbox uses an indeterminate state when debit/credit selections are mixed.
+
+**Dynamic table columns**: Debit, Credit, and Balance columns are rendered conditionally based on `parsedColumnInfo`. If only a generic Amount column was detected, a single "Amount" column is shown.
+
+**Transaction object shape**: Each parsed transaction includes `rowType` (`'debit'` or `'credit'`), raw string values (`debitRaw`, `creditRaw`, `balanceRaw`) for display, and numeric `amount` for calculations. The raw fields are stripped at import time — only `amount`, `date`, `description`, and `category` persist to `state.expenses`.
 
 ### Key Technical Decisions
 1. **XSS prevention**: All user input rendered via `innerHTML` must go through `escapeHtml()`. This includes file content from FileReader - `renderAnonymizedPreview` must escape text BEFORE inserting `[REDACTED]` highlight spans.
@@ -87,13 +106,19 @@ Each pass uses a `Set` of assigned column indices to prevent the same column bei
 8. **Persisted flags**: Any boolean flag that controls one-time behavior (like sample data insertion) must be stored in `localStorage`, not in-memory variables. In-memory flags reset on every page reload.
 9. **Anonymization regex ordering**: SSN must require separators (`[-\s]` not `[-\s]?`) to avoid matching 9-digit routing numbers. Routing must run before Account. Account must skip 9-digit numbers (`\d{8}|\d{10,17}` not `\d{8,17}`).
 10. **HTML escaping in anonymized previews**: `renderAnonymizedPreview` must call `escapeHtml()` on text BEFORE replacing `[...REDACTED]` markers with `<span>` tags. Otherwise malicious file content or filenames inject HTML.
-11. **Column detection must be multi-pass**: `detectColumns` uses separate passes for date→amount→description with a `Set` of assigned indices. A single-pass loop causes column collisions (e.g., "Transaction Date" matches both date regex via `date` and description regex via `transaction`).
+11. **Column detection must be multi-pass**: `detectColumns` uses separate passes for date→debit→credit→balance→description with a `Set` of assigned indices. A single-pass loop causes column collisions (e.g., "Transaction Date" matches both date regex via `date` and description regex via `transaction`).
 12. **European number format detection**: `parseAmount` uses the last-comma-after-last-dot heuristic to distinguish `1,234.56` (US) from `1.234,56` (EU). This covers the two most common formats without requiring locale config.
 13. **CSV escaped quotes**: RFC 4180 uses `""` inside quoted fields for literal quote characters. The CSV `splitRow` parser must check for consecutive `""` and emit a single `"` instead of toggling quote state.
 14. **SheetJS CDN guard**: Always check `typeof XLSX !== 'undefined'` before calling `XLSX.read()`. CDN failures should gracefully return an empty array, not throw a ReferenceError.
 15. **File type detection tightness**: Don't treat all `text/plain` MIME type files as CSV. Require `.csv`, `.tsv`, or `.txt` extension alongside the MIME check to avoid parsing random text files as tabular data.
 16. **Chart.js infinite resize fix**: Chart.js canvases inside flex or grid containers cause an infinite resize loop because the canvas reports its own size to the parent, which re-layouts, which re-triggers `onResize`. Fix: wrap each `<canvas>` in a `.chart-wrapper` div with `position: relative; flex: 1 1 0; min-height: 0` and set the canvas to `position: absolute; top: 0; left: 0; width: 100% !important; height: 100% !important`. The absolute positioning takes the canvas out of the flex flow so it can't inflate its parent.
 17. **European number format comma count**: `parseAmount` must count commas before applying the European heuristic. Multiple commas (e.g., `1,234,567`) are US thousands separators, not European decimals. Only a single comma after the last dot should trigger European mode.
+18. **Five-pass column detection**: `detectColumns` uses separate passes for date → debit → credit → balance → description (upgraded from 3-pass). The debit pass runs before credit to ensure "Withdrawal Amt." isn't claimed by a generic amount regex. The old `amount` return field is replaced by `debit`/`credit`/`balance`.
+19. **Debit/credit row classification**: Rows with a debit value are expenses (`selected: true`); rows with only a credit value are income (`selected: false`, shown dimmed). This prevents bank deposit entries from being accidentally imported as expenses.
+20. **DD/MM/YY 2-digit year pivot**: Indian bank statements use DD/MM/YY dates. The parser uses a 50-year pivot: years 00-49 map to 2000-2049, years 50-99 map to 1950-1999. This avoids requiring users to pre-process date formats.
+21. **Multi-header row detection**: Bank statements often have a title or account-info row above the actual column headers. `detectColumns` tries row 1 first; if no columns are found, it retries with row 2 as headers and adjusts the data start index accordingly.
+22. **Module-level `parsedColumnInfo`**: Tracks which columns (debit, credit, balance) were detected in the current file. This avoids passing column metadata through every function call and allows `renderParsedTransactions` to dynamically show/hide table columns.
+23. **Indeterminate select-all checkbox**: When a bank statement has both debit and credit rows, the select-all checkbox starts in the indeterminate state (mixed). Clicking it selects all, clicking again deselects all. This communicates that only expense rows are pre-selected without hiding the credit rows entirely.
 
 ### Features
 - Expense tracking with add/edit/delete, category filtering, date sorting
@@ -136,6 +161,12 @@ Each pass uses a `Set` of assigned column indices to prevent the same column bei
 24. **Currency change doesn't update parsed transactions** - the currency change handler must re-render the parsed transactions card if it's visible (`pendingParsedTransactions.length > 0`). Otherwise amounts display with the old currency symbol.
 25. **parseAmount multi-comma misclassification** - `"1,234,567"` (US, no decimal) was misclassified as European because `lastComma > lastDot` when there's no dot. Fix: require exactly 1 comma for European detection (`commaCount === 1`).
 26. **Investment chart missing `maintainAspectRatio: false`** - the investment projection chart (line type) must set `maintainAspectRatio: false` like the expense doughnut chart. Without it, the canvas ignores the `.chart-wrapper` absolute positioning constraints.
+27. **Credit rows imported as expenses** - if `rowType` is not checked during import, credit/deposit rows get imported as expenses with positive amounts. The import function must filter to only `selected: true` transactions and ensure credit rows default to `selected: false`.
+28. **DD/MM/YY parsed as MM/DD/YY** - 2-digit year dates like `15/06/23` must be parsed as DD/MM/YY (June 15, 2023), not MM/DD/YY. The DD/MM/YY format check must run after the MM/DD/YYYY check but before the native `Date()` fallback, which may interpret the format incorrectly.
+29. **`parsedColumnInfo` stale between uploads** - the module-level `parsedColumnInfo` must be reset at the start of each file parse. If a bank statement (with debit/credit/balance) is followed by a simple CSV (amount only), the table would still render debit/credit/balance columns from the previous parse.
+30. **Select-all checkbox not updating indeterminate state** - when individual row checkboxes are toggled, the select-all checkbox must recalculate whether to show checked, unchecked, or indeterminate. Failing to update the `.indeterminate` property leaves it visually stale.
+31. **Amount fallback column mapped to wrong field** - a generic "Amount" header must map to `debit` (not `amount`) in the new return shape. Code that still reads `columns.amount` instead of `columns.debit` will get `undefined` and produce NaN transactions.
+32. **Multi-header offset not applied to data rows** - when row 2 is detected as the header, data extraction must start from row 3 (index 2). If the header row offset isn't propagated, the header row itself gets parsed as a transaction with NaN values.
 
 ### QA Test Results (Agent-Automated)
 
@@ -167,6 +198,22 @@ Each pass uses a `Set` of assigned column indices to prevent the same column bei
 | Delete upload history entry | PASS |
 | Excel serial date parsing (44927) | PASS |
 
+**Bank Statement Parser Tests:**
+
+| Scenario | Result |
+|---|---|
+| Indian bank CSV with Withdrawal/Deposit/Balance columns | PASS (5-pass detection) |
+| DD/MM/YY date format (e.g., `15/06/23`) | PASS (50-year pivot) |
+| Header row on row 2 (title row above headers) | PASS (multi-header retry) |
+| Debit rows pre-selected, credit rows dimmed | PASS |
+| Select-all checkbox indeterminate with mixed rows | PASS |
+| Dynamic Debit/Credit/Balance column rendering | PASS |
+| Generic "Amount" column backward compatibility | PASS (maps to debit) |
+| Credit row hover opacity change (55% → 85%) | PASS |
+| Import only selected (debit) transactions | PASS |
+| `parsedColumnInfo` reset between file uploads | PASS |
+| Raw fields (`debitRaw`, `creditRaw`, `balanceRaw`) stripped at import | PASS |
+
 **Dashboard & Layout Tests:**
 
 | Scenario | Result |
@@ -184,9 +231,9 @@ Each pass uses a `Set` of assigned column indices to prevent the same column bei
 
 ### File Structure
 ```
-app.js    (~2000 lines) - All application logic, state management, file parsing, rendering
-index.html (~483 lines) - HTML structure, Chart.js + SheetJS CDNs, tab layout
-styles.css (~1325 lines) - CSS variables, responsive grid, chart wrappers, parsed table styles
+app.js    (~2200 lines) - All application logic, state management, file parsing, rendering
+index.html (~482 lines) - HTML structure, Chart.js + SheetJS CDNs, tab layout
+styles.css (~1388 lines) - CSS variables, responsive grid, chart wrappers, parsed table styles, bank statement row styles
 ```
 
 ### Development Notes
@@ -199,9 +246,14 @@ styles.css (~1325 lines) - CSS variables, responsive grid, chart wrappers, parse
 - When displaying positive/negative financial values, use dynamic CSS classes (`positive`/`negative`) and inline `style.color` where static CSS classes won't cover both states
 - When building text that flows into innerHTML (even indirectly through helper functions), trace the full data path to confirm HTML escaping happens before the final `.innerHTML =` assignment
 - When adding PII regex patterns to `anonymizeText`, always check whether existing patterns consume the same digit sequences first. Test with the exact input from QA Scenario 7.
-- When adding new column-detection regex patterns to `detectColumns`, verify they don't match headers that belong to other column roles. Use the three-pass priority system and `assigned` Set.
+- When adding new column-detection regex patterns to `detectColumns`, verify they don't match headers that belong to other column roles. Use the five-pass priority system (date → debit → credit → balance → description) and `assigned` Set.
 - When parsing amounts from CSV/Excel, never assume US number format. Use the last-comma-after-last-dot heuristic to auto-detect European format.
 - When parsing CSV quoted fields, always handle RFC 4180 escaped quotes (`""` → single `"`). Test with descriptions containing commas and literal quotes.
 - SheetJS is loaded from CDN. Any code calling `XLSX.*` must be wrapped in a `typeof XLSX !== 'undefined'` guard. Do not assume the library is always available.
 - When adding a Chart.js canvas, always wrap it in a `.chart-wrapper` div. Never place a `<canvas>` directly inside a flex or grid child. Both `.chart-card` and `.projection-card` expect this wrapper structure.
 - Dashboard uses `repeat(4, 1fr)` → `repeat(2, 1fr)` at ≤1024px → `repeat(2, 1fr)` at ≤768px. Avoid `auto-fit` for the summary grid to prevent uneven layouts.
+- When working with the parsed transaction object, always use `columns.debit` (not `columns.amount`). The old `amount` field no longer exists in the `detectColumns` return shape.
+- Credit rows in bank statements use `.credit-row` CSS class with 55% opacity (85% on hover). The `.income` class applies green color to credit/deposit amount cells. The `.balance-col` class applies muted styling to balance column values.
+- The `parsedColumnInfo` module-level variable must be reset to `null` at the start of every `parseCSVText()` and `parseExcelFile()` call. Stale column info from a previous upload causes incorrect table rendering.
+- When adding new date format support to `parseDate`, insert it in the correct position in the try-order. DD/MM/YY must come after MM/DD/YYYY to avoid ambiguous dates being parsed with the wrong format.
+- Bank statement files may have metadata/title rows before the actual column headers. Always test with files where the header is not on row 1.

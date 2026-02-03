@@ -973,9 +973,12 @@ const parseCSVText = (text) => {
     const lines = text.split(/\r?\n/).filter(l => l.trim());
     if (lines.length < 2) return [];
 
-    // Detect delimiter
+    // Detect delimiter (tab, comma, or pipe)
     const firstLine = lines[0];
-    const delim = firstLine.split('\t').length > firstLine.split(',').length ? '\t' : ',';
+    const tabCount = firstLine.split('\t').length;
+    const commaCount = firstLine.split(',').length;
+    const pipeCount = firstLine.split('|').length;
+    const delim = (pipeCount > tabCount && pipeCount > commaCount) ? '|' : (tabCount > commaCount ? '\t' : ',');
 
     const splitRow = (line) => {
         const fields = [];
@@ -1219,7 +1222,7 @@ const renderParsedTransactions = (transactions) => {
                             <td><input type="checkbox" class="parsed-check" data-idx="${i}" ${t.selected ? 'checked' : ''}></td>
                             <td>${escapeHtml(t.date)}</td>
                             <td>${escapeHtml(t.description)}</td>
-                            <td class="${t.rowType === 'debit' ? 'expense' : ''}">${t.rowType === 'debit' && t.debitRaw ? formatCurrency(t.debitRaw) : ''}</td>
+                            <td class="${(t.rowType === 'debit' || !t.rowType) ? 'expense' : ''}">${t.rowType === 'debit' && t.debitRaw != null ? formatCurrency(t.debitRaw) : (!t.rowType && t.amount ? formatCurrency(t.amount) : '')}</td>
                             ${showCredit ? `<td class="${t.rowType === 'credit' ? 'income' : ''}">${t.creditRaw ? formatCurrency(t.creditRaw) : ''}</td>` : ''}
                             ${showBalance ? `<td class="balance-col">${t.balanceRaw !== null ? formatCurrency(t.balanceRaw) : ''}</td>` : ''}
                             <td>

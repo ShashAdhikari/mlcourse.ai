@@ -1003,27 +1003,34 @@ const parseCSVText = (text) => {
         return fields;
     };
 
-    let headerRow = splitRow(lines[0]);
-    let cols = detectColumns(headerRow);
+    // Scan first 10 rows to find the best header row (bank statements often have info rows before headers)
+    let cols = { date: -1, description: -1, debit: -1, credit: -1, balance: -1 };
     let dataStartIdx = 1;
+    let bestScore = 0;
 
-    // If first row didn't detect as headers, try second row (some statements have a title row)
-    if (cols.date === -1 && cols.description === -1 && cols.debit === -1 && cols.credit === -1) {
-        if (lines.length >= 3) {
-            const altHeaders = splitRow(lines[1]);
-            const altCols = detectColumns(altHeaders);
-            if (altCols.date !== -1 || altCols.description !== -1 || altCols.debit !== -1) {
-                cols = altCols;
-                headerRow = altHeaders;
-                dataStartIdx = 2;
-            }
+    const scanLimit = Math.min(lines.length - 1, 10);
+    for (let r = 0; r < scanLimit; r++) {
+        const testHeaders = splitRow(lines[r]);
+        const testCols = detectColumns(testHeaders);
+        let score = 0;
+        if (testCols.date >= 0) score++;
+        if (testCols.description >= 0) score++;
+        if (testCols.debit >= 0) score += 2;
+        if (testCols.credit >= 0) score += 2;
+        if (testCols.balance >= 0) score++;
+
+        if (score > bestScore) {
+            bestScore = score;
+            cols = testCols;
+            dataStartIdx = r + 1;
         }
     }
 
     // Positional fallback: assume [date, description, debit] in first 3 columns
     if (cols.date === -1 && cols.description === -1 && cols.debit === -1 && cols.credit === -1) {
-        if (headerRow.length >= 3) {
+        if (splitRow(lines[0]).length >= 3) {
             cols.date = 0; cols.description = 1; cols.debit = 2;
+            dataStartIdx = 1;
         } else { return []; }
     }
 
@@ -1085,27 +1092,34 @@ const parseExcelFile = (arrayBuffer) => {
 
         if (rows.length < 2) return [];
 
-        let headerRow = rows[0].map(h => String(h));
-        let cols = detectColumns(headerRow);
+        // Scan first 10 rows to find the best header row (bank statements often have info rows before headers)
+        let cols = { date: -1, description: -1, debit: -1, credit: -1, balance: -1 };
         let dataStartIdx = 1;
+        let bestScore = 0;
 
-        // If first row didn't detect as headers, try second row (some statements have a title row)
-        if (cols.date === -1 && cols.description === -1 && cols.debit === -1 && cols.credit === -1) {
-            if (rows.length >= 3) {
-                const altHeaders = rows[1].map(h => String(h));
-                const altCols = detectColumns(altHeaders);
-                if (altCols.date !== -1 || altCols.description !== -1 || altCols.debit !== -1) {
-                    cols = altCols;
-                    headerRow = altHeaders;
-                    dataStartIdx = 2;
-                }
+        const scanLimit = Math.min(rows.length - 1, 10);
+        for (let r = 0; r < scanLimit; r++) {
+            const testHeaders = rows[r].map(h => String(h));
+            const testCols = detectColumns(testHeaders);
+            let score = 0;
+            if (testCols.date >= 0) score++;
+            if (testCols.description >= 0) score++;
+            if (testCols.debit >= 0) score += 2; // Weight debit/credit detection higher
+            if (testCols.credit >= 0) score += 2;
+            if (testCols.balance >= 0) score++;
+
+            if (score > bestScore) {
+                bestScore = score;
+                cols = testCols;
+                dataStartIdx = r + 1;
             }
         }
 
         // Positional fallback: assume [date, description, debit] in first 3 columns
         if (cols.date === -1 && cols.description === -1 && cols.debit === -1 && cols.credit === -1) {
-            if (headerRow.length >= 3) {
+            if (rows[0].length >= 3) {
                 cols.date = 0; cols.description = 1; cols.debit = 2;
+                dataStartIdx = 1;
             } else { return []; }
         }
 

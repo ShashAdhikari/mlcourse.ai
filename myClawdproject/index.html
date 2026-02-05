@@ -7,18 +7,20 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <a href="#main-content" class="skip-link">Skip to content</a>
+
     <header>
-        <nav>
+        <nav aria-label="Main navigation">
             <div class="logo">
-                <span class="logo-icon">💰</span>
+                <span class="logo-icon" aria-hidden="true">💰</span>
                 <h1>FinanceTracker</h1>
             </div>
-            <ul class="nav-links">
-                <li><a href="#dashboard" class="active">Dashboard</a></li>
-                <li><a href="#expenses">Expenses</a></li>
-                <li><a href="#debt">Debt Analysis</a></li>
-                <li><a href="#investments">Investments</a></li>
-                <li><a href="#upload">Upload</a></li>
+            <ul class="nav-links" role="tablist" aria-label="App sections">
+                <li role="presentation"><a href="#dashboard" role="tab" id="tab-dashboard" aria-selected="true" aria-controls="dashboard" class="active">Dashboard</a></li>
+                <li role="presentation"><a href="#expenses" role="tab" id="tab-expenses" aria-selected="false" aria-controls="expenses">Expenses</a></li>
+                <li role="presentation"><a href="#debt" role="tab" id="tab-debt" aria-selected="false" aria-controls="debt">Debt Analysis</a></li>
+                <li role="presentation"><a href="#investments" role="tab" id="tab-investments" aria-selected="false" aria-controls="investments">Investments</a></li>
+                <li role="presentation"><a href="#upload" role="tab" id="tab-upload" aria-selected="false" aria-controls="upload">Upload</a></li>
             </ul>
             <div class="currency-selector">
                 <label for="currency-select">Currency:</label>
@@ -47,9 +49,9 @@
         </nav>
     </header>
 
-    <main>
+    <main id="main-content">
         <!-- Dashboard Section -->
-        <section id="dashboard" class="section active">
+        <section id="dashboard" class="section active" role="tabpanel" aria-labelledby="tab-dashboard">
             <h2>Financial Dashboard</h2>
             <div class="dashboard-grid">
                 <div class="card summary-card income">
@@ -84,7 +86,7 @@
                 <div class="card chart-card">
                     <h3>Financial Health Score</h3>
                     <div class="health-score">
-                        <div class="score-circle" id="health-score">
+                        <div class="score-circle" id="health-score" role="img" aria-label="Financial health score">
                             <span class="score-value">--</span>
                             <span class="score-label">Score</span>
                         </div>
@@ -115,7 +117,7 @@
                 <p class="upload-description">Upload your expense report or payslip to auto-import transactions. Personal details (names, account numbers) are automatically redacted.</p>
                 <div class="quick-upload-row">
                     <div class="upload-zone upload-zone-compact" id="dashboard-upload-zone">
-                        <div class="upload-icon">📄</div>
+                        <div class="upload-icon" aria-hidden="true">📄</div>
                         <p>Drop expense report or payslip here</p>
                         <p class="upload-or">or</p>
                         <label class="btn btn-secondary upload-btn">
@@ -125,7 +127,7 @@
                     </div>
                     <div class="quick-upload-results" id="dashboard-upload-results">
                         <div class="anonymize-notice">
-                            <span class="lock-icon">🔒</span>
+                            <span class="lock-icon" aria-hidden="true">🔒</span>
                             <div>
                                 <strong>Privacy Protected</strong>
                                 <p>Names, bank accounts, SSNs, and card numbers are automatically anonymized before processing.</p>
@@ -138,7 +140,7 @@
         </section>
 
         <!-- Expenses Section -->
-        <section id="expenses" class="section">
+        <section id="expenses" class="section" role="tabpanel" aria-labelledby="tab-expenses">
             <h2>Expense Tracker</h2>
             <div class="expense-container">
                 <div class="card add-expense-card">
@@ -147,7 +149,7 @@
                         <div class="form-group description-group">
                             <label for="expense-description">Description</label>
                             <input type="text" id="expense-description" placeholder="e.g., Grocery shopping" autocomplete="off" required>
-                            <div class="tag-suggestions" id="tag-suggestions"></div>
+                            <div class="tag-suggestions" id="tag-suggestions" role="listbox" aria-label="Category suggestions"></div>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
@@ -182,7 +184,7 @@
                 <div class="card expense-list-card">
                     <h3>Recent Expenses</h3>
                     <div class="expense-filters">
-                        <select id="filter-category">
+                        <select id="filter-category" aria-label="Filter expenses by category">
                             <option value="all">All Categories</option>
                             <option value="housing">Housing</option>
                             <option value="transportation">Transportation</option>
@@ -204,7 +206,7 @@
         </section>
 
         <!-- Debt Analysis Section -->
-        <section id="debt" class="section">
+        <section id="debt" class="section" role="tabpanel" aria-labelledby="tab-debt">
             <h2>Debt Analysis & Payoff Plan</h2>
             <div class="debt-container">
                 <div class="card add-debt-card">
@@ -257,9 +259,9 @@
                 <div class="card payoff-card">
                     <h3>Debt Payoff Strategies</h3>
                     <div class="payoff-strategies">
-                        <div class="strategy-tabs">
-                            <button class="strategy-tab active" data-strategy="avalanche">Avalanche Method</button>
-                            <button class="strategy-tab" data-strategy="snowball">Snowball Method</button>
+                        <div class="strategy-tabs" role="tablist" aria-label="Payoff strategies">
+                            <button class="strategy-tab active" data-strategy="avalanche" role="tab" aria-selected="true">Avalanche Method</button>
+                            <button class="strategy-tab" data-strategy="snowball" role="tab" aria-selected="false">Snowball Method</button>
                         </div>
                         <div class="strategy-content" id="strategy-content">
                             <div class="strategy-info">
@@ -282,7 +284,7 @@
         </section>
 
         <!-- Investments Section -->
-        <section id="investments" class="section">
+        <section id="investments" class="section" role="tabpanel" aria-labelledby="tab-investments">
             <h2>Investment Analysis & Recommendations</h2>
             <div class="investment-container">
                 <div class="card investment-profile-card">
@@ -383,14 +385,14 @@
         </section>
 
         <!-- Upload Section -->
-        <section id="upload" class="section">
+        <section id="upload" class="section" role="tabpanel" aria-labelledby="tab-upload">
             <h2>Upload Documents</h2>
             <div class="upload-container">
                 <div class="card upload-card">
                     <h3>Upload Expense Report</h3>
                     <p class="upload-description">Upload your monthly expense report (CSV, Excel, or PDF)</p>
                     <div class="upload-zone" id="expense-upload-zone">
-                        <div class="upload-icon">📄</div>
+                        <div class="upload-icon" aria-hidden="true">📄</div>
                         <p>Drag & drop your expense report here</p>
                         <p class="upload-or">or</p>
                         <label class="btn btn-secondary upload-btn">
@@ -405,7 +407,7 @@
                     <h3>Upload Payslip</h3>
                     <p class="upload-description">Upload your payslip to track income (PDF or Image)</p>
                     <div class="upload-zone" id="payslip-upload-zone">
-                        <div class="upload-icon">💵</div>
+                        <div class="upload-icon" aria-hidden="true">💵</div>
                         <p>Drag & drop your payslip here</p>
                         <p class="upload-or">or</p>
                         <label class="btn btn-secondary upload-btn">
@@ -474,6 +476,8 @@
     <footer>
         <p>&copy; <script>document.write(new Date().getFullYear())</script> FinanceTracker. All rights reserved. This tool provides general financial guidance and should not be considered professional financial advice.</p>
     </footer>
+
+    <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>

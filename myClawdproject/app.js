@@ -1,2224 +1,1774 @@
-// Financial Tracker Application
-// Safe JSON parse with fallback
-const safeParse = (key, fallback) => {
-    try {
-        const data = localStorage.getItem(key);
-        return data ? JSON.parse(data) : fallback;
-    } catch {
-        return fallback;
-    }
-};
-
-// Main application state
-const state = {
-    expenses: safeParse('expenses', []),
-    debts: safeParse('debts', []),
-    investments: safeParse('investments', []),
-    incomes: safeParse('incomes', []),
-    uploads: safeParse('uploads', []),
-    investmentProfile: safeParse('investmentProfile', null)
-};
-
-// ==================== CURRENCY MANAGEMENT ====================
-
-// Detect currency from browser locale
-const detectCurrency = () => {
-    const saved = localStorage.getItem('selectedCurrency');
-    if (saved) return saved;
-
-    try {
-        const locale = navigator.language || navigator.userLanguage || 'en-US';
-        const localeCurrencyMap = {
-            'en-US': 'USD', 'en-GB': 'GBP', 'en-AU': 'AUD', 'en-CA': 'CAD',
-            'en-NZ': 'NZD', 'en-SG': 'SGD', 'en-HK': 'HKD', 'en-ZA': 'ZAR',
-            'en-IN': 'INR', 'ne-NP': 'NPR', 'hi-IN': 'INR',
-            'ja-JP': 'JPY', 'zh-CN': 'CNY', 'zh-TW': 'TWD', 'ko-KR': 'KRW',
-            'de-DE': 'EUR', 'fr-FR': 'EUR', 'es-ES': 'EUR', 'it-IT': 'EUR',
-            'pt-BR': 'BRL', 'es-MX': 'MXN', 'sv-SE': 'SEK', 'nb-NO': 'NOK',
-            'de-CH': 'CHF', 'fr-CH': 'CHF'
-        };
-        return localeCurrencyMap[locale] || 'USD';
-    } catch {
-        return 'USD';
-    }
-};
-
-let selectedCurrency = detectCurrency();
-
-// Utility functions
-const formatCurrency = (amount) => {
-    return new Intl.NumberFormat(navigator.language || 'en-US', {
-        style: 'currency',
-        currency: selectedCurrency
-    }).format(amount);
-};
-
-const formatDate = (dateStr) => {
-    return new Date(dateStr).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-    });
-};
-
-const generateId = () => {
-    return Date.now().toString(36) + Math.random().toString(36).substring(2);
-};
-
-// Escape HTML to prevent XSS
-const escapeHtml = (str) => {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-};
-
-const saveState = () => {
-    localStorage.setItem('expenses', JSON.stringify(state.expenses));
-    localStorage.setItem('debts', JSON.stringify(state.debts));
-    localStorage.setItem('investments', JSON.stringify(state.investments));
-    localStorage.setItem('incomes', JSON.stringify(state.incomes));
-    localStorage.setItem('uploads', JSON.stringify(state.uploads));
-    localStorage.setItem('investmentProfile', JSON.stringify(state.investmentProfile));
-};
-
-// Navigation
-document.querySelectorAll('.nav-links a').forEach(link => {
-    link.addEventListener('click', (e) => {
-        e.preventDefault();
-        const targetId = link.getAttribute('href').substring(1);
-
-        // Update nav active state
-        document.querySelectorAll('.nav-links a').forEach(l => l.classList.remove('active'));
-        link.classList.add('active');
-
-        // Show target section
-        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-        document.getElementById(targetId).classList.add('active');
-    });
-});
-
-// Initialize date inputs with today's date
-document.getElementById('expense-date').valueAsDate = new Date();
-
-// ==================== EXPENSE TRACKING ====================
-
-const renderExpenses = (filter = 'all') => {
-    const container = document.getElementById('expense-list');
-    let filteredExpenses = filter !== 'all'
-        ? state.expenses.filter(e => e.category === filter)
-        : [...state.expenses];
-
-    // Sort by date (newest first) - uses a copy so state is not mutated
-    filteredExpenses.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-    if (filteredExpenses.length === 0) {
-        container.innerHTML = '<p class="empty-state">No expenses recorded yet. Add your first expense above.</p>';
-        return;
-    }
-
-    container.innerHTML = filteredExpenses.map(expense => `
-        <div class="expense-item" data-id="${escapeHtml(expense.id)}">
-            <div class="item-info">
-                <h4>${escapeHtml(expense.description)}</h4>
-                <p>${formatDate(expense.date)}</p>
-                <span class="category-tag ${escapeHtml(expense.category)}">${escapeHtml(expense.category)}</span>
-            </div>
-            <span class="item-amount expense">-${formatCurrency(expense.amount)}</span>
-            <button class="edit-btn" onclick="editExpense('${escapeHtml(expense.id)}')">✏️</button>
-            <button class="delete-btn" onclick="deleteExpense('${escapeHtml(expense.id)}')">🗑️</button>
-        </div>
-    `).join('');
-};
-
-const addExpense = (e) => {
-    e.preventDefault();
-
-    const expense = {
-        id: generateId(),
-        description: document.getElementById('expense-description').value,
-        amount: parseFloat(document.getElementById('expense-amount').value),
-        category: document.getElementById('expense-category').value,
-        date: document.getElementById('expense-date').value
-    };
-
-    state.expenses.push(expense);
-    saveState();
-    renderExpenses();
-    updateDashboard();
-    e.target.reset();
-    document.getElementById('expense-date').valueAsDate = new Date();
-};
-
-const deleteExpense = (id) => {
-    state.expenses = state.expenses.filter(e => e.id !== id);
-    saveState();
-    renderExpenses();
-    updateDashboard();
-};
-
-const editExpense = (id) => {
-    const expense = state.expenses.find(e => e.id === id);
-    if (!expense) return;
-
-    const container = document.querySelector(`.expense-item[data-id="${CSS.escape(id)}"]`);
-    if (!container) return;
-
-    const categories = ['housing', 'transportation', 'food', 'utilities', 'healthcare', 'entertainment', 'shopping', 'education', 'personal', 'other'];
-    const categoryOptions = categories.map(c =>
-        `<option value="${c}" ${c === expense.category ? 'selected' : ''}>${capitalizeFirst(c)}</option>`
-    ).join('');
-
-    container.classList.add('editing');
-    container.innerHTML = `
-        <div class="edit-form">
-            <div class="edit-row">
-                <div class="edit-field">
-                    <label>Description</label>
-                    <input type="text" class="edit-input" id="edit-desc-${escapeHtml(id)}" value="${escapeHtml(expense.description)}">
-                </div>
-                <div class="edit-field">
-                    <label>Amount</label>
-                    <input type="number" class="edit-input" id="edit-amount-${escapeHtml(id)}" step="0.01" min="0" value="${expense.amount}">
-                </div>
-            </div>
-            <div class="edit-row">
-                <div class="edit-field">
-                    <label>Category</label>
-                    <select class="edit-input" id="edit-cat-${escapeHtml(id)}">
-                        ${categoryOptions}
-                    </select>
-                </div>
-                <div class="edit-field">
-                    <label>Date</label>
-                    <input type="date" class="edit-input" id="edit-date-${escapeHtml(id)}" value="${expense.date}">
-                </div>
-            </div>
-            <div class="edit-actions">
-                <button class="btn btn-primary btn-sm" onclick="saveExpenseEdit('${escapeHtml(id)}')">Save</button>
-                <button class="btn btn-secondary btn-sm" onclick="cancelExpenseEdit()">Cancel</button>
-            </div>
-        </div>
-    `;
-};
-
-const getCurrentFilter = () => {
-    const filterEl = document.getElementById('filter-category');
-    return filterEl ? filterEl.value : 'all';
-};
-
-const saveExpenseEdit = (id) => {
-    const expense = state.expenses.find(e => e.id === id);
-    if (!expense) return;
-
-    const desc = document.getElementById(`edit-desc-${id}`);
-    const amount = document.getElementById(`edit-amount-${id}`);
-    const cat = document.getElementById(`edit-cat-${id}`);
-    const date = document.getElementById(`edit-date-${id}`);
-
-    if (!desc || !amount || !cat || !date) return;
-    if (!desc.value.trim() || !amount.value || !date.value) return;
-
-    expense.description = desc.value.trim();
-    expense.amount = parseFloat(amount.value);
-    expense.category = cat.value;
-    expense.date = date.value;
-
-    saveState();
-    renderExpenses(getCurrentFilter());
-    updateDashboard();
-};
-
-const cancelExpenseEdit = () => {
-    renderExpenses(getCurrentFilter());
-};
-
-document.getElementById('expense-form').addEventListener('submit', addExpense);
-document.getElementById('filter-category').addEventListener('change', (e) => {
-    renderExpenses(e.target.value);
-});
-
-// ==================== DEBT MANAGEMENT ====================
-
-const renderDebts = () => {
-    const container = document.getElementById('debt-list');
-
-    if (state.debts.length === 0) {
-        container.innerHTML = '<p class="empty-state">No debts recorded. Add your debts to get a personalized payoff plan.</p>';
-        return;
-    }
-
-    container.innerHTML = state.debts.map(debt => `
-        <div class="debt-item" data-id="${escapeHtml(debt.id)}">
-            <div class="item-info">
-                <h4>${escapeHtml(debt.name)}</h4>
-                <p>Interest: ${debt.rate}% | Min Payment: ${formatCurrency(debt.minimum)}</p>
-                <span class="category-tag ${escapeHtml(debt.type)}">${escapeHtml(debt.type)}</span>
-            </div>
-            <span class="item-amount debt">${formatCurrency(debt.balance)}</span>
-            <button class="delete-btn" onclick="deleteDebt('${escapeHtml(debt.id)}')">🗑️</button>
-        </div>
-    `).join('');
-
-    updatePayoffPlan();
-};
-
-const addDebt = (e) => {
-    e.preventDefault();
-
-    const debt = {
-        id: generateId(),
-        name: document.getElementById('debt-name').value,
-        balance: parseFloat(document.getElementById('debt-balance').value),
-        rate: parseFloat(document.getElementById('debt-rate').value),
-        minimum: parseFloat(document.getElementById('debt-minimum').value),
-        type: document.getElementById('debt-type').value
-    };
-
-    state.debts.push(debt);
-    saveState();
-    renderDebts();
-    updateDashboard();
-    e.target.reset();
-};
-
-const deleteDebt = (id) => {
-    state.debts = state.debts.filter(d => d.id !== id);
-    saveState();
-    renderDebts();
-    updateDashboard();
-};
-
-document.getElementById('debt-form').addEventListener('submit', addDebt);
-
-// Debt Payoff Strategy Tabs
-document.querySelectorAll('.strategy-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-        document.querySelectorAll('.strategy-tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-        updatePayoffPlan();
-    });
-});
-
-const updatePayoffPlan = () => {
-    const container = document.getElementById('payoff-plan');
-    const strategyContent = document.getElementById('strategy-content');
-    const activeStrategy = document.querySelector('.strategy-tab.active').dataset.strategy;
-
-    if (state.debts.length === 0) {
-        container.innerHTML = '<p class="empty-state">Add debts to see your recommended payoff order.</p>';
-        return;
-    }
-
-    // Sort debts based on strategy
-    let sortedDebts = [...state.debts];
-    if (activeStrategy === 'avalanche') {
-        sortedDebts.sort((a, b) => b.rate - a.rate); // Highest interest first
-    } else {
-        sortedDebts.sort((a, b) => a.balance - b.balance); // Lowest balance first
-    }
-
-    // Update strategy info
-    const strategyInfo = strategyContent.querySelector('.strategy-info');
-    if (activeStrategy === 'avalanche') {
-        strategyInfo.innerHTML = `
-            <h4>Avalanche Method</h4>
-            <p>Pay off debts with the highest interest rate first. This saves the most money on interest over time.</p>
-        `;
-    } else {
-        strategyInfo.innerHTML = `
-            <h4>Snowball Method</h4>
-            <p>Pay off debts with the lowest balance first. This provides quick wins and psychological momentum.</p>
-        `;
-    }
-
-    container.innerHTML = sortedDebts.map((debt, index) => `
-        <div class="payoff-item">
-            <span class="payoff-order">${index + 1}</span>
-            <div class="payoff-details">
-                <h4>${escapeHtml(debt.name)}</h4>
-                <p>Balance: ${formatCurrency(debt.balance)} | Interest: ${debt.rate}%</p>
-            </div>
-        </div>
-    `).join('');
-};
-
-// Calculate Payoff Timeline
-document.getElementById('calculate-payoff').addEventListener('click', () => {
-    const extraPayment = parseFloat(document.getElementById('extra-payment-amount').value) || 0;
-    calculatePayoffTimeline(extraPayment);
-});
-
-const calculatePayoffTimeline = (extraPayment) => {
-    const summaryContainer = document.getElementById('payoff-summary');
-
-    if (state.debts.length === 0) {
-        summaryContainer.innerHTML = '';
-        return;
-    }
-
-    const activeStrategy = document.querySelector('.strategy-tab.active').dataset.strategy;
-    let debts = [...state.debts].map(d => ({...d}));
-
-    // Sort based on strategy
-    if (activeStrategy === 'avalanche') {
-        debts.sort((a, b) => b.rate - a.rate);
-    } else {
-        debts.sort((a, b) => a.balance - b.balance);
-    }
-
-    let totalInterestPaid = 0;
-    let totalAmountPaid = 0;
-    let months = 0;
-    const maxMonths = 360; // 30 years max
-
-    // Check if any debt is unpayable (minimum payment < monthly interest)
-    const unpayableDebts = debts.filter(d => {
-        const monthlyInterest = (d.balance * d.rate / 100) / 12;
-        return d.minimum < monthlyInterest && d.balance > 0;
-    });
-
-    while (debts.some(d => d.balance > 0) && months < maxMonths) {
-        months++;
-        const targetIndex = debts.findIndex(d => d.balance > 0);
-
-        for (let i = 0; i < debts.length; i++) {
-            if (debts[i].balance <= 0) continue;
-
-            // Calculate monthly interest
-            const monthlyInterest = (debts[i].balance * debts[i].rate / 100) / 12;
-            totalInterestPaid += monthlyInterest;
-            debts[i].balance += monthlyInterest;
-
-            // Apply minimum payment + extra to priority debt
-            let payment = debts[i].minimum;
-            if (i === targetIndex) {
-                payment += extraPayment;
-            }
-
-            // Don't overpay - cap at remaining balance
-            payment = Math.min(payment, debts[i].balance);
-            totalAmountPaid += payment;
-            debts[i].balance = Math.max(0, debts[i].balance - payment);
-        }
-    }
-
-    const years = Math.floor(months / 12);
-    const remainingMonths = months % 12;
-    const totalMinPayments = state.debts.reduce((sum, d) => sum + d.minimum, 0);
-    const hitMax = months >= maxMonths && debts.some(d => d.balance > 0);
-
-    let html = '<h4>Payoff Summary</h4>';
-
-    if (hitMax) {
-        html += `<p style="color: var(--danger-color);"><strong>Warning:</strong> With current payments, some debts will not be paid off within 30 years. Consider increasing your monthly payments.</p>`;
-    }
-
-    if (unpayableDebts.length > 0 && extraPayment === 0) {
-        html += `<p style="color: var(--warning-color);"><strong>Note:</strong> ${unpayableDebts.map(d => escapeHtml(d.name)).join(', ')} - minimum payment is less than monthly interest. Extra payments are needed.</p>`;
-    }
-
-    html += `
-        <p><strong>Payoff Time:</strong> ${hitMax ? '30+ years' : `${years > 0 ? years + ' years ' : ''}${remainingMonths} months`}</p>
-        <p><strong>Total Interest Paid:</strong> ${formatCurrency(totalInterestPaid)}</p>
-        <p><strong>Total Amount Paid:</strong> ${formatCurrency(totalAmountPaid)}</p>
-        <p><strong>Monthly Payment:</strong> ${formatCurrency(totalMinPayments + extraPayment)}</p>
-        ${extraPayment > 0 ? `<p><strong>Savings from Extra Payment:</strong> By paying an extra ${formatCurrency(extraPayment)}/month, you could save significantly on interest!</p>` : ''}
-    `;
-
-    summaryContainer.innerHTML = html;
-};
-
-// ==================== INVESTMENT MANAGEMENT ====================
-
-const renderInvestments = () => {
-    const container = document.getElementById('investment-list');
-    const totalElement = document.getElementById('total-investments');
-
-    if (state.investments.length === 0) {
-        container.innerHTML = '<p class="empty-state">No investments recorded yet.</p>';
-        totalElement.textContent = formatCurrency(0);
-        return;
-    }
-
-    const total = state.investments.reduce((sum, inv) => sum + inv.value, 0);
-    totalElement.textContent = formatCurrency(total);
-
-    container.innerHTML = state.investments.map(inv => `
-        <div class="investment-item" data-id="${escapeHtml(inv.id)}">
-            <div class="item-info">
-                <h4>${escapeHtml(inv.name)}</h4>
-                <span class="category-tag other">${escapeHtml(inv.type)}</span>
-            </div>
-            <span class="item-amount investment">${formatCurrency(inv.value)}</span>
-            <button class="delete-btn" onclick="deleteInvestment('${escapeHtml(inv.id)}')">🗑️</button>
-        </div>
-    `).join('');
-};
-
-const addInvestment = (e) => {
-    e.preventDefault();
-
-    const investment = {
-        id: generateId(),
-        name: document.getElementById('investment-name').value,
-        value: parseFloat(document.getElementById('investment-value').value),
-        type: document.getElementById('investment-type').value
-    };
-
-    state.investments.push(investment);
-    saveState();
-    renderInvestments();
-    updateDashboard();
-    e.target.reset();
-};
-
-const deleteInvestment = (id) => {
-    state.investments = state.investments.filter(i => i.id !== id);
-    saveState();
-    renderInvestments();
-    updateDashboard();
-};
-
-document.getElementById('add-investment-form').addEventListener('submit', addInvestment);
-
-// Investment Profile & Recommendations
-document.getElementById('investment-profile-form').addEventListener('submit', (e) => {
-    e.preventDefault();
-
-    state.investmentProfile = {
-        goal: document.getElementById('investment-goal').value,
-        timeline: parseInt(document.getElementById('investment-timeline').value),
-        riskTolerance: document.getElementById('risk-tolerance').value,
-        monthlyAmount: parseFloat(document.getElementById('monthly-investment').value)
-    };
-
-    saveState();
-    generateInvestmentRecommendations();
-    generateInvestmentProjection();
-});
-
-const generateInvestmentRecommendations = () => {
-    const container = document.getElementById('investment-recommendations');
-    const profile = state.investmentProfile;
-
-    if (!profile) {
-        container.innerHTML = '<p class="empty-state">Complete your investment profile to receive personalized recommendations.</p>';
-        return;
-    }
-
-    // Determine allocation based on risk tolerance and timeline
-    let allocation = { stocks: 60, bonds: 30, cash: 10 };
-    let expectedReturn = 7;
-
-    if (profile.riskTolerance === 'conservative') {
-        allocation = { stocks: 30, bonds: 50, cash: 20 };
-        expectedReturn = 5;
-    } else if (profile.riskTolerance === 'aggressive') {
-        allocation = { stocks: 80, bonds: 15, cash: 5 };
-        expectedReturn = 9;
-    }
-
-    // Adjust for timeline (ensure total stays at 100%)
-    if (profile.timeline < 5) {
-        const stockReduction = allocation.stocks - Math.max(20, allocation.stocks - 20);
-        allocation.stocks -= stockReduction;
-        allocation.bonds += Math.round(stockReduction * 0.6);
-        allocation.cash = 100 - allocation.stocks - allocation.bonds;
-    } else if (profile.timeline > 15) {
-        const stockIncrease = Math.min(90, allocation.stocks + 10) - allocation.stocks;
-        allocation.stocks += stockIncrease;
-        allocation.bonds -= Math.round(stockIncrease * 0.6);
-        allocation.cash = 100 - allocation.stocks - allocation.bonds;
-    }
-
-    // Generate specific recommendations based on goal
-    const recommendations = getGoalSpecificRecommendations(profile.goal, allocation, profile.timeline);
-
-    container.innerHTML = `
-        <div class="recommendation">
-            <h4>Recommended Asset Allocation</h4>
-            <p>Based on your ${profile.riskTolerance} risk tolerance and ${profile.timeline}-year timeline:</p>
-            <div class="allocation-bar">
-                <div class="allocation-segment stocks" style="width: ${allocation.stocks}%">${allocation.stocks}%</div>
-                <div class="allocation-segment bonds" style="width: ${allocation.bonds}%">${allocation.bonds}%</div>
-                <div class="allocation-segment cash" style="width: ${allocation.cash}%">${allocation.cash}%</div>
-            </div>
-            <div class="allocation-legend">
-                <span class="legend-item"><span class="legend-color" style="background: var(--primary-color)"></span> Stocks</span>
-                <span class="legend-item"><span class="legend-color" style="background: var(--success-color)"></span> Bonds</span>
-                <span class="legend-item"><span class="legend-color" style="background: var(--warning-color)"></span> Cash/Money Market</span>
-            </div>
-        </div>
-
-        <div class="recommendation">
-            <h4>Investment Ideas for ${capitalizeFirst(profile.goal)}</h4>
-            <ul>
-                ${recommendations.map(rec => `<li>${rec}</li>`).join('')}
-            </ul>
-        </div>
-
-        <div class="recommendation">
-            <h4>Action Steps</h4>
-            <ul>
-                <li>Set up automatic investments of ${formatCurrency(profile.monthlyAmount)} monthly</li>
-                <li>Review and rebalance your portfolio quarterly</li>
-                <li>Increase contributions by 1% annually when possible</li>
-                <li>Keep emergency fund separate (3-6 months expenses)</li>
-                ${state.debts.length > 0 ? '<li>Consider paying off high-interest debt before investing aggressively</li>' : ''}
-            </ul>
-        </div>
-    `;
-};
-
-const getGoalSpecificRecommendations = (goal, allocation, timeline) => {
-    const recommendations = {
-        retirement: [
-            'Maximize 401(k) contributions, especially if employer matches',
-            'Consider a Roth IRA for tax-free growth ($7,000 annual limit for 2024)',
-            'Invest in low-cost index funds tracking S&P 500 or total market',
-            'Consider target-date retirement funds for automatic rebalancing',
-            'Look into Health Savings Account (HSA) for triple tax advantages'
-        ],
-        emergency: [
-            'Build 3-6 months of expenses in high-yield savings account',
-            'Consider money market funds for slightly higher yields',
-            'Keep funds easily accessible (no penalties for withdrawal)',
-            'Look for FDIC-insured accounts with 4%+ APY',
-            'Avoid investing emergency funds in stocks or volatile assets'
-        ],
-        home: [
-            'Save in high-yield savings account for down payment',
-            'Consider I-Bonds for inflation protection (if timeline > 1 year)',
-            timeline > 5 ? 'A conservative mix of bonds and stocks could be appropriate' : 'Avoid stock market volatility for short-term goal',
-            'Aim for 20% down payment to avoid PMI',
-            'Research first-time homebuyer programs in your area'
-        ],
-        education: [
-            'Open a 529 college savings plan for tax advantages',
-            'Consider Coverdell ESA for K-12 and college expenses',
-            'Use age-based portfolios that automatically become conservative',
-            'Research state tax deductions for 529 contributions',
-            'Look into prepaid tuition plans if available'
-        ],
-        wealth: [
-            'After maxing retirement accounts, use taxable brokerage accounts',
-            'Consider tax-efficient index funds and ETFs',
-            'Look into dividend growth stocks for passive income',
-            'Explore real estate investment trusts (REITs) for diversification',
-            'Consider dollar-cost averaging into broad market index funds'
-        ],
-        other: [
-            'Define specific amount and timeline for your goal',
-            'Match investment risk to your timeline',
-            'Consider a balanced portfolio of stocks and bonds',
-            'Review progress quarterly and adjust as needed',
-            'Consult a fiduciary financial advisor for personalized advice'
-        ]
-    };
-
-    return recommendations[goal] || recommendations.other;
-};
-
-const capitalizeFirst = (str) => str.charAt(0).toUpperCase() + str.slice(1);
-
-const generateInvestmentProjection = () => {
-    const canvas = document.getElementById('investment-chart');
-    const detailsContainer = document.getElementById('projection-details');
-    const profile = state.investmentProfile;
-
-    if (!profile) return;
-
-    // Calculate projections
-    const currentPortfolio = state.investments.reduce((sum, inv) => sum + inv.value, 0);
-    const monthlyContribution = profile.monthlyAmount;
-    const years = profile.timeline;
-
-    // Expected returns based on risk tolerance
-    const expectedReturns = {
-        conservative: 0.05,
-        moderate: 0.07,
-        aggressive: 0.09
-    };
-
-    const annualReturn = expectedReturns[profile.riskTolerance];
-    const monthlyReturn = annualReturn / 12;
-
-    // Generate projection data
-    const labels = [];
-    const projectedValues = [];
-    const contributionValues = [];
-
-    let balance = currentPortfolio;
-    let totalContributions = currentPortfolio;
-
-    for (let year = 0; year <= years; year++) {
-        labels.push(`Year ${year}`);
-        projectedValues.push(Math.round(balance));
-        contributionValues.push(Math.round(totalContributions));
-
-        // Calculate for next year
-        for (let month = 0; month < 12; month++) {
-            balance = balance * (1 + monthlyReturn) + monthlyContribution;
-            totalContributions += monthlyContribution;
-        }
-    }
-
-    const finalBalance = projectedValues[projectedValues.length - 1];
-    const totalContributionsAmount = contributionValues[contributionValues.length - 1];
-    const totalGrowth = finalBalance - totalContributionsAmount;
-
-    // Create or update chart
-    if (window.investmentChart) {
-        window.investmentChart.destroy();
-    }
-
-    window.investmentChart = new Chart(canvas, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'Projected Value',
-                    data: projectedValues,
-                    borderColor: '#2563eb',
-                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                    fill: true,
-                    tension: 0.4
-                },
-                {
-                    label: 'Total Contributions',
-                    data: contributionValues,
-                    borderColor: '#10b981',
-                    backgroundColor: 'transparent',
-                    borderDash: [5, 5],
-                    tension: 0.4
-                }
-            ]
+(function () {
+    'use strict';
+
+    // ==================== UTILITIES ====================
+
+    const Utils = {
+        safeParse(key, fallback) {
+            try {
+                const data = localStorage.getItem(key);
+                return data ? JSON.parse(data) : fallback;
+            } catch { return fallback; }
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return context.dataset.label + ': ' + formatCurrency(context.raw);
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return formatCurrency(value);
-                        }
-                    }
-                }
-            }
+
+        generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+        },
+
+        escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        },
+
+        capitalizeFirst(str) {
+            return str.charAt(0).toUpperCase() + str.slice(1);
+        },
+
+        formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / 1048576).toFixed(1) + ' MB';
+        },
+
+        formatDate(dateStr) {
+            if (!dateStr) return 'N/A';
+            const [year, month, day] = dateStr.split('-').map(Number);
+            const date = new Date(year, month - 1, day);
+            return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
         }
-    });
-
-    detailsContainer.innerHTML = `
-        <div style="margin-top: 1rem; padding: 1rem; background: var(--background-color); border-radius: 8px;">
-            <p><strong>Projected Value in ${years} years:</strong> ${formatCurrency(finalBalance)}</p>
-            <p><strong>Total Contributions:</strong> ${formatCurrency(totalContributionsAmount)}</p>
-            <p><strong>Investment Growth:</strong> ${formatCurrency(totalGrowth)}</p>
-            <p><strong>Assumed Annual Return:</strong> ${(annualReturn * 100).toFixed(1)}%</p>
-            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.5rem;">
-                *Projections are estimates based on historical averages and are not guaranteed.
-            </p>
-        </div>
-    `;
-};
-
-// ==================== INCOME MANAGEMENT ====================
-
-const renderIncomes = () => {
-    const container = document.getElementById('income-list');
-
-    if (state.incomes.length === 0) {
-        container.innerHTML = '<p class="empty-state">No income sources recorded.</p>';
-        return;
-    }
-
-    container.innerHTML = state.incomes.map(income => `
-        <div class="income-item" data-id="${escapeHtml(income.id)}">
-            <div class="item-info">
-                <h4>${escapeHtml(income.source)}</h4>
-                <span class="category-tag other">${escapeHtml(income.type)}</span>
-            </div>
-            <span class="item-amount income">${formatCurrency(income.amount)}</span>
-            <button class="delete-btn" onclick="deleteIncome('${escapeHtml(income.id)}')">🗑️</button>
-        </div>
-    `).join('');
-};
-
-const addIncome = (e) => {
-    e.preventDefault();
-
-    const income = {
-        id: generateId(),
-        source: document.getElementById('income-source').value,
-        amount: parseFloat(document.getElementById('income-amount').value),
-        type: document.getElementById('income-type').value
     };
 
-    state.incomes.push(income);
-    saveState();
-    renderIncomes();
-    updateDashboard();
-    e.target.reset();
-};
+    // ==================== CURRENCY ====================
 
-const deleteIncome = (id) => {
-    state.incomes = state.incomes.filter(i => i.id !== id);
-    saveState();
-    renderIncomes();
-    updateDashboard();
-};
+    const Currency = {
+        symbols: {
+            USD: '$', EUR: '\u20AC', GBP: '\u00A3', JPY: '\u00A5', AUD: 'A$',
+            CAD: 'C$', CHF: 'CHF ', CNY: '\u00A5', INR: '\u20B9', NZD: 'NZ$',
+            SGD: 'S$', HKD: 'HK$', KRW: '\u20A9', BRL: 'R$', ZAR: 'R ',
+            MXN: 'MX$', SEK: 'kr ', NOK: 'kr ', NPR: '\u20A8'
+        },
 
-document.getElementById('income-form').addEventListener('submit', addIncome);
+        selected: localStorage.getItem('selectedCurrency') || 'USD',
 
-// ==================== FILE UPLOAD ====================
+        format(amount) {
+            const sym = Currency.symbols[Currency.selected] || '$';
+            return sym + Math.abs(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        },
 
-const setupUploadZone = (zoneId, inputId, previewId, type) => {
-    const zone = document.getElementById(zoneId);
-    const input = document.getElementById(inputId);
-    const preview = document.getElementById(previewId);
-
-    // Drag and drop events
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        zone.addEventListener(eventName, preventDefaults, false);
-    });
-
-    function preventDefaults(e) {
-        e.preventDefault();
-        e.stopPropagation();
-    }
-
-    ['dragenter', 'dragover'].forEach(eventName => {
-        zone.addEventListener(eventName, () => zone.classList.add('dragover'), false);
-    });
-
-    ['dragleave', 'drop'].forEach(eventName => {
-        zone.addEventListener(eventName, () => zone.classList.remove('dragover'), false);
-    });
-
-    zone.addEventListener('drop', (e) => {
-        const files = e.dataTransfer.files;
-        handleFiles(files, type, preview);
-    });
-
-    input.addEventListener('change', (e) => {
-        handleFiles(e.target.files, type, preview);
-    });
-
-    zone.addEventListener('click', (e) => {
-        // Avoid double-trigger: labels already open the file dialog natively
-        if (!e.target.closest('.upload-btn') && e.target.tagName !== 'INPUT') {
-            input.click();
-        }
-    });
-};
-
-const handleFiles = (files, type, previewContainer) => {
-    Array.from(files).forEach(file => {
-        processFile(file, type, previewContainer);
-    });
-};
-
-// ==================== FILE PARSING ENGINE ====================
-
-let pendingParsedTransactions = [];
-let parsedColumnInfo = null;
-
-const parseDate = (value) => {
-    if (!value) return null;
-    const str = String(value).trim();
-    // Try common date formats
-    // MM/DD/YYYY or M/D/YYYY
-    let m = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
-    if (m) return `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;
-    // YYYY-MM-DD or YYYY/MM/DD
-    m = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
-    if (m) return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
-    // DD-Mon-YYYY (e.g., 15-Jan-2024)
-    const monthMap = {jan:'01',feb:'02',mar:'03',apr:'04',may:'05',jun:'06',jul:'07',aug:'08',sep:'09',oct:'10',nov:'11',dec:'12'};
-    m = str.match(/^(\d{1,2})[\/\-\s]([A-Za-z]{3})[\/\-\s](\d{4})$/);
-    if (m && monthMap[m[2].toLowerCase()]) {
-        return `${m[3]}-${monthMap[m[2].toLowerCase()]}-${m[1].padStart(2,'0')}`;
-    }
-    // DD/MM/YY (2-digit year, common in Indian bank statements)
-    m = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2})$/);
-    if (m) {
-        const year = parseInt(m[3]) + (parseInt(m[3]) > 50 ? 1900 : 2000);
-        return `${year}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
-    }
-    // Excel serial date number
-    if (/^\d{5}$/.test(str)) {
-        const d = new Date((parseInt(str) - 25569) * 86400000);
-        if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
-    }
-    // Last resort: native Date parse
-    const d = new Date(str);
-    if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
-    return null;
-};
-
-const parseAmount = (value) => {
-    if (value === null || value === undefined) return null;
-    if (typeof value === 'number') return Math.abs(value);
-    let str = String(value).trim();
-    // Handle parenthetical negatives: (45.00) → -45.00
-    const isParenNeg = /^\(.*\)$/.test(str);
-    if (isParenNeg) str = str.slice(1, -1);
-    // Detect European format: "1.234,56" (dot=thousands, comma=decimal)
-    // Heuristic: exactly one comma after the last dot → European decimal separator
-    // Multiple commas (e.g. "1,234,567") → US thousands separators
-    const commaCount = (str.match(/,/g) || []).length;
-    const lastDot = str.lastIndexOf('.');
-    const lastComma = str.lastIndexOf(',');
-    let cleaned;
-    if (commaCount === 1 && lastComma > lastDot) {
-        // European: remove dots (thousands), replace single comma with dot (decimal)
-        cleaned = str.replace(/[^0-9,\-]/g, '').replace(',', '.');
-    } else {
-        // Standard: remove everything except digits, dots, hyphens
-        cleaned = str.replace(/[^0-9.\-]/g, '');
-    }
-    const num = parseFloat(cleaned);
-    return isNaN(num) ? null : Math.abs(num);
-};
-
-const autoCategorize = (description) => {
-    const matches = suggestCategory(description);
-    return matches.length > 0 ? matches[0].category : 'other';
-};
-
-const detectColumns = (headers) => {
-    const lower = headers.map(h => String(h).toLowerCase().trim());
-    const result = { date: -1, description: -1, debit: -1, credit: -1, balance: -1 };
-    const assigned = new Set();
-
-    // Pass 1: date detection (highest priority)
-    for (let i = 0; i < lower.length; i++) {
-        if (result.date === -1 && /date|trans.*date|post.*date|value.*date/.test(lower[i])) {
-            result.date = i;
-            assigned.add(i);
-            break;
-        }
-    }
-
-    // Pass 2: debit/withdrawal detection
-    for (let i = 0; i < lower.length; i++) {
-        if (assigned.has(i)) continue;
-        if (result.debit === -1 && /\bdebit\b|\bdr\b|withdrawal|money\s*out|paid\s*out|expenses?|charges?|payment/.test(lower[i])) {
-            result.debit = i;
-            assigned.add(i);
-            break;
-        }
-    }
-
-    // Pass 3: credit/deposit detection
-    for (let i = 0; i < lower.length; i++) {
-        if (assigned.has(i)) continue;
-        if (result.credit === -1 && /\bcredit\b|\bcr\b|deposit|money\s*in|paid\s*in|income|received/.test(lower[i])) {
-            result.credit = i;
-            assigned.add(i);
-            break;
-        }
-    }
-
-    // Pass 4: balance detection
-    for (let i = 0; i < lower.length; i++) {
-        if (assigned.has(i)) continue;
-        if (result.balance === -1 && /balance|closing\s*bal|running\s*bal|available\s*bal|ledger\s*bal/.test(lower[i])) {
-            result.balance = i;
-            assigned.add(i);
-            break;
-        }
-    }
-
-    // Pass 5: description detection (skip columns already assigned)
-    for (let i = 0; i < lower.length; i++) {
-        if (assigned.has(i)) continue;
-        if (result.description === -1 && /desc|narration|particular|detail|memo|payee|merchant|transaction|reference/.test(lower[i])) {
-            result.description = i;
-            assigned.add(i);
-            break;
-        }
-    }
-
-    // Fallback: if no debit or credit column, try generic amount keywords → assign to debit
-    if (result.debit === -1 && result.credit === -1) {
-        for (let i = 0; i < lower.length; i++) {
-            if (assigned.has(i)) continue;
-            if (/amount|sum|total|value/.test(lower[i])) {
-                result.debit = i;
-                assigned.add(i);
-                break;
-            }
-        }
-    }
-
-    return result;
-};
-
-const parseCSVText = (text) => {
-    const lines = text.split(/\r?\n/).filter(l => l.trim());
-    if (lines.length < 2) return [];
-
-    // Detect delimiter (tab, comma, or pipe)
-    const firstLine = lines[0];
-    const tabCount = firstLine.split('\t').length;
-    const commaCount = firstLine.split(',').length;
-    const pipeCount = firstLine.split('|').length;
-    const delim = (pipeCount > tabCount && pipeCount > commaCount) ? '|' : (tabCount > commaCount ? '\t' : ',');
-
-    const splitRow = (line) => {
-        const fields = [];
-        let current = '';
-        let inQuotes = false;
-        for (let i = 0; i < line.length; i++) {
-            const ch = line[i];
-            if (ch === '"') {
-                if (inQuotes && i + 1 < line.length && line[i + 1] === '"') {
-                    // Escaped quote ("") inside quoted field → literal quote
-                    current += '"';
-                    i++;
-                } else {
-                    inQuotes = !inQuotes;
+        setupSelector() {
+            const select = document.getElementById('currency-select');
+            if (!select) return;
+            select.value = Currency.selected;
+            select.addEventListener('change', () => {
+                Currency.selected = select.value;
+                localStorage.setItem('selectedCurrency', select.value);
+                Expenses.render();
+                Debts.render();
+                Investments.render();
+                Income.render();
+                Dashboard.update();
+                Debts.updatePayoffPlan();
+                if (State.data.investmentProfile) {
+                    Investments.generateRecommendations();
+                    Investments.generateProjection();
                 }
-                continue;
-            }
-            if (ch === delim && !inQuotes) { fields.push(current.trim()); current = ''; continue; }
-            current += ch;
-        }
-        fields.push(current.trim());
-        return fields;
-    };
-
-    // Scan first 10 rows to find the best header row (bank statements often have info rows before headers)
-    let cols = { date: -1, description: -1, debit: -1, credit: -1, balance: -1 };
-    let dataStartIdx = 1;
-    let bestScore = 0;
-
-    const scanLimit = Math.min(lines.length - 1, 10);
-    for (let r = 0; r < scanLimit; r++) {
-        const testHeaders = splitRow(lines[r]);
-        const testCols = detectColumns(testHeaders);
-        let score = 0;
-        if (testCols.date >= 0) score++;
-        if (testCols.description >= 0) score++;
-        if (testCols.debit >= 0) score += 2;
-        if (testCols.credit >= 0) score += 2;
-        if (testCols.balance >= 0) score++;
-
-        if (score > bestScore) {
-            bestScore = score;
-            cols = testCols;
-            dataStartIdx = r + 1;
-        }
-    }
-
-    // Positional fallback: assume [date, description, debit] in first 3 columns
-    if (cols.date === -1 && cols.description === -1 && cols.debit === -1 && cols.credit === -1) {
-        if (splitRow(lines[0]).length >= 3) {
-            cols.date = 0; cols.description = 1; cols.debit = 2;
-            dataStartIdx = 1;
-        } else { return []; }
-    }
-
-    // Store column info for rendering
-    parsedColumnInfo = {
-        hasDebit: cols.debit >= 0,
-        hasCredit: cols.credit >= 0,
-        hasBalance: cols.balance >= 0
-    };
-
-    const transactions = [];
-    for (let i = dataStartIdx; i < lines.length; i++) {
-        const fields = splitRow(lines[i]);
-        if (fields.length < 2) continue;
-
-        const date = cols.date >= 0 ? parseDate(fields[cols.date]) : new Date().toISOString().split('T')[0];
-        const desc = cols.description >= 0 ? fields[cols.description] : '';
-
-        const debitRaw = cols.debit >= 0 ? parseAmount(fields[cols.debit]) : null;
-        const creditRaw = cols.credit >= 0 ? parseAmount(fields[cols.credit]) : null;
-        const balanceRaw = cols.balance >= 0 ? parseAmount(fields[cols.balance]) : null;
-
-        // Determine row type: debit (expense) or credit (income)
-        let rowType, amount;
-        if (debitRaw !== null && debitRaw > 0) {
-            rowType = 'debit';
-            amount = debitRaw;
-        } else if (creditRaw !== null && creditRaw > 0) {
-            rowType = 'credit';
-            amount = creditRaw;
-        } else {
-            continue; // Skip rows with no financial data
-        }
-
-        if (!desc && !amount) continue;
-
-        transactions.push({
-            id: generateId(),
-            date: date || new Date().toISOString().split('T')[0],
-            description: desc || 'Unnamed Transaction',
-            amount: amount,
-            category: autoCategorize(desc),
-            selected: rowType === 'debit',
-            rowType: rowType,
-            debitRaw: debitRaw,
-            creditRaw: creditRaw,
-            balanceRaw: balanceRaw
-        });
-    }
-    return transactions;
-};
-
-const parseExcelFile = (arrayBuffer) => {
-    try {
-        if (typeof XLSX === 'undefined') return [];
-        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
-
-        if (rows.length < 2) return [];
-
-        // Scan first 10 rows to find the best header row (bank statements often have info rows before headers)
-        let cols = { date: -1, description: -1, debit: -1, credit: -1, balance: -1 };
-        let dataStartIdx = 1;
-        let bestScore = 0;
-
-        const scanLimit = Math.min(rows.length - 1, 10);
-        for (let r = 0; r < scanLimit; r++) {
-            const testHeaders = rows[r].map(h => String(h));
-            const testCols = detectColumns(testHeaders);
-            let score = 0;
-            if (testCols.date >= 0) score++;
-            if (testCols.description >= 0) score++;
-            if (testCols.debit >= 0) score += 2; // Weight debit/credit detection higher
-            if (testCols.credit >= 0) score += 2;
-            if (testCols.balance >= 0) score++;
-
-            if (score > bestScore) {
-                bestScore = score;
-                cols = testCols;
-                dataStartIdx = r + 1;
-            }
-        }
-
-        // Positional fallback: assume [date, description, debit] in first 3 columns
-        if (cols.date === -1 && cols.description === -1 && cols.debit === -1 && cols.credit === -1) {
-            if (rows[0].length >= 3) {
-                cols.date = 0; cols.description = 1; cols.debit = 2;
-                dataStartIdx = 1;
-            } else { return []; }
-        }
-
-        // Store column info for rendering
-        parsedColumnInfo = {
-            hasDebit: cols.debit >= 0,
-            hasCredit: cols.credit >= 0,
-            hasBalance: cols.balance >= 0
-        };
-
-        const transactions = [];
-        for (let i = dataStartIdx; i < rows.length; i++) {
-            const row = rows[i];
-            if (!row || row.length < 2) continue;
-
-            const date = cols.date >= 0 ? parseDate(row[cols.date]) : new Date().toISOString().split('T')[0];
-            const desc = cols.description >= 0 ? String(row[cols.description]).trim() : '';
-
-            const debitRaw = cols.debit >= 0 ? parseAmount(row[cols.debit]) : null;
-            const creditRaw = cols.credit >= 0 ? parseAmount(row[cols.credit]) : null;
-            const balanceRaw = cols.balance >= 0 ? parseAmount(row[cols.balance]) : null;
-
-            // Determine row type: debit (expense) or credit (income)
-            let rowType, amount;
-            if (debitRaw !== null && debitRaw > 0) {
-                rowType = 'debit';
-                amount = debitRaw;
-            } else if (creditRaw !== null && creditRaw > 0) {
-                rowType = 'credit';
-                amount = creditRaw;
-            } else {
-                continue; // Skip rows with no financial data
-            }
-
-            if (!desc && !amount) continue;
-
-            transactions.push({
-                id: generateId(),
-                date: date || new Date().toISOString().split('T')[0],
-                description: desc || 'Unnamed Transaction',
-                amount: amount,
-                category: autoCategorize(desc),
-                selected: rowType === 'debit',
-                rowType: rowType,
-                debitRaw: debitRaw,
-                creditRaw: creditRaw,
-                balanceRaw: balanceRaw
+                if (Parser.pending.length > 0) {
+                    Parser.render(Parser.pending);
+                }
             });
         }
-        return transactions;
-    } catch (e) {
-        return [];
-    }
-};
-
-const renderParsedTransactions = (transactions) => {
-    pendingParsedTransactions = transactions;
-    const card = document.getElementById('parsed-transactions-card');
-    const table = document.getElementById('parsed-transactions-table');
-    const count = document.getElementById('parsed-count');
-
-    if (!transactions.length) {
-        card.style.display = 'none';
-        return;
-    }
-
-    card.style.display = 'block';
-
-    // Count debits and credits separately
-    const debitCount = transactions.filter(t => t.rowType === 'debit').length;
-    const creditCount = transactions.filter(t => t.rowType === 'credit').length;
-    if (creditCount > 0) {
-        count.textContent = `${transactions.length} transaction${transactions.length !== 1 ? 's' : ''} found (${debitCount} debit${debitCount !== 1 ? 's' : ''}, ${creditCount} credit${creditCount !== 1 ? 's' : ''})`;
-    } else {
-        count.textContent = `${transactions.length} transaction${transactions.length !== 1 ? 's' : ''} found`;
-    }
-
-    // If Upload section is hidden (user uploaded from Dashboard), switch to it
-    const uploadSection = document.getElementById('upload');
-    if (uploadSection && !uploadSection.classList.contains('active')) {
-        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-        uploadSection.classList.add('active');
-        document.querySelectorAll('.nav-links a').forEach(a => {
-            a.classList.toggle('active', a.getAttribute('href') === '#upload');
-        });
-    }
-
-    // Scroll card into view so it's not hidden below the upload zones
-    setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
-
-    const categories = ['housing', 'transportation', 'food', 'utilities', 'healthcare', 'entertainment', 'shopping', 'education', 'personal', 'other'];
-    const catOptions = categories.map(c => `<option value="${c}">${capitalizeFirst(c)}</option>`).join('');
-
-    // Determine which columns to show based on parsed file structure
-    const showCredit = parsedColumnInfo && parsedColumnInfo.hasCredit;
-    const showBalance = parsedColumnInfo && parsedColumnInfo.hasBalance;
-    const debitLabel = showCredit ? 'Debit' : 'Amount';
-
-    table.innerHTML = `
-        <div class="parsed-table-wrapper">
-            <table class="analytics-table parsed-table">
-                <thead><tr>
-                    <th><input type="checkbox" id="select-all-parsed"></th>
-                    <th>Date</th>
-                    <th>Description</th>
-                    <th>${debitLabel}</th>
-                    ${showCredit ? '<th>Credit</th>' : ''}
-                    ${showBalance ? '<th>Balance</th>' : ''}
-                    <th>Category</th>
-                </tr></thead>
-                <tbody>
-                    ${transactions.map((t, i) => `
-                        <tr data-idx="${i}" class="${t.rowType === 'credit' ? 'credit-row' : ''}">
-                            <td><input type="checkbox" class="parsed-check" data-idx="${i}" ${t.selected ? 'checked' : ''}></td>
-                            <td>${escapeHtml(t.date)}</td>
-                            <td>${escapeHtml(t.description)}</td>
-                            <td class="${(t.rowType === 'debit' || !t.rowType) ? 'expense' : ''}">${t.rowType === 'debit' && t.debitRaw != null ? formatCurrency(t.debitRaw) : (!t.rowType && t.amount ? formatCurrency(t.amount) : '')}</td>
-                            ${showCredit ? `<td class="${t.rowType === 'credit' ? 'income' : ''}">${t.creditRaw ? formatCurrency(t.creditRaw) : ''}</td>` : ''}
-                            ${showBalance ? `<td class="balance-col">${t.balanceRaw !== null ? formatCurrency(t.balanceRaw) : ''}</td>` : ''}
-                            <td>
-                                <select class="parsed-category" data-idx="${i}">
-                                    ${catOptions.replace(`value="${t.category}"`, `value="${t.category}" selected`)}
-                                </select>
-                            </td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        </div>
-    `;
-
-    // Set select-all checkbox state (indeterminate if mixed debit/credit selection)
-    const selectAll = document.getElementById('select-all-parsed');
-    const allChecked = transactions.every(t => t.selected);
-    const someChecked = transactions.some(t => t.selected);
-    selectAll.checked = allChecked;
-    selectAll.indeterminate = someChecked && !allChecked;
-
-    // Wire up select-all checkbox
-    selectAll.addEventListener('change', (e) => {
-        const checked = e.target.checked;
-        document.querySelectorAll('.parsed-check').forEach(cb => {
-            cb.checked = checked;
-            pendingParsedTransactions[parseInt(cb.dataset.idx)].selected = checked;
-        });
-    });
-
-    // Wire up individual checkboxes
-    table.querySelectorAll('.parsed-check').forEach(cb => {
-        cb.addEventListener('change', (e) => {
-            pendingParsedTransactions[parseInt(e.target.dataset.idx)].selected = e.target.checked;
-            // Update select-all state
-            const all = pendingParsedTransactions.every(t => t.selected);
-            const some = pendingParsedTransactions.some(t => t.selected);
-            selectAll.checked = all;
-            selectAll.indeterminate = some && !all;
-        });
-    });
-
-    // Wire up category selects
-    table.querySelectorAll('.parsed-category').forEach(sel => {
-        sel.addEventListener('change', (e) => {
-            pendingParsedTransactions[parseInt(e.target.dataset.idx)].category = e.target.value;
-        });
-    });
-};
-
-const importParsedTransactions = () => {
-    const toImport = pendingParsedTransactions.filter(t => t.selected);
-    if (toImport.length === 0) return;
-
-    toImport.forEach(t => {
-        state.expenses.push({
-            id: generateId(),
-            description: t.description,
-            amount: t.amount,
-            category: t.category,
-            date: t.date
-        });
-    });
-
-    saveState();
-    renderExpenses();
-    updateDashboard();
-
-    // Show success feedback then hide the parsed card
-    const card = document.getElementById('parsed-transactions-card');
-    const count = toImport.length;
-    card.innerHTML = `
-        <div class="empty-state" style="color: var(--success-color); padding: 1.5rem;">
-            <strong>${count} transaction${count !== 1 ? 's' : ''} imported successfully!</strong>
-            <p style="color: var(--text-secondary); margin-top: 0.5rem;">Check the Expenses tab to review your imported transactions.</p>
-        </div>
-    `;
-    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    setTimeout(() => { card.style.display = 'none'; }, 3000);
-    pendingParsedTransactions = [];
-    parsedColumnInfo = null;
-};
-
-const discardParsedTransactions = () => {
-    pendingParsedTransactions = [];
-    parsedColumnInfo = null;
-    document.getElementById('parsed-transactions-card').style.display = 'none';
-};
-
-const processFile = (file, type, previewContainer) => {
-    const upload = {
-        id: generateId(),
-        name: file.name,
-        size: file.size,
-        type: type,
-        date: new Date().toISOString(),
-        status: 'processing'
     };
 
-    const safeName = escapeHtml(file.name);
-    const isCSV = /\.csv$/i.test(file.name) || file.type === 'text/csv' || (/\.(tsv|txt)$/i.test(file.name) && file.type === 'text/plain');
-    const isExcel = /\.(xlsx|xls)$/i.test(file.name);
+    // ==================== STATE ====================
 
-    previewContainer.innerHTML = `
-        <div class="upload-preview-item">
-            <span class="file-icon">${type === 'expense' ? '📄' : '💵'}</span>
-            <div class="file-info">
-                <span class="file-name">${safeName}</span>
-                <span class="file-size">${formatFileSize(file.size)}</span>
-            </div>
-            <span class="file-status processing">Parsing...</span>
-        </div>
-    `;
-
-    const finalizeUpload = (transactions) => {
-        upload.status = 'success';
-        upload.transactionCount = transactions.length;
-        state.uploads.push(upload);
-        saveState();
-
-        const statusMsg = transactions.length > 0
-            ? `${transactions.length} transaction${transactions.length !== 1 ? 's' : ''} found`
-            : 'No transactions detected';
-
-        previewContainer.innerHTML = `
-            <div class="upload-preview-item">
-                <span class="file-icon">${type === 'expense' ? '📄' : '💵'}</span>
-                <div class="file-info">
-                    <span class="file-name">${safeName}</span>
-                    <span class="file-size">${formatFileSize(file.size)} &middot; ${statusMsg}</span>
-                </div>
-                <span class="file-status success">Parsed</span>
-            </div>
-        `;
-
-        renderUploadHistory();
-
-        if (transactions.length > 0 && type === 'expense') {
-            renderParsedTransactions(transactions);
-        } else if (type !== 'expense') {
-            addSampleIncome();
-        }
-    };
-
-    if (isCSV) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const transactions = parseCSVText(e.target.result);
-            finalizeUpload(transactions);
-        };
-        reader.onerror = () => finalizeUpload([]);
-        reader.readAsText(file);
-    } else if (isExcel) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const transactions = parseExcelFile(e.target.result);
-            finalizeUpload(transactions);
-        };
-        reader.onerror = () => finalizeUpload([]);
-        reader.readAsArrayBuffer(file);
-    } else {
-        // PDF or unsupported: can't parse client-side, record upload only
-        setTimeout(() => finalizeUpload([]), 500);
-    }
-};
-
-const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-};
-
-const renderUploadHistory = () => {
-    const container = document.getElementById('upload-history');
-
-    if (state.uploads.length === 0) {
-        container.innerHTML = '<p class="empty-state">No documents uploaded yet.</p>';
-        return;
-    }
-
-    container.innerHTML = state.uploads.map(upload => `
-        <div class="history-item" data-id="${escapeHtml(upload.id)}">
-            <span class="file-icon">${upload.type === 'expense' ? '📄' : '💵'}</span>
-            <div class="file-info">
-                <span class="file-name">${escapeHtml(upload.name)}</span>
-                <span class="file-date">${formatDate(upload.date)}${upload.transactionCount ? ` &middot; ${upload.transactionCount} transactions` : ''}</span>
-            </div>
-            <span class="file-status success">Processed</span>
-            <button class="delete-btn" onclick="deleteUpload('${escapeHtml(upload.id)}')">🗑️</button>
-        </div>
-    `).join('');
-};
-
-const deleteUpload = (id) => {
-    state.uploads = state.uploads.filter(u => u.id !== id);
-    saveState();
-    renderUploadHistory();
-};
-
-// Sample data functions (simulating file parsing)
-// Track whether sample data has been added to avoid duplicates (persisted)
-let sampleExpensesAdded = localStorage.getItem('sampleExpensesAdded') === 'true';
-let sampleIncomeAdded = localStorage.getItem('sampleIncomeAdded') === 'true';
-
-const addSampleExpenses = () => {
-    if (sampleExpensesAdded) return;
-    sampleExpensesAdded = true;
-    localStorage.setItem('sampleExpensesAdded', 'true');
-
-    const today = new Date().toISOString().split('T')[0];
-    const sampleExpenses = [
-        { description: 'Rent Payment', amount: 1500, category: 'housing', date: today },
-        { description: 'Grocery Shopping', amount: 250, category: 'food', date: today },
-        { description: 'Electric Bill', amount: 120, category: 'utilities', date: today },
-        { description: 'Gas', amount: 80, category: 'transportation', date: today },
-        { description: 'Internet', amount: 60, category: 'utilities', date: today }
-    ];
-
-    sampleExpenses.forEach(expense => {
-        state.expenses.push({ ...expense, id: generateId() });
-    });
-
-    saveState();
-    renderExpenses();
-    updateDashboard();
-};
-
-const addSampleIncome = () => {
-    if (sampleIncomeAdded) return;
-    sampleIncomeAdded = true;
-    localStorage.setItem('sampleIncomeAdded', 'true');
-
-    const sampleIncome = {
-        id: generateId(),
-        source: 'Primary Job',
-        amount: 5000,
-        type: 'salary'
-    };
-
-    state.incomes.push(sampleIncome);
-    saveState();
-    renderIncomes();
-    updateDashboard();
-};
-
-// Initialize upload zones
-setupUploadZone('expense-upload-zone', 'expense-file-input', 'expense-upload-preview', 'expense');
-setupUploadZone('payslip-upload-zone', 'payslip-file-input', 'payslip-upload-preview', 'payslip');
-
-// ==================== DASHBOARD ====================
-
-let expenseChart = null;
-
-const updateDashboard = () => {
-    // Calculate totals
-    const totalIncome = state.incomes.reduce((sum, inc) => sum + inc.amount, 0);
-    const totalExpenses = state.expenses.reduce((sum, exp) => sum + exp.amount, 0);
-    const totalDebt = state.debts.reduce((sum, debt) => sum + debt.balance, 0);
-    const netSavings = totalIncome - totalExpenses;
-
-    // Update summary cards
-    document.getElementById('total-income').textContent = formatCurrency(totalIncome);
-    document.getElementById('total-expenses').textContent = formatCurrency(totalExpenses);
-    document.getElementById('total-debt').textContent = formatCurrency(totalDebt);
-
-    const savingsEl = document.getElementById('net-savings');
-    savingsEl.textContent = formatCurrency(netSavings);
-    savingsEl.style.color = netSavings < 0 ? 'var(--danger-color)' : 'var(--primary-color)';
-
-    // Update health score
-    updateHealthScore(totalIncome, totalExpenses, totalDebt, netSavings);
-
-    // Update expense chart
-    updateExpenseChart();
-
-    // Update monthly analytics and yearly projection
-    renderMonthlyAnalytics();
-    renderYearlyProjection();
-};
-
-const updateHealthScore = (income, expenses, debt, savings) => {
-    const scoreCircle = document.getElementById('health-score');
-    const scoreValue = scoreCircle.querySelector('.score-value');
-    const healthMessage = document.getElementById('health-message');
-
-    if (income === 0 && expenses === 0 && debt === 0) {
-        scoreValue.textContent = '--';
-        healthMessage.textContent = 'Add your financial data to see your score';
-        scoreCircle.style.background = `conic-gradient(var(--border-color) 0deg, var(--border-color) 360deg)`;
-        return;
-    }
-
-    // Calculate health score (0-100)
-    let score = 50; // Base score
-
-    // Savings rate factor (up to +30 points)
-    if (income > 0) {
-        const savingsRate = savings / income;
-        score += Math.min(30, savingsRate * 100);
-    }
-
-    // Debt-to-income ratio factor (up to -30 points)
-    if (income > 0) {
-        const debtToIncome = debt / (income * 12);
-        score -= Math.min(30, debtToIncome * 15);
-    }
-
-    // Expense control factor (up to +20 points)
-    if (income > 0) {
-        const expenseRatio = expenses / income;
-        if (expenseRatio < 0.5) score += 20;
-        else if (expenseRatio < 0.7) score += 10;
-        else if (expenseRatio > 0.9) score -= 10;
-    }
-
-    score = Math.max(0, Math.min(100, Math.round(score)));
-
-    // Update display
-    scoreValue.textContent = score;
-
-    const angle = (score / 100) * 360;
-    let color = score >= 70 ? 'var(--success-color)' : score >= 40 ? 'var(--warning-color)' : 'var(--danger-color)';
-    scoreCircle.style.background = `conic-gradient(${color} 0deg, ${color} ${angle}deg, var(--border-color) ${angle}deg)`;
-
-    // Update message
-    if (score >= 80) {
-        healthMessage.textContent = 'Excellent! Your finances are in great shape. Keep up the good work!';
-    } else if (score >= 60) {
-        healthMessage.textContent = 'Good financial health. Consider increasing savings or paying down debt for an even better score.';
-    } else if (score >= 40) {
-        healthMessage.textContent = 'Fair financial health. Focus on reducing expenses and building an emergency fund.';
-    } else {
-        healthMessage.textContent = 'Your finances need attention. Consider creating a strict budget and prioritizing debt payoff.';
-    }
-};
-
-const updateExpenseChart = () => {
-    const canvas = document.getElementById('expense-chart');
-
-    if (state.expenses.length === 0) {
-        if (expenseChart) {
-            expenseChart.destroy();
-            expenseChart = null;
-        }
-        return;
-    }
-
-    // Group expenses by category
-    const categoryTotals = {};
-    state.expenses.forEach(expense => {
-        if (!categoryTotals[expense.category]) {
-            categoryTotals[expense.category] = 0;
-        }
-        categoryTotals[expense.category] += expense.amount;
-    });
-
-    const labels = Object.keys(categoryTotals).map(cat => capitalizeFirst(cat));
-    const data = Object.values(categoryTotals);
-
-    const colors = {
-        housing: '#3b82f6',
-        transportation: '#f59e0b',
-        food: '#10b981',
-        utilities: '#6366f1',
-        healthcare: '#ec4899',
-        entertainment: '#a855f7',
-        shopping: '#f97316',
-        education: '#14b8a6',
-        personal: '#d946ef',
-        other: '#64748b'
-    };
-
-    const backgroundColors = Object.keys(categoryTotals).map(cat => colors[cat] || colors.other);
-
-    if (expenseChart) {
-        expenseChart.destroy();
-    }
-
-    expenseChart = new Chart(canvas, {
-        type: 'doughnut',
+    const State = {
         data: {
-            labels: labels,
-            datasets: [{
-                data: data,
-                backgroundColor: backgroundColors,
-                borderWidth: 0
-            }]
+            expenses: Utils.safeParse('expenses', []),
+            debts: Utils.safeParse('debts', []),
+            investments: Utils.safeParse('investments', []),
+            incomes: Utils.safeParse('incomes', []),
+            uploads: Utils.safeParse('uploads', []),
+            investmentProfile: Utils.safeParse('investmentProfile', null)
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'right'
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percentage = ((context.raw / total) * 100).toFixed(1);
-                            return `${context.label}: ${formatCurrency(context.raw)} (${percentage}%)`;
-                        }
+
+        save(key) {
+            localStorage.setItem(key, JSON.stringify(State.data[key]));
+        },
+
+        modify(key, fn) {
+            fn(State.data[key]);
+            State.save(key);
+        },
+
+        set(key, value) {
+            State.data[key] = value;
+            State.save(key);
+        }
+    };
+
+    // ==================== NOTIFY (TOAST) ====================
+
+    const Notify = {
+        show(message, type, duration) {
+            type = type || 'info';
+            duration = duration || 3000;
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            const toast = document.createElement('div');
+            toast.className = 'toast toast-' + type;
+            toast.textContent = message;
+            container.appendChild(toast);
+            requestAnimationFrame(() => toast.classList.add('visible'));
+            setTimeout(() => {
+                toast.classList.remove('visible');
+                toast.addEventListener('transitionend', () => toast.remove());
+            }, duration);
+        }
+    };
+
+    // ==================== CATEGORY ENGINE ====================
+
+    const CategoryEngine = {
+        keywords: {
+            housing: ['rent', 'mortgage', 'lease', 'apartment', 'condo', 'property', 'hoa', 'home', 'house', 'landlord', 'tenant', 'real estate', 'down payment'],
+            transportation: ['gas', 'fuel', 'uber', 'lyft', 'taxi', 'bus', 'train', 'subway', 'metro', 'car', 'auto', 'parking', 'toll', 'oil change', 'tire', 'vehicle', 'mechanic', 'flight', 'airline'],
+            food: ['grocery', 'groceries', 'restaurant', 'dining', 'coffee', 'lunch', 'dinner', 'breakfast', 'takeout', 'delivery', 'doordash', 'grubhub', 'ubereats', 'pizza', 'food', 'meal', 'snack', 'cafe', 'bar', 'drink'],
+            utilities: ['electric', 'electricity', 'water', 'gas bill', 'internet', 'wifi', 'phone', 'mobile', 'cable', 'trash', 'sewage', 'heating', 'cooling', 'power'],
+            healthcare: ['doctor', 'hospital', 'pharmacy', 'medicine', 'prescription', 'dental', 'dentist', 'vision', 'therapy', 'clinic', 'health', 'medical', 'lab', 'insurance premium', 'copay'],
+            entertainment: ['movie', 'netflix', 'spotify', 'hulu', 'disney', 'concert', 'theater', 'game', 'gaming', 'subscription', 'streaming', 'music', 'book', 'hobby', 'sport', 'gym', 'fitness'],
+            shopping: ['amazon', 'walmart', 'target', 'clothing', 'clothes', 'shoes', 'electronics', 'furniture', 'appliance', 'gift', 'online', 'store', 'mall', 'purchase'],
+            education: ['tuition', 'textbook', 'course', 'class', 'school', 'college', 'university', 'student', 'loan', 'training', 'certification', 'exam', 'udemy', 'coursera'],
+            personal: ['haircut', 'salon', 'spa', 'skincare', 'makeup', 'laundry', 'dry clean', 'grooming', 'barber', 'nail', 'massage', 'cosmetics']
+        },
+
+        labels: {
+            housing: 'Housing', transportation: 'Transportation', food: 'Food & Groceries',
+            utilities: 'Utilities', healthcare: 'Healthcare', entertainment: 'Entertainment',
+            shopping: 'Shopping', education: 'Education', personal: 'Personal Care', other: 'Other'
+        },
+
+        colors: {
+            housing: '#dbeafe;color:#1e40af', transportation: '#fef3c7;color:#92400e',
+            food: '#d1fae5;color:#065f46', utilities: '#e0e7ff;color:#3730a3',
+            healthcare: '#fce7f3;color:#9d174d', entertainment: '#fae8ff;color:#86198f',
+            shopping: '#fed7aa;color:#c2410c', education: '#ccfbf1;color:#0f766e',
+            personal: '#f5d0fe;color:#a21caf', other: '#e2e8f0;color:#475569'
+        },
+
+        suggest(description) {
+            const lower = description.toLowerCase().trim();
+            if (lower.length < 2) return [];
+            const matches = [];
+            for (const [category, keywords] of Object.entries(CategoryEngine.keywords)) {
+                for (const keyword of keywords) {
+                    if (keyword.includes(lower) || lower.includes(keyword)) {
+                        const score = keyword === lower ? 100 : keyword.startsWith(lower) ? 80 : 60;
+                        matches.push({ category, keyword, score });
                     }
                 }
             }
-        }
-    });
-};
+            const best = {};
+            for (const m of matches) {
+                if (!best[m.category] || m.score > best[m.category].score) {
+                    best[m.category] = m;
+                }
+            }
+            return Object.values(best).sort((a, b) => b.score - a.score).slice(0, 5);
+        },
 
-// ==================== ANONYMIZATION ENGINE ====================
+        autoDetect(description) {
+            const suggestions = CategoryEngine.suggest(description);
+            return suggestions.length > 0 ? suggestions[0].category : 'other';
+        },
 
-const anonymizeText = (text) => {
-    let result = text;
-    const redact = (label) => `[${label} REDACTED]`;
-
-    // SSN patterns: 123-45-6789 or 123 45 6789 (require at least one separator to avoid catching routing numbers)
-    result = result.replace(/\b\d{3}[-\s]\d{2}[-\s]\d{4}\b/g, redact('SSN'));
-
-    // Credit/debit card numbers: 4 groups of 4 digits
-    result = result.replace(/\b\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}\b/g, redact('CARD'));
-
-    // Routing numbers: exactly 9 consecutive digits (must run before account to avoid being swallowed)
-    result = result.replace(/\b\d{9}\b/g, redact('ROUTING'));
-
-    // Bank account numbers: 8 or 10-17 consecutive digits (skip 9 which is routing)
-    result = result.replace(/\b(?:\d{8}|\d{10,17})\b/g, redact('ACCOUNT'));
-
-    // Email addresses
-    result = result.replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, redact('EMAIL'));
-
-    // Phone numbers: various formats
-    result = result.replace(/(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b/g, redact('PHONE'));
-
-    // Names after common labels (Name:, Account Holder:, etc.)
-    result = result.replace(/((?:name|account\s*holder|customer|client|employee|recipient|beneficiary)\s*[:]\s*)([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/gi,
-        (match, label) => label + redact('NAME'));
-
-    // Addresses (street number + street name pattern)
-    result = result.replace(/\b\d{1,5}\s+[A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*\s+(?:St|Street|Ave|Avenue|Blvd|Boulevard|Dr|Drive|Ln|Lane|Rd|Road|Ct|Court|Way|Pl|Place)\b\.?/gi,
-        redact('ADDRESS'));
-
-    return result;
-};
-
-const renderAnonymizedPreview = (text, container) => {
-    const anonymized = anonymizeText(text);
-    // HTML-escape the anonymized text first to prevent XSS from file content
-    const escaped = escapeHtml(anonymized);
-    // Then highlight redacted portions (these are safe, generated by our code)
-    const highlighted = escaped.replace(/\[([\w\s]+) REDACTED\]/g,
-        '<span class="redacted">[$1 REDACTED]</span>');
-    container.innerHTML = `
-        <div class="anonymize-notice">
-            <span class="lock-icon">🔒</span>
-            <div>
-                <strong>Privacy Protected</strong>
-                <p>Personal details have been automatically redacted from the uploaded file.</p>
-            </div>
-        </div>
-        <div class="anonymized-preview">${highlighted}</div>
-    `;
-};
-
-// Dashboard quick upload zone
-const setupDashboardUpload = () => {
-    const zone = document.getElementById('dashboard-upload-zone');
-    const input = document.getElementById('dashboard-file-input');
-    const preview = document.getElementById('dashboard-upload-preview');
-    const results = document.getElementById('dashboard-upload-results');
-
-    if (!zone) return;
-
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        zone.addEventListener(eventName, (e) => { e.preventDefault(); e.stopPropagation(); }, false);
-    });
-    ['dragenter', 'dragover'].forEach(eventName => {
-        zone.addEventListener(eventName, () => zone.classList.add('dragover'), false);
-    });
-    ['dragleave', 'drop'].forEach(eventName => {
-        zone.addEventListener(eventName, () => zone.classList.remove('dragover'), false);
-    });
-
-    const handleDashboardFile = (file) => {
-        const safeName = escapeHtml(file.name);
-        const isPayslip = /payslip|salary|wage|pay\s*stub/i.test(file.name);
-        const fileType = isPayslip ? 'payslip' : 'expense';
-
-        preview.innerHTML = `
-            <div class="upload-preview-item">
-                <span class="file-icon">${isPayslip ? '💵' : '📄'}</span>
-                <div class="file-info">
-                    <span class="file-name">${safeName}</span>
-                    <span class="file-size">${formatFileSize(file.size)}</span>
-                </div>
-                <span class="file-status processing">Processing & anonymizing...</span>
-            </div>
-        `;
-
-        // Read file if it's a text-based format for anonymization demo
-        if (file.name.endsWith('.csv') || file.type === 'text/csv' || file.type === 'text/plain') {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const rawText = e.target.result;
-                renderAnonymizedPreview(rawText, results);
-                finalizeDashboardUpload(file, fileType, safeName, preview);
-            };
-            reader.readAsText(file);
-        } else {
-            // For binary files, show a simulated anonymization notice
-            const simulatedContent = `File: ${safeName}\nName: [NAME REDACTED]\nAccount: [ACCOUNT REDACTED]\nProcessed: ${new Date().toLocaleDateString()}`;
-            renderAnonymizedPreview(simulatedContent, results);
-            finalizeDashboardUpload(file, fileType, safeName, preview);
+        optionsHtml(selected) {
+            return Object.entries(CategoryEngine.labels).map(([value, label]) =>
+                `<option value="${value}"${value === selected ? ' selected' : ''}>${label}</option>`
+            ).join('');
         }
     };
 
-    const finalizeDashboardUpload = (file, fileType, safeName, previewEl) => {
-        setTimeout(() => {
+    // ==================== ANONYMIZER ====================
+
+    const Anonymizer = {
+        patterns: [
+            { regex: /\b[A-Z][a-z]+\s[A-Z][a-z]+\b/g, replacement: '[REDACTED NAME]' },
+            { regex: /\b\d{3}-\d{2}-\d{4}\b/g, replacement: '[REDACTED SSN]' },
+            { regex: /\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g, replacement: '[REDACTED CARD]' },
+            { regex: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g, replacement: '[REDACTED EMAIL]' },
+            { regex: /\b\d{9,18}\b/g, replacement: '[REDACTED ACCOUNT]' },
+            { regex: /\(\d{3}\)\s?\d{3}-\d{4}/g, replacement: '[REDACTED PHONE]' },
+            { regex: /\b\d{3}-\d{3}-\d{4}\b/g, replacement: '[REDACTED PHONE]' }
+        ],
+
+        anonymize(text) {
+            let result = text;
+            Anonymizer.patterns.forEach(p => { result = result.replace(p.regex, p.replacement); });
+            return result;
+        },
+
+        renderPreview(text, container) {
+            let html = Utils.escapeHtml(text);
+            html = html.replace(/\[REDACTED[^\]]*\]/g, '<span class="redacted">$&</span>');
+            container.innerHTML = '<div class="anonymized-preview">' + html + '</div>';
+        }
+    };
+
+    // ==================== PARSER ====================
+
+    const Parser = {
+        pending: [],
+        columnInfo: null,
+
+        parseDate(value) {
+            if (!value) return null;
+            const str = String(value).trim();
+            if (!str) return null;
+
+            // Already YYYY-MM-DD
+            let m = str.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (m) return str;
+
+            // MM/DD/YYYY or MM-DD-YYYY
+            m = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+            if (m) return `${m[3]}-${m[1].padStart(2, '0')}-${m[2].padStart(2, '0')}`;
+
+            // DD/MM/YY (2-digit year, 50-year pivot)
+            m = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2})$/);
+            if (m) {
+                const year = parseInt(m[3]) + (parseInt(m[3]) > 50 ? 1900 : 2000);
+                return `${year}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+            }
+
+            // Excel serial date number
+            if (/^\d{5}$/.test(str)) {
+                const serial = parseInt(str);
+                const epoch = new Date(1899, 11, 30);
+                const date = new Date(epoch.getTime() + serial * 86400000);
+                return date.toISOString().split('T')[0];
+            }
+
+            // Natural language date
+            const d = new Date(str);
+            if (!isNaN(d.getTime())) {
+                return d.toISOString().split('T')[0];
+            }
+            return null;
+        },
+
+        parseAmount(value) {
+            if (value === null || value === undefined || String(value).trim() === '') return null;
+            if (typeof value === 'number') return value;
+            const cleaned = String(value).replace(/[^0-9.\-,]/g, '').replace(/,/g, '');
+            const num = parseFloat(cleaned);
+            return isNaN(num) ? null : Math.abs(num);
+        },
+
+        detectColumns(headers) {
+            const lower = headers.map(h => String(h).toLowerCase().trim());
+            const result = { date: -1, description: -1, debit: -1, credit: -1, balance: -1 };
+            const assigned = new Set();
+
+            // Pass 1: Date
+            for (let i = 0; i < lower.length; i++) {
+                if (/\bdate\b/.test(lower[i]) && !/\bvalue\b/.test(lower[i])) {
+                    result.date = i; assigned.add(i); break;
+                }
+            }
+            if (result.date === -1) {
+                for (let i = 0; i < lower.length; i++) {
+                    if (/\bdate\b/.test(lower[i]) && !assigned.has(i)) {
+                        result.date = i; assigned.add(i); break;
+                    }
+                }
+            }
+
+            // Pass 2: Debit / Withdrawal
+            for (let i = 0; i < lower.length; i++) {
+                if (assigned.has(i)) continue;
+                if (/\b(debit|withdrawal|withdraw|expense|spent|paid|payment)\b/.test(lower[i])) {
+                    result.debit = i; assigned.add(i); break;
+                }
+            }
+
+            // Pass 3: Credit / Deposit
+            for (let i = 0; i < lower.length; i++) {
+                if (assigned.has(i)) continue;
+                if (/\b(credit|deposit|income|received|refund)\b/.test(lower[i])) {
+                    result.credit = i; assigned.add(i); break;
+                }
+            }
+
+            // Pass 4: Balance
+            for (let i = 0; i < lower.length; i++) {
+                if (assigned.has(i)) continue;
+                if (/\b(balance|closing|running|total)\b/.test(lower[i])) {
+                    result.balance = i; assigned.add(i); break;
+                }
+            }
+
+            // Pass 5: Description / Narration
+            for (let i = 0; i < lower.length; i++) {
+                if (assigned.has(i)) continue;
+                if (/\b(desc|narr|particular|detail|memo|note|reference|remark|transaction)\b/.test(lower[i])) {
+                    result.description = i; assigned.add(i); break;
+                }
+            }
+
+            // Fallback: generic "amount" → debit
+            if (result.debit === -1 && result.credit === -1) {
+                for (let i = 0; i < lower.length; i++) {
+                    if (assigned.has(i)) continue;
+                    if (/\b(amount|sum|value|cost|price|total)\b/.test(lower[i]) && !/\bdate\b/.test(lower[i])) {
+                        result.debit = i; assigned.add(i); break;
+                    }
+                }
+            }
+
+            return result;
+        },
+
+        parseRows(rows) {
+            if (rows.length < 2) return [];
+
+            // Scan first 10 rows for best header row
+            let cols = { date: -1, description: -1, debit: -1, credit: -1, balance: -1 };
+            let dataStartIdx = 1;
+            let bestScore = 0;
+            const scanLimit = Math.min(rows.length - 1, 10);
+
+            for (let r = 0; r < scanLimit; r++) {
+                const testHeaders = rows[r].map(h => String(h));
+                const testCols = Parser.detectColumns(testHeaders);
+                let score = 0;
+                if (testCols.date >= 0) score++;
+                if (testCols.description >= 0) score++;
+                if (testCols.debit >= 0) score += 2;
+                if (testCols.credit >= 0) score += 2;
+                if (testCols.balance >= 0) score++;
+                if (score > bestScore) {
+                    bestScore = score;
+                    cols = testCols;
+                    dataStartIdx = r + 1;
+                }
+            }
+
+            // Positional fallback
+            if (cols.date === -1 && cols.description === -1 && cols.debit === -1 && cols.credit === -1) {
+                if (rows[0].length >= 3) {
+                    cols.date = 0; cols.description = 1; cols.debit = 2;
+                    dataStartIdx = 1;
+                } else { return []; }
+            }
+
+            Parser.columnInfo = {
+                hasDebit: cols.debit >= 0,
+                hasCredit: cols.credit >= 0,
+                hasBalance: cols.balance >= 0
+            };
+
+            const transactions = [];
+            for (let i = dataStartIdx; i < rows.length; i++) {
+                const row = rows[i];
+                if (!row || row.length < 2) continue;
+
+                const date = cols.date >= 0 ? Parser.parseDate(row[cols.date]) : null;
+                const desc = cols.description >= 0 ? String(row[cols.description] || '').trim() : '';
+                const debitRaw = cols.debit >= 0 ? Parser.parseAmount(row[cols.debit]) : null;
+                const creditRaw = cols.credit >= 0 ? Parser.parseAmount(row[cols.credit]) : null;
+                const balanceRaw = cols.balance >= 0 ? Parser.parseAmount(row[cols.balance]) : null;
+
+                let rowType, amount;
+                if (debitRaw !== null && debitRaw > 0) {
+                    rowType = 'debit'; amount = debitRaw;
+                } else if (creditRaw !== null && creditRaw > 0) {
+                    rowType = 'credit'; amount = creditRaw;
+                } else { continue; }
+
+                if (!desc && !amount) continue;
+
+                transactions.push({
+                    id: Utils.generateId(),
+                    date: date || new Date().toISOString().split('T')[0],
+                    description: desc || 'Unnamed Transaction',
+                    amount,
+                    category: CategoryEngine.autoDetect(desc),
+                    selected: rowType === 'debit',
+                    rowType,
+                    debitRaw,
+                    creditRaw,
+                    balanceRaw
+                });
+            }
+            return transactions;
+        },
+
+        parseCSV(text) {
+            const lines = text.split(/\r?\n/).filter(l => l.trim());
+            if (lines.length < 2) return [];
+
+            // Detect delimiter
+            const firstLine = lines[0];
+            let delimiter = ',';
+            if (firstLine.includes('\t') && (firstLine.split('\t').length > firstLine.split(',').length)) {
+                delimiter = '\t';
+            } else if (firstLine.includes(';') && !firstLine.includes(',')) {
+                delimiter = ';';
+            } else if (firstLine.includes('|') && (firstLine.split('|').length > firstLine.split(',').length)) {
+                delimiter = '|';
+            }
+
+            const splitRow = (line) => {
+                if (delimiter !== ',') return line.split(delimiter).map(c => c.trim());
+                const cells = [];
+                let current = '';
+                let inQuotes = false;
+                for (const char of line) {
+                    if (char === '"') { inQuotes = !inQuotes; }
+                    else if (char === ',' && !inQuotes) { cells.push(current.trim()); current = ''; }
+                    else { current += char; }
+                }
+                cells.push(current.trim());
+                return cells;
+            };
+
+            const rows = lines.map(splitRow);
+            return Parser.parseRows(rows);
+        },
+
+        parseExcel(arrayBuffer) {
+            try {
+                if (typeof XLSX === 'undefined') return [];
+                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
+                return Parser.parseRows(rows);
+            } catch { return []; }
+        },
+
+        render(transactions) {
+            Parser.pending = transactions;
+            const card = document.getElementById('parsed-transactions-card');
+            const tableContainer = document.getElementById('parsed-transactions-table');
+            const countEl = document.getElementById('parsed-count');
+            if (!card || !tableContainer) return;
+
+            if (transactions.length === 0) {
+                card.style.display = 'none';
+                return;
+            }
+            card.style.display = '';
+
+            const info = Parser.columnInfo || {};
+            const hasDebit = info.hasDebit;
+            const hasCredit = info.hasCredit;
+            const hasBalance = info.hasBalance;
+
+            // Build header
+            let headerHtml = '<th><input type="checkbox" id="select-all-parsed" checked></th><th>Date</th><th>Description</th>';
+            if (hasDebit) headerHtml += '<th>Debit</th>';
+            if (hasCredit) headerHtml += '<th>Credit</th>';
+            if (!hasDebit && !hasCredit) headerHtml += '<th>Amount</th>';
+            if (hasBalance) headerHtml += '<th>Balance</th>';
+            headerHtml += '<th>Category</th>';
+
+            // Build rows
+            let rowsHtml = '';
+            transactions.forEach((t, idx) => {
+                const rowClass = t.rowType === 'credit' ? ' class="credit-row"' : '';
+                rowsHtml += `<tr${rowClass}>`;
+                rowsHtml += `<td><input type="checkbox" data-parsed-idx="${idx}" ${t.selected ? 'checked' : ''}></td>`;
+                rowsHtml += `<td>${Utils.escapeHtml(t.date)}</td>`;
+                rowsHtml += `<td>${Utils.escapeHtml(t.description)}</td>`;
+
+                if (hasDebit) {
+                    rowsHtml += `<td class="expense">${t.debitRaw != null && t.debitRaw > 0 ? Currency.format(t.debitRaw) : ''}</td>`;
+                }
+                if (hasCredit) {
+                    rowsHtml += `<td class="income">${t.creditRaw != null && t.creditRaw > 0 ? Currency.format(t.creditRaw) : ''}</td>`;
+                }
+                if (!hasDebit && !hasCredit) {
+                    rowsHtml += `<td class="expense">${Currency.format(t.amount)}</td>`;
+                }
+                if (hasBalance) {
+                    rowsHtml += `<td class="balance-col">${t.balanceRaw != null ? Currency.format(t.balanceRaw) : ''}</td>`;
+                }
+
+                rowsHtml += `<td><select class="parsed-category" data-parsed-cat-idx="${idx}">${CategoryEngine.optionsHtml(t.category)}</select></td>`;
+                rowsHtml += '</tr>';
+            });
+
+            tableContainer.innerHTML = `
+                <div class="parsed-table-wrapper">
+                    <table class="analytics-table parsed-table">
+                        <thead><tr>${headerHtml}</tr></thead>
+                        <tbody>${rowsHtml}</tbody>
+                    </table>
+                </div>`;
+
+            // Select-all checkbox
+            const selectAll = document.getElementById('select-all-parsed');
+            if (selectAll) {
+                selectAll.addEventListener('change', () => {
+                    transactions.forEach(t => { t.selected = selectAll.checked; });
+                    tableContainer.querySelectorAll('input[data-parsed-idx]').forEach(cb => {
+                        cb.checked = selectAll.checked;
+                    });
+                    Parser.updateCount();
+                });
+            }
+
+            // Row checkboxes
+            tableContainer.querySelectorAll('input[data-parsed-idx]').forEach(cb => {
+                cb.addEventListener('change', () => {
+                    const idx = parseInt(cb.dataset.parsedIdx);
+                    transactions[idx].selected = cb.checked;
+                    // Update select-all indeterminate state
+                    const checked = transactions.filter(t => t.selected).length;
+                    if (selectAll) {
+                        selectAll.checked = checked === transactions.length;
+                        selectAll.indeterminate = checked > 0 && checked < transactions.length;
+                    }
+                    Parser.updateCount();
+                });
+            });
+
+            // Category selects
+            tableContainer.querySelectorAll('select[data-parsed-cat-idx]').forEach(sel => {
+                sel.addEventListener('change', () => {
+                    const idx = parseInt(sel.dataset.parsedCatIdx);
+                    transactions[idx].category = sel.value;
+                });
+            });
+
+            // Initial indeterminate state
+            const checkedCount = transactions.filter(t => t.selected).length;
+            if (selectAll) {
+                selectAll.checked = checkedCount === transactions.length;
+                selectAll.indeterminate = checkedCount > 0 && checkedCount < transactions.length;
+            }
+
+            Parser.updateCount();
+        },
+
+        updateCount() {
+            const countEl = document.getElementById('parsed-count');
+            if (!countEl) return;
+            const selected = Parser.pending.filter(t => t.selected).length;
+            countEl.textContent = `${selected} of ${Parser.pending.length} selected for import`;
+        },
+
+        import() {
+            const toImport = Parser.pending.filter(t => t.selected);
+            if (toImport.length === 0) {
+                Notify.show('No transactions selected for import', 'warning');
+                return;
+            }
+
+            toImport.forEach(t => {
+                State.data.expenses.push({
+                    id: Utils.generateId(),
+                    description: t.description,
+                    amount: t.amount,
+                    category: t.category,
+                    date: t.date
+                });
+            });
+            State.save('expenses');
+
+            Parser.pending = [];
+            Parser.columnInfo = null;
+            document.getElementById('parsed-transactions-card').style.display = 'none';
+
+            Expenses.render();
+            Dashboard.update();
+            Notify.show(toImport.length + ' transactions imported', 'success');
+        },
+
+        discard() {
+            Parser.pending = [];
+            Parser.columnInfo = null;
+            document.getElementById('parsed-transactions-card').style.display = 'none';
+            Notify.show('Parsed transactions discarded', 'info');
+        }
+    };
+
+    // ==================== EXPENSES ====================
+
+    const Expenses = {
+        render(filter) {
+            filter = filter || document.getElementById('filter-category').value || 'all';
+            const container = document.getElementById('expense-list');
+            if (!container) return;
+
+            let expenses = [...State.data.expenses].sort((a, b) => new Date(b.date) - new Date(a.date));
+            if (filter !== 'all') {
+                expenses = expenses.filter(e => e.category === filter);
+            }
+
+            if (expenses.length === 0) {
+                container.innerHTML = '<p class="empty-state">No expenses recorded yet. Add your first expense above.</p>';
+                return;
+            }
+
+            container.innerHTML = expenses.map(exp => `
+                <div class="expense-item" id="expense-${exp.id}">
+                    <div class="item-info">
+                        <h4>${Utils.escapeHtml(exp.description)}</h4>
+                        <p>${Utils.formatDate(exp.date)}</p>
+                        <span class="category-tag ${exp.category}">${CategoryEngine.labels[exp.category] || exp.category}</span>
+                    </div>
+                    <span class="item-amount expense">${Currency.format(exp.amount)}</span>
+                    <button class="edit-btn" data-action="edit-expense" data-id="${exp.id}" aria-label="Edit expense" title="Edit">&#9998;</button>
+                    <button class="delete-btn" data-action="delete-expense" data-id="${exp.id}" aria-label="Delete expense" title="Delete">&#128465;</button>
+                </div>
+            `).join('');
+        },
+
+        add(e) {
+            e.preventDefault();
+            const description = document.getElementById('expense-description').value.trim();
+            const amount = parseFloat(document.getElementById('expense-amount').value);
+            const category = document.getElementById('expense-category').value;
+            const date = document.getElementById('expense-date').value;
+
+            if (!description || !amount || !category || !date) return;
+
+            State.modify('expenses', arr => arr.push({
+                id: Utils.generateId(),
+                description, amount, category, date
+            }));
+
+            e.target.reset();
+            document.getElementById('expense-date').valueAsDate = new Date();
+            Expenses.render();
+            Dashboard.update();
+            Notify.show('Expense added', 'success');
+        },
+
+        delete(id) {
+            State.set('expenses', State.data.expenses.filter(e => e.id !== id));
+            Expenses.render();
+            Dashboard.update();
+            Notify.show('Expense deleted', 'info');
+        },
+
+        edit(id) {
+            const exp = State.data.expenses.find(e => e.id === id);
+            if (!exp) return;
+            const el = document.getElementById('expense-' + id);
+            if (!el) return;
+
+            el.className = 'expense-item editing';
+            el.innerHTML = `
+                <div class="edit-form">
+                    <div class="edit-row">
+                        <div class="edit-field">
+                            <label>Description</label>
+                            <input type="text" class="edit-input" id="edit-desc-${id}" value="${Utils.escapeHtml(exp.description)}">
+                        </div>
+                        <div class="edit-field">
+                            <label>Amount</label>
+                            <input type="number" class="edit-input" id="edit-amount-${id}" step="0.01" value="${exp.amount}">
+                        </div>
+                    </div>
+                    <div class="edit-row">
+                        <div class="edit-field">
+                            <label>Category</label>
+                            <select class="edit-input" id="edit-cat-${id}">
+                                ${CategoryEngine.optionsHtml(exp.category)}
+                            </select>
+                        </div>
+                        <div class="edit-field">
+                            <label>Date</label>
+                            <input type="date" class="edit-input" id="edit-date-${id}" value="${exp.date}">
+                        </div>
+                    </div>
+                    <div class="edit-actions">
+                        <button class="btn btn-primary btn-sm" data-action="save-expense-edit" data-id="${id}">Save</button>
+                        <button class="btn btn-secondary btn-sm" data-action="cancel-expense-edit">Cancel</button>
+                    </div>
+                </div>`;
+        },
+
+        saveEdit(id) {
+            const desc = document.getElementById('edit-desc-' + id);
+            const amount = document.getElementById('edit-amount-' + id);
+            const cat = document.getElementById('edit-cat-' + id);
+            const date = document.getElementById('edit-date-' + id);
+            if (!desc || !amount || !cat || !date) return;
+
+            const exp = State.data.expenses.find(e => e.id === id);
+            if (!exp) return;
+
+            exp.description = desc.value.trim();
+            exp.amount = parseFloat(amount.value);
+            exp.category = cat.value;
+            exp.date = date.value;
+            State.save('expenses');
+
+            Expenses.render();
+            Dashboard.update();
+            Notify.show('Expense updated', 'success');
+        },
+
+        cancelEdit() {
+            Expenses.render();
+        }
+    };
+
+    // ==================== DEBTS ====================
+
+    const Debts = {
+        render() {
+            const container = document.getElementById('debt-list');
+            if (!container) return;
+
+            if (State.data.debts.length === 0) {
+                container.innerHTML = '<p class="empty-state">No debts recorded. Add your debts to get a personalized payoff plan.</p>';
+                Debts.updatePayoffPlan();
+                return;
+            }
+
+            container.innerHTML = State.data.debts.map(debt => `
+                <div class="debt-item">
+                    <div class="item-info">
+                        <h4>${Utils.escapeHtml(debt.name)}</h4>
+                        <p>${Utils.capitalizeFirst(debt.type.replace('-', ' '))} &bull; ${debt.rate}% APR</p>
+                        <p>Min payment: ${Currency.format(debt.minimum)}/mo</p>
+                    </div>
+                    <span class="item-amount debt">${Currency.format(debt.balance)}</span>
+                    <button class="delete-btn" data-action="delete-debt" data-id="${debt.id}" aria-label="Delete debt" title="Delete">&#128465;</button>
+                </div>
+            `).join('');
+
+            Debts.updatePayoffPlan();
+        },
+
+        add(e) {
+            e.preventDefault();
+            const name = document.getElementById('debt-name').value.trim();
+            const balance = parseFloat(document.getElementById('debt-balance').value);
+            const rate = parseFloat(document.getElementById('debt-rate').value);
+            const minimum = parseFloat(document.getElementById('debt-minimum').value);
+            const type = document.getElementById('debt-type').value;
+
+            if (!name || !balance || !rate || !minimum || !type) return;
+
+            State.modify('debts', arr => arr.push({
+                id: Utils.generateId(),
+                name, balance, rate, minimum, type
+            }));
+
+            e.target.reset();
+            Debts.render();
+            Dashboard.update();
+            Notify.show('Debt added', 'success');
+        },
+
+        delete(id) {
+            State.set('debts', State.data.debts.filter(d => d.id !== id));
+            Debts.render();
+            Dashboard.update();
+            Notify.show('Debt deleted', 'info');
+        },
+
+        updatePayoffPlan() {
+            const activeTab = document.querySelector('.strategy-tab.active');
+            const strategy = activeTab ? activeTab.dataset.strategy : 'avalanche';
+            const infoEl = document.querySelector('.strategy-info');
+            const planEl = document.getElementById('payoff-plan');
+
+            if (infoEl) {
+                if (strategy === 'avalanche') {
+                    infoEl.innerHTML = '<h4>Avalanche Method</h4><p>Pay off debts with the highest interest rate first. This saves the most money on interest over time.</p>';
+                } else {
+                    infoEl.innerHTML = '<h4>Snowball Method</h4><p>Pay off debts with the smallest balance first. This builds momentum and motivation with quick wins.</p>';
+                }
+            }
+
+            if (!planEl) return;
+
+            if (State.data.debts.length === 0) {
+                planEl.innerHTML = '<p class="empty-state">Add debts to see your recommended payoff order.</p>';
+                return;
+            }
+
+            const sorted = [...State.data.debts].sort((a, b) =>
+                strategy === 'avalanche' ? b.rate - a.rate : a.balance - b.balance
+            );
+
+            planEl.innerHTML = sorted.map((debt, i) => `
+                <div class="payoff-item">
+                    <div class="payoff-order">${i + 1}</div>
+                    <div class="payoff-details">
+                        <h4>${Utils.escapeHtml(debt.name)}</h4>
+                        <p>Balance: ${Currency.format(debt.balance)} &bull; Rate: ${debt.rate}% &bull; Min: ${Currency.format(debt.minimum)}/mo</p>
+                    </div>
+                </div>
+            `).join('');
+        },
+
+        calculateTimeline(extraPayment) {
+            const summaryEl = document.getElementById('payoff-summary');
+            if (!summaryEl || State.data.debts.length === 0) return;
+
+            let totalInterest = 0;
+            let maxMonths = 0;
+
+            State.data.debts.forEach(debt => {
+                let balance = debt.balance;
+                const monthlyRate = debt.rate / 100 / 12;
+                let months = 0;
+                const payment = debt.minimum + (extraPayment / State.data.debts.length);
+
+                while (balance > 0 && months < 600) {
+                    const interest = balance * monthlyRate;
+                    totalInterest += interest;
+                    balance = balance + interest - payment;
+                    months++;
+                    if (payment <= interest) { months = -1; break; }
+                }
+                if (months > maxMonths) maxMonths = months;
+            });
+
+            if (maxMonths === -1) {
+                summaryEl.innerHTML = '<h4>Payment too low</h4><p>Your payments don\'t cover the interest. Increase your monthly payment amount.</p>';
+                return;
+            }
+
+            const years = Math.floor(maxMonths / 12);
+            const remainingMonths = maxMonths % 12;
+            const totalPaid = State.data.debts.reduce((s, d) => s + d.balance, 0) + totalInterest;
+
+            summaryEl.innerHTML = `
+                <h4>Payoff Timeline</h4>
+                <p><strong>Time to debt free:</strong> ${years > 0 ? years + ' years ' : ''}${remainingMonths} months</p>
+                <p><strong>Total interest paid:</strong> ${Currency.format(totalInterest)}</p>
+                <p><strong>Total amount paid:</strong> ${Currency.format(totalPaid)}</p>
+                ${extraPayment > 0 ? `<p><strong>Extra payment:</strong> ${Currency.format(extraPayment)}/month saves you time and interest!</p>` : ''}
+            `;
+        }
+    };
+
+    // ==================== INVESTMENTS ====================
+
+    const Investments = {
+        chart: null,
+
+        render() {
+            const container = document.getElementById('investment-list');
+            const totalEl = document.getElementById('total-investments');
+            if (!container) return;
+
+            if (State.data.investments.length === 0) {
+                container.innerHTML = '<p class="empty-state">No investments recorded yet.</p>';
+                if (totalEl) totalEl.textContent = Currency.format(0);
+                return;
+            }
+
+            const total = State.data.investments.reduce((s, inv) => s + inv.value, 0);
+            if (totalEl) totalEl.textContent = Currency.format(total);
+
+            container.innerHTML = State.data.investments.map(inv => `
+                <div class="investment-item">
+                    <div class="item-info">
+                        <h4>${Utils.escapeHtml(inv.name)}</h4>
+                        <p>${Utils.capitalizeFirst(inv.type.replace('-', ' '))}</p>
+                    </div>
+                    <span class="item-amount investment">${Currency.format(inv.value)}</span>
+                    <button class="delete-btn" data-action="delete-investment" data-id="${inv.id}" aria-label="Delete investment" title="Delete">&#128465;</button>
+                </div>
+            `).join('');
+        },
+
+        add(e) {
+            e.preventDefault();
+            const name = document.getElementById('investment-name').value.trim();
+            const value = parseFloat(document.getElementById('investment-value').value);
+            const type = document.getElementById('investment-type').value;
+
+            if (!name || !value || !type) return;
+
+            State.modify('investments', arr => arr.push({
+                id: Utils.generateId(),
+                name, value, type
+            }));
+
+            e.target.reset();
+            Investments.render();
+            Dashboard.update();
+            Notify.show('Investment added', 'success');
+        },
+
+        delete(id) {
+            State.set('investments', State.data.investments.filter(i => i.id !== id));
+            Investments.render();
+            Dashboard.update();
+            Notify.show('Investment deleted', 'info');
+        },
+
+        generateRecommendations() {
+            const container = document.getElementById('investment-recommendations');
+            if (!container || !State.data.investmentProfile) return;
+
+            const { goal, timeline, riskTolerance, monthlyAmount } = State.data.investmentProfile;
+            let allocation = {};
+
+            if (riskTolerance === 'conservative') {
+                allocation = { stocks: 30, bonds: 50, cash: 20 };
+            } else if (riskTolerance === 'moderate') {
+                allocation = { stocks: 60, bonds: 30, cash: 10 };
+            } else {
+                allocation = { stocks: 80, bonds: 15, cash: 5 };
+            }
+
+            const goalRecommendations = Investments.getGoalRecommendations(goal, allocation, timeline);
+
+            container.innerHTML = `
+                <div class="recommendation">
+                    <h4>Asset Allocation</h4>
+                    <p>Based on your ${riskTolerance} risk tolerance and ${timeline}-year horizon:</p>
+                    <div class="allocation-bar">
+                        <div class="allocation-segment stocks" style="width:${allocation.stocks}%">${allocation.stocks}%</div>
+                        <div class="allocation-segment bonds" style="width:${allocation.bonds}%">${allocation.bonds}%</div>
+                        <div class="allocation-segment cash" style="width:${allocation.cash}%">${allocation.cash}%</div>
+                    </div>
+                    <div class="allocation-legend">
+                        <div class="legend-item"><span class="legend-color" style="background:var(--primary-color)"></span>Stocks ${allocation.stocks}%</div>
+                        <div class="legend-item"><span class="legend-color" style="background:var(--success-color)"></span>Bonds ${allocation.bonds}%</div>
+                        <div class="legend-item"><span class="legend-color" style="background:var(--warning-color)"></span>Cash ${allocation.cash}%</div>
+                    </div>
+                </div>
+                <div class="recommendation">
+                    <h4>${goalRecommendations.title}</h4>
+                    <p>${goalRecommendations.description}</p>
+                    <ul>${goalRecommendations.tips.map(t => '<li>' + t + '</li>').join('')}</ul>
+                </div>
+            `;
+        },
+
+        getGoalRecommendations(goal, allocation, timeline) {
+            const recommendations = {
+                retirement: {
+                    title: 'Retirement Planning',
+                    description: 'Focus on long-term growth with tax-advantaged accounts.',
+                    tips: ['Max out 401(k) employer match', 'Consider Roth IRA for tax-free growth', 'Diversify across index funds', 'Rebalance portfolio annually']
+                },
+                emergency: {
+                    title: 'Emergency Fund',
+                    description: 'Build a safety net of 3-6 months of expenses.',
+                    tips: ['Use high-yield savings account', 'Keep funds easily accessible', 'Aim for 3-6 months expenses', 'Don\'t invest emergency fund in stocks']
+                },
+                home: {
+                    title: 'Home Purchase',
+                    description: 'Save for a down payment with low-risk investments.',
+                    tips: ['Target 20% down payment', 'Consider CDs or short-term bonds', 'Factor in closing costs (2-5%)', 'Look into first-time buyer programs']
+                },
+                education: {
+                    title: 'Education Fund',
+                    description: 'Save for education with tax-advantaged 529 plans.',
+                    tips: ['Open a 529 plan for tax benefits', 'Start early for compound growth', 'Consider age-based portfolios', 'Research scholarship opportunities']
+                },
+                wealth: {
+                    title: 'Wealth Building',
+                    description: 'Grow your net worth through diversified investments.',
+                    tips: ['Invest consistently regardless of market conditions', 'Diversify across asset classes', 'Keep fees low with index funds', 'Reinvest dividends for compound growth']
+                },
+                other: {
+                    title: 'General Investing',
+                    description: 'Build a diversified portfolio aligned with your goals.',
+                    tips: ['Define clear financial goals', 'Match investment horizon to risk', 'Keep an emergency fund separate', 'Review and rebalance quarterly']
+                }
+            };
+            return recommendations[goal] || recommendations.other;
+        },
+
+        generateProjection() {
+            const detailsEl = document.getElementById('projection-details');
+            if (!State.data.investmentProfile) return;
+
+            const { timeline, riskTolerance, monthlyAmount } = State.data.investmentProfile;
+            const currentPortfolio = State.data.investments.reduce((s, inv) => s + inv.value, 0);
+
+            const rates = { conservative: 0.06, moderate: 0.08, aggressive: 0.10 };
+            const annualRate = rates[riskTolerance] || 0.08;
+            const monthlyRate = annualRate / 12;
+
+            const labels = [];
+            const data = [];
+            const years = parseInt(timeline) || 10;
+
+            let balance = currentPortfolio;
+            labels.push('Now');
+            data.push(balance);
+
+            for (let y = 1; y <= years; y++) {
+                for (let m = 0; m < 12; m++) {
+                    balance = balance * (1 + monthlyRate) + monthlyAmount;
+                }
+                labels.push('Year ' + y);
+                data.push(Math.round(balance));
+            }
+
+            const totalContributed = currentPortfolio + (monthlyAmount * 12 * years);
+            const totalGrowth = balance - totalContributed;
+
+            // Render chart
+            const ctx = document.getElementById('investment-chart');
+            if (ctx) {
+                if (Investments.chart) Investments.chart.destroy();
+                Investments.chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: 'Portfolio Value',
+                            data,
+                            borderColor: '#2563eb',
+                            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                            fill: true,
+                            tension: 0.3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: {
+                                ticks: { callback: v => Currency.format(v) }
+                            }
+                        }
+                    }
+                });
+            }
+
+            if (detailsEl) {
+                detailsEl.innerHTML = `
+                    <div class="investment-total" style="margin-top:1rem">
+                        <div>
+                            <p><strong>Projected Value (${years}yr):</strong> ${Currency.format(balance)}</p>
+                            <p>Total Contributed: ${Currency.format(totalContributed)} &bull; Growth: ${Currency.format(totalGrowth)}</p>
+                        </div>
+                    </div>`;
+            }
+        }
+    };
+
+    // ==================== INCOME ====================
+
+    const Income = {
+        render() {
+            const container = document.getElementById('income-list');
+            if (!container) return;
+
+            if (State.data.incomes.length === 0) {
+                container.innerHTML = '<p class="empty-state">No income sources recorded.</p>';
+                return;
+            }
+
+            container.innerHTML = State.data.incomes.map(inc => `
+                <div class="income-item">
+                    <div class="item-info">
+                        <h4>${Utils.escapeHtml(inc.source)}</h4>
+                        <p>${Utils.capitalizeFirst(inc.type.replace('-', ' '))}</p>
+                    </div>
+                    <span class="item-amount income">${Currency.format(inc.amount)}/mo</span>
+                    <button class="delete-btn" data-action="delete-income" data-id="${inc.id}" aria-label="Delete income" title="Delete">&#128465;</button>
+                </div>
+            `).join('');
+        },
+
+        add(e) {
+            e.preventDefault();
+            const source = document.getElementById('income-source').value.trim();
+            const amount = parseFloat(document.getElementById('income-amount').value);
+            const type = document.getElementById('income-type').value;
+
+            if (!source || !amount || !type) return;
+
+            State.modify('incomes', arr => arr.push({
+                id: Utils.generateId(),
+                source, amount, type
+            }));
+
+            e.target.reset();
+            Income.render();
+            Dashboard.update();
+            Notify.show('Income added', 'success');
+        },
+
+        delete(id) {
+            State.set('incomes', State.data.incomes.filter(i => i.id !== id));
+            Income.render();
+            Dashboard.update();
+            Notify.show('Income deleted', 'info');
+        }
+    };
+
+    // ==================== UPLOAD ====================
+
+    const Upload = {
+        sampleExpensesAdded: localStorage.getItem('sampleExpensesAdded') === 'true',
+        sampleIncomeAdded: localStorage.getItem('sampleIncomeAdded') === 'true',
+
+        setupZone(zoneId, inputId, previewId, type) {
+            const zone = document.getElementById(zoneId);
+            const input = document.getElementById(inputId);
+            if (!zone || !input) return;
+
+            zone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                zone.classList.add('dragover');
+            });
+            zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zone.classList.remove('dragover');
+                Upload.handleFiles(e.dataTransfer.files, type, document.getElementById(previewId));
+            });
+            input.addEventListener('change', () => {
+                Upload.handleFiles(input.files, type, document.getElementById(previewId));
+                input.value = '';
+            });
+            zone.addEventListener('click', (e) => {
+                if (!e.target.closest('.upload-btn') && e.target.tagName !== 'INPUT') {
+                    input.click();
+                }
+            });
+        },
+
+        handleFiles(files, type, previewContainer) {
+            if (!files || files.length === 0) return;
+            Array.from(files).forEach(file => Upload.processFile(file, type, previewContainer));
+        },
+
+        processFile(file, type, previewContainer) {
             const upload = {
-                id: generateId(),
+                id: Utils.generateId(),
                 name: file.name,
                 size: file.size,
-                type: fileType,
-                date: new Date().toISOString(),
-                status: 'success'
+                type,
+                date: new Date().toISOString().split('T')[0],
+                status: 'processing'
             };
-            state.uploads.push(upload);
-            saveState();
 
-            previewEl.innerHTML = `
-                <div class="upload-preview-item">
-                    <span class="file-icon">${fileType === 'payslip' ? '💵' : '📄'}</span>
+            State.modify('uploads', arr => arr.push(upload));
+            Upload.renderHistory();
+
+            if (previewContainer) {
+                previewContainer.innerHTML = `
+                    <div class="upload-preview-item">
+                        <span class="file-icon">&#128196;</span>
+                        <div class="file-info">
+                            <div class="file-name">${Utils.escapeHtml(file.name)}</div>
+                            <div class="file-size">${Utils.formatFileSize(file.size)}</div>
+                        </div>
+                        <span class="file-status processing">Processing...</span>
+                    </div>`;
+            }
+
+            const ext = file.name.split('.').pop().toLowerCase();
+
+            if (ext === 'csv') {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const anonymized = Anonymizer.anonymize(e.target.result);
+                    const transactions = Parser.parseCSV(anonymized);
+                    Upload.finishProcessing(upload, file, transactions, previewContainer);
+                };
+                reader.readAsText(file);
+            } else if (ext === 'xlsx' || ext === 'xls') {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const transactions = Parser.parseExcel(e.target.result);
+                    Upload.finishProcessing(upload, file, transactions, previewContainer);
+                };
+                reader.readAsArrayBuffer(file);
+            } else {
+                // PDF/Image - add sample data as fallback
+                if (type === 'expense' && !Upload.sampleExpensesAdded) {
+                    Upload.addSampleExpenses();
+                } else if (type === 'payslip' && !Upload.sampleIncomeAdded) {
+                    Upload.addSampleIncome();
+                }
+                upload.status = 'success';
+                State.save('uploads');
+                Upload.renderHistory();
+
+                if (previewContainer) {
+                    const statusEl = previewContainer.querySelector('.file-status');
+                    if (statusEl) {
+                        statusEl.className = 'file-status success';
+                        statusEl.textContent = 'Processed';
+                    }
+                }
+                Notify.show('File processed successfully', 'success');
+            }
+        },
+
+        finishProcessing(upload, file, transactions, previewContainer) {
+            upload.status = 'success';
+            upload.transactionCount = transactions.length;
+            State.save('uploads');
+            Upload.renderHistory();
+
+            if (previewContainer) {
+                const statusEl = previewContainer.querySelector('.file-status');
+                if (statusEl) {
+                    statusEl.className = 'file-status success';
+                    statusEl.textContent = transactions.length + ' transactions found';
+                }
+            }
+
+            if (transactions.length > 0) {
+                Parser.render(transactions);
+                // Switch to upload tab to show parsed transactions
+                const uploadTab = document.querySelector('[href="#upload"]');
+                if (uploadTab && !document.getElementById('upload').classList.contains('active')) {
+                    uploadTab.click();
+                }
+                Notify.show(transactions.length + ' transactions parsed from ' + file.name, 'success');
+            } else {
+                Notify.show('No transactions found in ' + file.name, 'warning');
+            }
+        },
+
+        renderHistory() {
+            const container = document.getElementById('upload-history');
+            if (!container) return;
+
+            if (State.data.uploads.length === 0) {
+                container.innerHTML = '<p class="empty-state">No documents uploaded yet.</p>';
+                return;
+            }
+
+            container.innerHTML = [...State.data.uploads].reverse().map(u => `
+                <div class="history-item">
+                    <span class="file-icon">&#128196;</span>
                     <div class="file-info">
-                        <span class="file-name">${safeName}</span>
-                        <span class="file-size">${formatFileSize(file.size)}</span>
+                        <div class="file-name">${Utils.escapeHtml(u.name)}</div>
+                        <div class="file-date">${Utils.formatDate(u.date)} &bull; ${Utils.formatFileSize(u.size)}${u.transactionCount ? ' &bull; ' + u.transactionCount + ' transactions' : ''}</div>
                     </div>
-                    <span class="file-status success">Uploaded & Anonymized</span>
+                    <button class="delete-btn" data-action="delete-upload" data-id="${u.id}" aria-label="Delete upload" title="Delete">&#128465;</button>
                 </div>
-            `;
+            `).join('');
+        },
 
-            renderUploadHistory();
-            if (fileType === 'expense') { addSampleExpenses(); } else { addSampleIncome(); }
-        }, 1500);
+        deleteUpload(id) {
+            State.set('uploads', State.data.uploads.filter(u => u.id !== id));
+            Upload.renderHistory();
+        },
+
+        setupDashboard() {
+            const zone = document.getElementById('dashboard-upload-zone');
+            const input = document.getElementById('dashboard-file-input');
+            const preview = document.getElementById('dashboard-upload-preview');
+            const results = document.getElementById('dashboard-upload-results');
+            if (!zone || !input) return;
+
+            zone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                zone.classList.add('dragover');
+            });
+            zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zone.classList.remove('dragover');
+                const file = e.dataTransfer.files[0];
+                if (file) Upload.processFile(file, 'expense', preview);
+            });
+            input.addEventListener('change', () => {
+                if (input.files[0]) Upload.processFile(input.files[0], 'expense', preview);
+                input.value = '';
+            });
+            zone.addEventListener('click', (e) => {
+                if (!e.target.closest('.upload-btn') && e.target.tagName !== 'INPUT') {
+                    input.click();
+                }
+            });
+        },
+
+        addSampleExpenses() {
+            const samples = [
+                { description: 'Monthly Rent', amount: 1500, category: 'housing', date: new Date().toISOString().split('T')[0] },
+                { description: 'Grocery Shopping', amount: 250, category: 'food', date: new Date().toISOString().split('T')[0] },
+                { description: 'Gas Station', amount: 55, category: 'transportation', date: new Date().toISOString().split('T')[0] },
+                { description: 'Netflix Subscription', amount: 15.99, category: 'entertainment', date: new Date().toISOString().split('T')[0] },
+                { description: 'Electric Bill', amount: 120, category: 'utilities', date: new Date().toISOString().split('T')[0] }
+            ];
+
+            samples.forEach(s => {
+                State.data.expenses.push({ id: Utils.generateId(), ...s });
+            });
+            State.save('expenses');
+            Upload.sampleExpensesAdded = true;
+            localStorage.setItem('sampleExpensesAdded', 'true');
+            Expenses.render();
+            Dashboard.update();
+        },
+
+        addSampleIncome() {
+            State.data.incomes.push({
+                id: Utils.generateId(),
+                source: 'Primary Job (from payslip)',
+                amount: 5000,
+                type: 'salary'
+            });
+            State.save('incomes');
+            Upload.sampleIncomeAdded = true;
+            localStorage.setItem('sampleIncomeAdded', 'true');
+            Income.render();
+            Dashboard.update();
+        }
     };
 
-    zone.addEventListener('drop', (e) => {
-        if (e.dataTransfer.files.length > 0) {
-            handleDashboardFile(e.dataTransfer.files[0]);
-            if (e.dataTransfer.files.length > 1) {
-                const extra = e.dataTransfer.files.length - 1;
-                const note = document.createElement('p');
-                note.style.cssText = 'color: var(--warning-color); font-size: 0.85rem; margin-top: 0.5rem;';
-                note.textContent = `Note: Only the first file was processed. ${extra} additional file${extra > 1 ? 's were' : ' was'} ignored.`;
-                preview.appendChild(note);
+    // ==================== DASHBOARD ====================
+
+    const Dashboard = {
+        expenseChart: null,
+
+        update() {
+            const totalIncome = State.data.incomes.reduce((s, i) => s + i.amount, 0);
+            const totalExpenses = State.data.expenses.reduce((s, e) => s + e.amount, 0);
+            const totalDebt = State.data.debts.reduce((s, d) => s + d.balance, 0);
+            const totalInvestments = State.data.investments.reduce((s, i) => s + i.value, 0);
+            const netSavings = totalIncome - totalExpenses;
+
+            document.getElementById('total-income').textContent = Currency.format(totalIncome);
+            document.getElementById('total-expenses').textContent = Currency.format(totalExpenses);
+            document.getElementById('total-debt').textContent = Currency.format(totalDebt);
+            document.getElementById('net-savings').textContent = Currency.format(netSavings);
+
+            Dashboard.updateHealthScore(totalIncome, totalExpenses, totalDebt, netSavings);
+            Dashboard.updateExpenseChart();
+            Dashboard.renderMonthlyAnalytics();
+            Dashboard.renderYearlyProjection();
+        },
+
+        updateHealthScore(income, expenses, debt, savings) {
+            const circle = document.getElementById('health-score');
+            const message = document.getElementById('health-message');
+            if (!circle || !message) return;
+
+            let score = 50;
+            if (income > 0) {
+                const ratio = expenses / income;
+                if (ratio < 0.5) score += 20;
+                else if (ratio < 0.7) score += 10;
+                else if (ratio > 0.9) score -= 10;
+
+                if (savings > 0) score += 15;
+                else score -= 15;
             }
-        }
-    });
-    input.addEventListener('change', (e) => {
-        if (e.target.files.length > 0) handleDashboardFile(e.target.files[0]);
-    });
-    zone.addEventListener('click', (e) => {
-        if (!e.target.closest('.upload-btn') && e.target.tagName !== 'INPUT') {
-            input.click();
-        }
-    });
-};
+            if (debt === 0) score += 15;
+            else if (debt > income * 12) score -= 15;
+            else if (debt > income * 6) score -= 5;
 
-// ==================== TAG / CATEGORY SUGGESTIONS ====================
+            score = Math.max(0, Math.min(100, score));
+            const angle = (score / 100) * 360;
+            const color = score >= 70 ? '#10b981' : score >= 40 ? '#f59e0b' : '#ef4444';
 
-const categoryKeywords = {
-    housing: ['rent', 'mortgage', 'lease', 'apartment', 'condo', 'property', 'hoa', 'home', 'house', 'landlord', 'tenant', 'real estate', 'down payment'],
-    transportation: ['gas', 'fuel', 'uber', 'lyft', 'taxi', 'bus', 'train', 'subway', 'metro', 'car', 'auto', 'parking', 'toll', 'oil change', 'tire', 'vehicle', 'mechanic', 'flight', 'airline'],
-    food: ['grocery', 'groceries', 'restaurant', 'dining', 'coffee', 'lunch', 'dinner', 'breakfast', 'takeout', 'delivery', 'doordash', 'grubhub', 'ubereats', 'pizza', 'food', 'meal', 'snack', 'cafe', 'bar', 'drink'],
-    utilities: ['electric', 'electricity', 'water', 'gas bill', 'internet', 'wifi', 'phone', 'mobile', 'cable', 'trash', 'sewage', 'heating', 'cooling', 'power'],
-    healthcare: ['doctor', 'hospital', 'pharmacy', 'medicine', 'prescription', 'dental', 'dentist', 'vision', 'therapy', 'clinic', 'health', 'medical', 'lab', 'insurance premium', 'copay'],
-    entertainment: ['movie', 'netflix', 'spotify', 'hulu', 'disney', 'concert', 'theater', 'game', 'gaming', 'subscription', 'streaming', 'music', 'book', 'hobby', 'sport', 'gym', 'fitness'],
-    shopping: ['amazon', 'walmart', 'target', 'clothing', 'clothes', 'shoes', 'electronics', 'furniture', 'appliance', 'gift', 'online', 'store', 'mall', 'purchase'],
-    education: ['tuition', 'textbook', 'course', 'class', 'school', 'college', 'university', 'student', 'loan', 'training', 'certification', 'exam', 'udemy', 'coursera'],
-    personal: ['haircut', 'salon', 'spa', 'skincare', 'makeup', 'laundry', 'dry clean', 'grooming', 'barber', 'nail', 'massage', 'cosmetics']
-};
+            circle.style.background = `conic-gradient(${color} ${angle}deg, #e2e8f0 ${angle}deg)`;
+            circle.querySelector('.score-value').textContent = score;
 
-const categoryLabels = {
-    housing: 'Housing', transportation: 'Transportation', food: 'Food & Groceries',
-    utilities: 'Utilities', healthcare: 'Healthcare', entertainment: 'Entertainment',
-    shopping: 'Shopping', education: 'Education', personal: 'Personal Care', other: 'Other'
-};
+            let msg = '';
+            if (score >= 80) msg = 'Excellent financial health! Keep up the great work.';
+            else if (score >= 60) msg = 'Good financial health. A few improvements could boost your score.';
+            else if (score >= 40) msg = 'Fair financial health. Consider reducing expenses or paying down debt.';
+            else msg = 'Needs attention. Focus on reducing debt and building an emergency fund.';
+            message.textContent = msg;
+        },
 
-const categoryColors = {
-    housing: '#dbeafe;color:#1e40af', transportation: '#fef3c7;color:#92400e',
-    food: '#d1fae5;color:#065f46', utilities: '#e0e7ff;color:#3730a3',
-    healthcare: '#fce7f3;color:#9d174d', entertainment: '#fae8ff;color:#86198f',
-    shopping: '#fed7aa;color:#c2410c', education: '#ccfbf1;color:#0f766e',
-    personal: '#f5d0fe;color:#a21caf', other: '#e2e8f0;color:#475569'
-};
+        updateExpenseChart() {
+            const ctx = document.getElementById('expense-chart');
+            if (!ctx) return;
 
-let highlightedSuggestionIndex = -1;
-
-const suggestCategory = (description) => {
-    const lower = description.toLowerCase().trim();
-    if (lower.length < 2) return [];
-
-    const matches = [];
-    for (const [category, keywords] of Object.entries(categoryKeywords)) {
-        for (const keyword of keywords) {
-            if (keyword.includes(lower) || lower.includes(keyword)) {
-                const score = keyword === lower ? 100 : keyword.startsWith(lower) ? 80 : 60;
-                matches.push({ category, keyword, score });
-            }
-        }
-    }
-
-    // Deduplicate by category (keep highest score)
-    const best = {};
-    for (const m of matches) {
-        if (!best[m.category] || m.score > best[m.category].score) {
-            best[m.category] = m;
-        }
-    }
-
-    return Object.values(best).sort((a, b) => b.score - a.score).slice(0, 5);
-};
-
-const setupTagSuggestions = () => {
-    const input = document.getElementById('expense-description');
-    const container = document.getElementById('tag-suggestions');
-    const categorySelect = document.getElementById('expense-category');
-
-    input.addEventListener('input', () => {
-        const value = input.value;
-        const suggestions = suggestCategory(value);
-        highlightedSuggestionIndex = -1;
-
-        if (suggestions.length === 0 || value.length < 2) {
-            container.classList.remove('visible');
-            container.innerHTML = '';
-            return;
-        }
-
-        container.innerHTML = suggestions.map((s, i) => `
-            <div class="tag-suggestion-item" data-category="${s.category}" data-index="${i}">
-                <span class="suggestion-category" style="background:${categoryColors[s.category]}">${categoryLabels[s.category]}</span>
-                <span class="suggestion-text">${escapeHtml(capitalizeFirst(s.keyword))}</span>
-                <span class="suggestion-hint">Tab to apply</span>
-            </div>
-        `).join('');
-        container.classList.add('visible');
-
-        container.querySelectorAll('.tag-suggestion-item').forEach(item => {
-            item.addEventListener('click', () => {
-                categorySelect.value = item.dataset.category;
-                container.classList.remove('visible');
+            const categoryTotals = {};
+            State.data.expenses.forEach(exp => {
+                categoryTotals[exp.category] = (categoryTotals[exp.category] || 0) + exp.amount;
             });
-        });
-    });
 
-    input.addEventListener('keydown', (e) => {
-        const items = container.querySelectorAll('.tag-suggestion-item');
-        if (!items.length || !container.classList.contains('visible')) return;
+            const labels = Object.keys(categoryTotals).map(c => CategoryEngine.labels[c] || c);
+            const data = Object.values(categoryTotals);
+            const colors = ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#06b6d4', '#64748b'];
 
-        if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            highlightedSuggestionIndex = Math.min(highlightedSuggestionIndex + 1, items.length - 1);
-            items.forEach((item, i) => item.classList.toggle('highlighted', i === highlightedSuggestionIndex));
-        } else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            highlightedSuggestionIndex = Math.max(highlightedSuggestionIndex - 1, 0);
-            items.forEach((item, i) => item.classList.toggle('highlighted', i === highlightedSuggestionIndex));
-        } else if (e.key === 'Tab' || e.key === 'Enter') {
-            const idx = highlightedSuggestionIndex >= 0 ? highlightedSuggestionIndex : 0;
-            if (items[idx]) {
-                e.preventDefault();
-                categorySelect.value = items[idx].dataset.category;
-                container.classList.remove('visible');
+            if (Dashboard.expenseChart) Dashboard.expenseChart.destroy();
+
+            if (data.length === 0) {
+                Dashboard.expenseChart = null;
+                return;
             }
-        } else if (e.key === 'Escape') {
-            container.classList.remove('visible');
-        }
-    });
 
-    // Close suggestions when clicking outside
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.description-group')) {
-            container.classList.remove('visible');
-        }
-    });
-};
+            Dashboard.expenseChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels,
+                    datasets: [{ data, backgroundColor: colors.slice(0, data.length), borderWidth: 2, borderColor: '#fff' }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right', labels: { padding: 15, usePointStyle: true } }
+                    }
+                }
+            });
+        },
 
-// ==================== MONTHLY ANALYTICS & YEARLY PROJECTION ====================
+        getMonthlyBreakdown() {
+            const monthlyExpenses = {};
+            State.data.expenses.forEach(exp => {
+                const key = exp.date.substring(0, 7);
+                monthlyExpenses[key] = (monthlyExpenses[key] || 0) + exp.amount;
+            });
+            return monthlyExpenses;
+        },
 
-const getMonthlyBreakdown = () => {
-    const monthlyExpenses = {};
-    state.expenses.forEach(exp => {
-        const key = exp.date.substring(0, 7); // YYYY-MM
-        if (!monthlyExpenses[key]) monthlyExpenses[key] = 0;
-        monthlyExpenses[key] += exp.amount;
-    });
-    return monthlyExpenses;
-};
+        parseMonthKey(monthKey) {
+            const [year, month] = monthKey.split('-').map(Number);
+            return new Date(year, month - 1, 1);
+        },
 
-const parseMonthKey = (monthKey) => {
-    // Parse "YYYY-MM" without UTC offset issues
-    const [year, month] = monthKey.split('-').map(Number);
-    return new Date(year, month - 1, 1);
-};
+        renderMonthlyAnalytics() {
+            const container = document.getElementById('monthly-analytics');
+            if (!container) return;
 
-const renderMonthlyAnalytics = () => {
-    const container = document.getElementById('monthly-analytics');
-    if (!container) return;
+            const totalIncome = State.data.incomes.reduce((s, i) => s + i.amount, 0);
+            const totalExpenses = State.data.expenses.reduce((s, e) => s + e.amount, 0);
 
-    const totalIncome = state.incomes.reduce((sum, inc) => sum + inc.amount, 0);
-    const totalExpenses = state.expenses.reduce((sum, exp) => sum + exp.amount, 0);
+            if (State.data.expenses.length === 0 && State.data.incomes.length === 0) {
+                container.innerHTML = '<p class="empty-state">Add expenses and income to see your monthly comparison.</p>';
+                return;
+            }
 
-    // Show empty state when no data exists
-    if (state.expenses.length === 0 && state.incomes.length === 0) {
-        container.innerHTML = '<p class="empty-state">Add expenses and income to see your monthly comparison.</p>';
-        return;
-    }
+            const monthlyBreakdown = Dashboard.getMonthlyBreakdown();
+            const months = Object.keys(monthlyBreakdown);
+            const monthCount = months.length || 1;
+            const avgMonthlyExpense = totalExpenses / monthCount;
+            const diff = totalIncome - avgMonthlyExpense;
+            const diffClass = diff >= 0 ? 'positive' : 'negative';
+            const diffLabel = diff >= 0 ? 'surplus' : 'deficit';
 
-    const monthlyBreakdown = getMonthlyBreakdown();
-    const months = Object.keys(monthlyBreakdown);
-    const monthCount = months.length || 1;
-    const avgMonthlyExpense = totalExpenses / monthCount;
-    const diff = totalIncome - avgMonthlyExpense;
-    const diffClass = diff >= 0 ? 'positive' : 'negative';
-    const diffLabel = diff >= 0 ? 'surplus' : 'deficit';
+            const sortedMonths = [...months].sort().reverse();
 
-    // Sort months for the breakdown table
-    const sortedMonths = [...months].sort().reverse();
+            let monthRows = '';
+            if (sortedMonths.length > 0) {
+                monthRows = sortedMonths.map(m => {
+                    const mExp = monthlyBreakdown[m];
+                    const mDiff = totalIncome - mExp;
+                    const mClass = mDiff >= 0 ? 'positive' : 'negative';
+                    const monthLabel = Dashboard.parseMonthKey(m).toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+                    return `<tr><td>${monthLabel}</td><td>${Currency.format(mExp)}</td><td>${Currency.format(totalIncome)}</td><td class="${mClass}">${Currency.format(mDiff)}</td></tr>`;
+                }).join('');
+            } else {
+                monthRows = '<tr><td colspan="4" class="empty-state">No expense data yet</td></tr>';
+            }
 
-    let monthRows = '';
-    if (sortedMonths.length > 0) {
-        monthRows = sortedMonths.map(m => {
-            const mExp = monthlyBreakdown[m];
-            const mDiff = totalIncome - mExp;
-            const mClass = mDiff >= 0 ? 'positive' : 'negative';
-            const monthLabel = parseMonthKey(m).toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
-            return `
-                <tr>
-                    <td>${monthLabel}</td>
-                    <td>${formatCurrency(mExp)}</td>
-                    <td>${formatCurrency(totalIncome)}</td>
-                    <td class="${mClass}">${formatCurrency(mDiff)}</td>
-                </tr>
-            `;
-        }).join('');
-    } else {
-        monthRows = '<tr><td colspan="4" class="empty-state">No expense data yet</td></tr>';
-    }
+            const ratio = totalIncome > 0 ? avgMonthlyExpense / totalIncome : 0;
+            const ratioPercent = Math.min(100, ratio * 100).toFixed(1);
+            const ratioClass = ratio > 0.9 ? 'danger' : ratio > 0.7 ? 'warning' : 'good';
 
-    const ratio = totalIncome > 0 ? avgMonthlyExpense / totalIncome : 0;
-    const ratioPercent = Math.min(100, ratio * 100).toFixed(1);
-    const ratioClass = ratio > 0.9 ? 'danger' : ratio > 0.7 ? 'warning' : 'good';
-
-    container.innerHTML = `
-        <div class="analytics-summary">
-            <div class="analytics-stat">
-                <span class="analytics-label">Avg Monthly Expense</span>
-                <span class="analytics-value expense">${formatCurrency(avgMonthlyExpense)}</span>
-            </div>
-            <div class="analytics-stat">
-                <span class="analytics-label">Monthly Income</span>
-                <span class="analytics-value income">${formatCurrency(totalIncome)}</span>
-            </div>
-            <div class="analytics-stat">
-                <span class="analytics-label">Monthly ${capitalizeFirst(diffLabel)}</span>
-                <span class="analytics-value ${diffClass}">${formatCurrency(diff)}</span>
-            </div>
-            <div class="analytics-stat">
-                <span class="analytics-label">Months Tracked</span>
-                <span class="analytics-value">${months.length}</span>
-            </div>
-        </div>
-        ${totalIncome > 0 ? `
-        <div class="analytics-bar-container">
-            <div class="analytics-bar-label">Expense-to-Income Ratio</div>
-            <div class="analytics-bar-track">
-                <div class="analytics-bar-fill ${ratioClass}"
-                     style="width: ${ratioPercent}%">
-                    ${ratioPercent}%
+            container.innerHTML = `
+                <div class="analytics-summary">
+                    <div class="analytics-stat"><span class="analytics-label">Avg Monthly Expense</span><span class="analytics-value expense">${Currency.format(avgMonthlyExpense)}</span></div>
+                    <div class="analytics-stat"><span class="analytics-label">Monthly Income</span><span class="analytics-value income">${Currency.format(totalIncome)}</span></div>
+                    <div class="analytics-stat"><span class="analytics-label">Monthly ${Utils.capitalizeFirst(diffLabel)}</span><span class="analytics-value ${diffClass}">${Currency.format(diff)}</span></div>
+                    <div class="analytics-stat"><span class="analytics-label">Months Tracked</span><span class="analytics-value">${months.length}</span></div>
                 </div>
-            </div>
-        </div>
-        ` : ''}
-        <div class="analytics-table-wrapper">
-            <table class="analytics-table">
-                <thead>
-                    <tr>
-                        <th>Month</th>
-                        <th>Expenses</th>
-                        <th>Income</th>
-                        <th>Net</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${monthRows}
-                </tbody>
-            </table>
-        </div>
-    `;
-};
+                ${totalIncome > 0 ? `
+                <div class="analytics-bar-container">
+                    <div class="analytics-bar-label">Expense-to-Income Ratio</div>
+                    <div class="analytics-bar-track"><div class="analytics-bar-fill ${ratioClass}" style="width:${ratioPercent}%">${ratioPercent}%</div></div>
+                </div>` : ''}
+                <div class="analytics-table-wrapper">
+                    <table class="analytics-table">
+                        <thead><tr><th>Month</th><th>Expenses</th><th>Income</th><th>Net</th></tr></thead>
+                        <tbody>${monthRows}</tbody>
+                    </table>
+                </div>`;
+        },
 
-const renderYearlyProjection = () => {
-    const container = document.getElementById('yearly-projection');
-    if (!container) return;
+        renderYearlyProjection() {
+            const container = document.getElementById('yearly-projection');
+            if (!container) return;
 
-    const totalIncome = state.incomes.reduce((sum, inc) => sum + inc.amount, 0);
-    const totalExpenses = state.expenses.reduce((sum, exp) => sum + exp.amount, 0);
+            const totalIncome = State.data.incomes.reduce((s, i) => s + i.amount, 0);
+            const totalExpenses = State.data.expenses.reduce((s, e) => s + e.amount, 0);
 
-    // Show empty state when no data exists
-    if (state.expenses.length === 0 && state.incomes.length === 0) {
-        container.innerHTML = '<p class="empty-state">Add expenses and income to see your annual projection.</p>';
-        return;
-    }
+            if (State.data.expenses.length === 0 && State.data.incomes.length === 0) {
+                container.innerHTML = '<p class="empty-state">Add expenses and income to see your annual projection.</p>';
+                return;
+            }
 
-    const monthlyBreakdown = getMonthlyBreakdown();
-    const months = Object.keys(monthlyBreakdown);
-    const monthCount = months.length || 1;
-    const avgMonthlyExpense = totalExpenses / monthCount;
+            const monthlyBreakdown = Dashboard.getMonthlyBreakdown();
+            const months = Object.keys(monthlyBreakdown);
+            const monthCount = months.length || 1;
+            const avgMonthlyExpense = totalExpenses / monthCount;
 
-    // Figure out how many months are left in the year (calendar-based)
-    const now = new Date();
-    const currentMonth = now.getMonth(); // 0-indexed
-    const currentYear = now.getFullYear();
-    const monthsElapsed = currentMonth + 1;
-    const monthsRemaining = 12 - monthsElapsed;
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+            const monthsElapsed = currentMonth + 1;
+            const monthsRemaining = 12 - monthsElapsed;
 
-    // Already-tracked expenses for this year
-    const yearExpensesSoFar = months
-        .filter(m => m.startsWith(String(currentYear)))
-        .reduce((sum, m) => sum + monthlyBreakdown[m], 0);
+            const yearExpensesSoFar = months
+                .filter(m => m.startsWith(String(currentYear)))
+                .reduce((sum, m) => sum + monthlyBreakdown[m], 0);
 
-    const projectedYearExpenses = yearExpensesSoFar + (avgMonthlyExpense * monthsRemaining);
-    const projectedYearIncome = totalIncome * 12;
-    const projectedYearNet = projectedYearIncome - projectedYearExpenses;
-    const netClass = projectedYearNet >= 0 ? 'positive' : 'negative';
-    const netLabel = projectedYearNet >= 0 ? 'Projected Net Savings' : 'Projected Net Deficit';
+            const projectedYearExpenses = yearExpensesSoFar + (avgMonthlyExpense * monthsRemaining);
+            const projectedYearIncome = totalIncome * 12;
+            const projectedYearNet = projectedYearIncome - projectedYearExpenses;
+            const netClass = projectedYearNet >= 0 ? 'positive' : 'negative';
+            const netLabel = projectedYearNet >= 0 ? 'Projected Net Savings' : 'Projected Net Deficit';
 
-    // Month-by-month projection rows
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    let projRows = '';
-    let runningExpense = 0;
-    let runningIncome = 0;
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            let projRows = '';
+            let runningExpense = 0;
+            let runningIncome = 0;
 
-    for (let m = 0; m < 12; m++) {
-        const key = `${currentYear}-${String(m + 1).padStart(2, '0')}`;
-        const isActual = monthlyBreakdown[key] !== undefined;
-        const mExpense = isActual ? monthlyBreakdown[key] : avgMonthlyExpense;
-        const mIncome = totalIncome;
-        runningExpense += mExpense;
-        runningIncome += mIncome;
-        const mNet = mIncome - mExpense;
-        const mClass = mNet >= 0 ? 'positive' : 'negative';
-        const typeLabel = isActual ? 'Actual' : 'Projected';
-        const typeCls = isActual ? 'actual' : 'projected';
+            for (let m = 0; m < 12; m++) {
+                const key = `${currentYear}-${String(m + 1).padStart(2, '0')}`;
+                const isActual = monthlyBreakdown[key] !== undefined;
+                const mExpense = isActual ? monthlyBreakdown[key] : avgMonthlyExpense;
+                const mIncome = totalIncome;
+                runningExpense += mExpense;
+                runningIncome += mIncome;
+                const mNet = mIncome - mExpense;
+                const mClass = mNet >= 0 ? 'positive' : 'negative';
+                const typeLabel = isActual ? 'Actual' : 'Projected';
+                const typeCls = isActual ? 'actual' : 'projected';
 
-        projRows += `
-            <tr class="${typeCls}">
-                <td>${monthNames[m]} ${currentYear}</td>
-                <td>${formatCurrency(mExpense)}</td>
-                <td>${formatCurrency(mIncome)}</td>
-                <td class="${mClass}">${formatCurrency(mNet)}</td>
-                <td><span class="projection-badge ${typeCls}">${typeLabel}</span></td>
-            </tr>
-        `;
-    }
+                projRows += `<tr class="${typeCls}"><td>${monthNames[m]} ${currentYear}</td><td>${Currency.format(mExpense)}</td><td>${Currency.format(mIncome)}</td><td class="${mClass}">${Currency.format(mNet)}</td><td><span class="projection-badge ${typeCls}">${typeLabel}</span></td></tr>`;
+            }
 
-    container.innerHTML = `
-        <div class="projection-summary">
-            <div class="projection-stat">
-                <span class="projection-label">Projected Annual Expenses</span>
-                <span class="projection-value expense">${formatCurrency(projectedYearExpenses)}</span>
-            </div>
-            <div class="projection-stat">
-                <span class="projection-label">Projected Annual Income</span>
-                <span class="projection-value income">${formatCurrency(projectedYearIncome)}</span>
-            </div>
-            <div class="projection-stat">
-                <span class="projection-label">${netLabel}</span>
-                <span class="projection-value ${netClass}">${formatCurrency(projectedYearNet)}</span>
-            </div>
-            <div class="projection-stat">
-                <span class="projection-label">Based on</span>
-                <span class="projection-value">${monthsElapsed} actual + ${monthsRemaining} projected mo.</span>
-            </div>
-        </div>
-        <div class="analytics-table-wrapper">
-            <table class="analytics-table projection-table">
-                <thead>
-                    <tr>
-                        <th>Month</th>
-                        <th>Expenses</th>
-                        <th>Income</th>
-                        <th>Net</th>
-                        <th>Type</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${projRows}
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <td><strong>Total</strong></td>
-                        <td><strong>${formatCurrency(runningExpense)}</strong></td>
-                        <td><strong>${formatCurrency(runningIncome)}</strong></td>
-                        <td class="${netClass}"><strong>${formatCurrency(runningIncome - runningExpense)}</strong></td>
-                        <td></td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
-    `;
-};
-
-// ==================== CURRENCY CHANGE HANDLER ====================
-
-const setupCurrencySelector = () => {
-    const select = document.getElementById('currency-select');
-    if (!select) return;
-
-    select.value = selectedCurrency;
-
-    select.addEventListener('change', () => {
-        selectedCurrency = select.value;
-        localStorage.setItem('selectedCurrency', selectedCurrency);
-        // Re-render everything with new currency
-        renderExpenses();
-        renderDebts();
-        renderInvestments();
-        renderIncomes();
-        updateDashboard();
-        updatePayoffPlan();
-        if (state.investmentProfile) {
-            generateInvestmentRecommendations();
-            generateInvestmentProjection();
+            container.innerHTML = `
+                <div class="projection-summary">
+                    <div class="projection-stat"><span class="projection-label">Projected Annual Expenses</span><span class="projection-value expense">${Currency.format(projectedYearExpenses)}</span></div>
+                    <div class="projection-stat"><span class="projection-label">Projected Annual Income</span><span class="projection-value income">${Currency.format(projectedYearIncome)}</span></div>
+                    <div class="projection-stat"><span class="projection-label">${netLabel}</span><span class="projection-value ${netClass}">${Currency.format(projectedYearNet)}</span></div>
+                    <div class="projection-stat"><span class="projection-label">Based on</span><span class="projection-value">${monthsElapsed} actual + ${monthsRemaining} projected mo.</span></div>
+                </div>
+                <div class="analytics-table-wrapper">
+                    <table class="analytics-table projection-table">
+                        <thead><tr><th>Month</th><th>Expenses</th><th>Income</th><th>Net</th><th>Type</th></tr></thead>
+                        <tbody>${projRows}</tbody>
+                        <tfoot><tr><td><strong>Total</strong></td><td><strong>${Currency.format(runningExpense)}</strong></td><td><strong>${Currency.format(runningIncome)}</strong></td><td class="${netClass}"><strong>${Currency.format(runningIncome - runningExpense)}</strong></td><td></td></tr></tfoot>
+                    </table>
+                </div>`;
         }
-        // Re-render parsed transactions card if visible
-        if (pendingParsedTransactions.length > 0) {
-            renderParsedTransactions(pendingParsedTransactions);
+    };
+
+    // ==================== TAG SUGGESTIONS ====================
+
+    const TagSuggestions = {
+        highlightedIndex: -1,
+
+        setup() {
+            const input = document.getElementById('expense-description');
+            const container = document.getElementById('tag-suggestions');
+            const categorySelect = document.getElementById('expense-category');
+            if (!input || !container || !categorySelect) return;
+
+            input.addEventListener('input', () => {
+                const value = input.value;
+                const suggestions = CategoryEngine.suggest(value);
+                TagSuggestions.highlightedIndex = -1;
+
+                if (suggestions.length === 0 || value.length < 2) {
+                    container.classList.remove('visible');
+                    container.innerHTML = '';
+                    return;
+                }
+
+                container.innerHTML = suggestions.map((s, i) => `
+                    <div class="tag-suggestion-item" data-category="${s.category}" data-index="${i}">
+                        <span class="suggestion-category" style="background:${CategoryEngine.colors[s.category]}">${CategoryEngine.labels[s.category]}</span>
+                        <span class="suggestion-text">${Utils.escapeHtml(Utils.capitalizeFirst(s.keyword))}</span>
+                        <span class="suggestion-hint">Tab to apply</span>
+                    </div>
+                `).join('');
+                container.classList.add('visible');
+
+                container.querySelectorAll('.tag-suggestion-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        categorySelect.value = item.dataset.category;
+                        container.classList.remove('visible');
+                    });
+                });
+            });
+
+            input.addEventListener('keydown', (e) => {
+                const items = container.querySelectorAll('.tag-suggestion-item');
+                if (!items.length || !container.classList.contains('visible')) return;
+
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    TagSuggestions.highlightedIndex = Math.min(TagSuggestions.highlightedIndex + 1, items.length - 1);
+                    items.forEach((item, i) => item.classList.toggle('highlighted', i === TagSuggestions.highlightedIndex));
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    TagSuggestions.highlightedIndex = Math.max(TagSuggestions.highlightedIndex - 1, 0);
+                    items.forEach((item, i) => item.classList.toggle('highlighted', i === TagSuggestions.highlightedIndex));
+                } else if (e.key === 'Tab' || e.key === 'Enter') {
+                    const idx = TagSuggestions.highlightedIndex >= 0 ? TagSuggestions.highlightedIndex : 0;
+                    if (items[idx]) {
+                        e.preventDefault();
+                        categorySelect.value = items[idx].dataset.category;
+                        container.classList.remove('visible');
+                    }
+                } else if (e.key === 'Escape') {
+                    container.classList.remove('visible');
+                }
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.description-group')) {
+                    container.classList.remove('visible');
+                }
+            });
         }
-    });
-};
+    };
 
-// ==================== INITIALIZATION ====================
+    // ==================== APP (ORCHESTRATOR) ====================
 
-const init = () => {
-    setupCurrencySelector();
-    setupTagSuggestions();
-    setupDashboardUpload();
+    const App = {
+        init() {
+            App.setupNavigation();
+            App.setupEventDelegation();
+            App.setupForms();
+            Currency.setupSelector();
+            TagSuggestions.setup();
+            Upload.setupDashboard();
+            Upload.setupZone('expense-upload-zone', 'expense-file-input', 'expense-upload-preview', 'expense');
+            Upload.setupZone('payslip-upload-zone', 'payslip-file-input', 'payslip-upload-preview', 'payslip');
 
-    // Wire up parsed transactions import/discard buttons
-    const importBtn = document.getElementById('import-all-btn');
-    const discardBtn = document.getElementById('discard-parsed-btn');
-    if (importBtn) importBtn.addEventListener('click', importParsedTransactions);
-    if (discardBtn) discardBtn.addEventListener('click', discardParsedTransactions);
+            // Import/discard buttons
+            const importBtn = document.getElementById('import-all-btn');
+            const discardBtn = document.getElementById('discard-parsed-btn');
+            if (importBtn) importBtn.addEventListener('click', () => Parser.import());
+            if (discardBtn) discardBtn.addEventListener('click', () => Parser.discard());
 
-    renderExpenses();
-    renderDebts();
-    renderInvestments();
-    renderIncomes();
-    renderUploadHistory();
-    updateDashboard();
+            // Initial renders
+            Expenses.render();
+            Debts.render();
+            Investments.render();
+            Income.render();
+            Upload.renderHistory();
+            Dashboard.update();
 
-    if (state.investmentProfile) {
-        document.getElementById('investment-goal').value = state.investmentProfile.goal;
-        document.getElementById('investment-timeline').value = state.investmentProfile.timeline;
-        document.getElementById('risk-tolerance').value = state.investmentProfile.riskTolerance;
-        document.getElementById('monthly-investment').value = state.investmentProfile.monthlyAmount;
-        generateInvestmentRecommendations();
-        generateInvestmentProjection();
-    }
-};
+            // Restore investment profile
+            if (State.data.investmentProfile) {
+                const p = State.data.investmentProfile;
+                document.getElementById('investment-goal').value = p.goal;
+                document.getElementById('investment-timeline').value = p.timeline;
+                document.getElementById('risk-tolerance').value = p.riskTolerance;
+                document.getElementById('monthly-investment').value = p.monthlyAmount;
+                Investments.generateRecommendations();
+                Investments.generateProjection();
+            }
 
-// Make functions globally accessible
-window.deleteExpense = deleteExpense;
-window.editExpense = editExpense;
-window.saveExpenseEdit = saveExpenseEdit;
-window.cancelExpenseEdit = cancelExpenseEdit;
-window.deleteDebt = deleteDebt;
-window.deleteInvestment = deleteInvestment;
-window.deleteIncome = deleteIncome;
-window.deleteUpload = deleteUpload;
+            // Set default date
+            const dateInput = document.getElementById('expense-date');
+            if (dateInput) dateInput.valueAsDate = new Date();
+        },
 
-// Initialize app
-document.addEventListener('DOMContentLoaded', init);
+        setupNavigation() {
+            document.querySelectorAll('.nav-links a').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetId = link.getAttribute('href').substring(1);
+
+                    // Update tab states
+                    document.querySelectorAll('.nav-links a').forEach(l => {
+                        l.classList.remove('active');
+                        l.setAttribute('aria-selected', 'false');
+                    });
+                    link.classList.add('active');
+                    link.setAttribute('aria-selected', 'true');
+
+                    // Update panel visibility
+                    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+                    document.getElementById(targetId).classList.add('active');
+                });
+            });
+        },
+
+        setupEventDelegation() {
+            document.body.addEventListener('click', (e) => {
+                const target = e.target.closest('[data-action]');
+                if (!target) return;
+
+                const action = target.dataset.action;
+                const id = target.dataset.id;
+
+                switch (action) {
+                    case 'delete-expense': Expenses.delete(id); break;
+                    case 'edit-expense': Expenses.edit(id); break;
+                    case 'save-expense-edit': Expenses.saveEdit(id); break;
+                    case 'cancel-expense-edit': Expenses.cancelEdit(); break;
+                    case 'delete-debt': Debts.delete(id); break;
+                    case 'delete-investment': Investments.delete(id); break;
+                    case 'delete-income': Income.delete(id); break;
+                    case 'delete-upload': Upload.deleteUpload(id); break;
+                }
+            });
+        },
+
+        setupForms() {
+            // Expense form
+            document.getElementById('expense-form').addEventListener('submit', (e) => Expenses.add(e));
+
+            // Debt form
+            document.getElementById('debt-form').addEventListener('submit', (e) => Debts.add(e));
+
+            // Investment form
+            document.getElementById('add-investment-form').addEventListener('submit', (e) => Investments.add(e));
+
+            // Income form
+            document.getElementById('income-form').addEventListener('submit', (e) => Income.add(e));
+
+            // Expense filter
+            document.getElementById('filter-category').addEventListener('change', (e) => Expenses.render(e.target.value));
+
+            // Calculate payoff
+            document.getElementById('calculate-payoff').addEventListener('click', () => {
+                const extra = parseFloat(document.getElementById('extra-payment-amount').value) || 0;
+                Debts.calculateTimeline(extra);
+            });
+
+            // Strategy tabs
+            document.querySelectorAll('.strategy-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.strategy-tab').forEach(t => {
+                        t.classList.remove('active');
+                        t.setAttribute('aria-selected', 'false');
+                    });
+                    tab.classList.add('active');
+                    tab.setAttribute('aria-selected', 'true');
+                    Debts.updatePayoffPlan();
+                });
+            });
+
+            // Investment profile
+            document.getElementById('investment-profile-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                State.set('investmentProfile', {
+                    goal: document.getElementById('investment-goal').value,
+                    timeline: document.getElementById('investment-timeline').value,
+                    riskTolerance: document.getElementById('risk-tolerance').value,
+                    monthlyAmount: parseFloat(document.getElementById('monthly-investment').value) || 0
+                });
+                Investments.generateRecommendations();
+                Investments.generateProjection();
+                Notify.show('Investment profile updated', 'success');
+            });
+        }
+    };
+
+    // ==================== BOOT ====================
+
+    document.addEventListener('DOMContentLoaded', App.init);
+})();

@@ -123,6 +123,8 @@
             setTimeout(() => {
                 toast.classList.remove('visible');
                 toast.addEventListener('transitionend', () => toast.remove());
+                // Fallback removal if transitionend doesn't fire
+                setTimeout(() => { if (toast.parentNode) toast.remove(); }, 500);
             }, duration);
         }
     };

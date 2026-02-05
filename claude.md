@@ -239,6 +239,7 @@ styles.css (~1388 lines) - CSS variables, responsive grid, chart wrappers, parse
 ### Development Notes
 - Branch: `claude/expense-tracker-financial-analysis-EyKk5`
 - Both `/expense-tracker/` and `/myClawdproject/` should be kept identical
+- **Agent system defined in `agents.md`** - 6 agents (Designer, Coder, Reviewer, Debugger, Tester, Super) with orchestration protocol. See agents.md for full definitions, prompt templates, and communication contracts.
 - The app uses no package manager or build step - edit files directly and open `index.html` in a browser
 - When adding new user-facing text that includes user input, always sanitize with `escapeHtml()`
 - When adding new currency-formatted values, use `formatCurrency(amount)` instead of hardcoded `$` signs

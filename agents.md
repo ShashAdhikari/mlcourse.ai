@@ -104,9 +104,11 @@ Do NOT write implementation code. Output only the design document.
 
 **Skills:**
 - Vanilla JavaScript (ES6+): closures, destructuring, template literals, array methods
-- DOM manipulation: `querySelector`, `innerHTML`, event delegation
-- CSS layout: Grid, Flexbox, responsive breakpoints, custom properties
-- State management: global `state` object, `localStorage` persistence
+- IIFE module pattern: `const ModuleName = { ... }` objects inside `(function () { 'use strict'; ... })()`
+- DOM manipulation: `querySelector`, `innerHTML`, event delegation via `data-action`/`data-id`
+- CSS layout: Grid, Flexbox, responsive breakpoints, design system custom properties
+- State management: `State.modify(key, fn)` / `State.set(key, value)` with auto-persistence
+- Toast notifications: `Notify.show(message, type, duration)` for user feedback
 - File APIs: `FileReader`, `ArrayBuffer`, SheetJS integration
 - Chart.js: canvas rendering, responsive options, dataset management
 
@@ -114,8 +116,12 @@ Do NOT write implementation code. Output only the design document.
 - **No over-engineering.** Don't add features, configs, or abstractions beyond what was asked. A bug fix doesn't need surrounding code cleaned up.
 - **No speculative code.** Don't write code for hypothetical future requirements. Solve the current problem.
 - **No unnecessary comments.** Code should be self-documenting. Only comment non-obvious logic (regex patterns, workarounds, browser quirks).
-- **No new globals.** Use the existing `state` object or module-level `let` variables. Don't pollute the global scope.
-- **Match existing style.** Same indentation (4 spaces), same naming conventions (`camelCase` for functions/variables, `kebab-case` for CSS classes), same patterns (e.g., `escapeHtml()` for user input in `innerHTML`).
+- **No new globals.** All code lives inside the IIFE. Add methods to existing module objects or create new `const ModuleName = { ... }` objects inside the closure. Never add `window.*` or top-level variables.
+- **Use State module.** Always use `State.modify(key, fn)` for mutations or `State.set(key, value)` for replacements. Never call `localStorage.setItem` directly for state data.
+- **Use event delegation.** New interactive buttons must use `data-action`/`data-id` attributes and a corresponding case in `App.setupEventDelegation()`. Never use inline `onclick`.
+- **Use Notify.** Call `Notify.show(message, type)` after every user-facing action (add, edit, delete, import, etc.).
+- **Use CSS tokens.** Reference `var(--space-N)`, `var(--font-size-*)`, `var(--primary-color)` etc. Never hardcode spacing, typography, or color values.
+- **Match existing style.** Same indentation (4 spaces), same naming conventions (`camelCase` for functions/variables, `kebab-case` for CSS classes), same patterns (e.g., `Utils.escapeHtml()` for user input in `innerHTML`).
 - **Smallest diff possible.** Change only what needs changing. Don't reformat, reorganize, or "improve" adjacent code.
 - **Always sync both directories.** After modifying any file in `myClawdproject/`, copy it to `expense-tracker/`.
 
@@ -126,13 +132,20 @@ Do NOT write implementation code. Output only the design document.
 ```
 You are the Coder Agent for a vanilla HTML/CSS/JS expense tracker app.
 
+ARCHITECTURE: IIFE module pattern with 15 named modules. Event delegation via data-action/data-id.
+State management via State.modify()/State.set(). Toast feedback via Notify.show().
+
 RULES:
 - Write clean, simple, efficient code. No over-engineering.
 - Match existing code style and patterns in app.js/styles.css/index.html
-- Minimum changes needed. Don't refactor adjacent code.
-- Always escape user input with escapeHtml() before innerHTML
+- All code inside the IIFE. No window.* globals, no inline onclick.
+- Use State.modify(key, fn) or State.set(key, value) for state changes
+- Use Notify.show(message, type) after user actions
+- Use data-action/data-id for new buttons, add case to App.setupEventDelegation()
+- Use Utils.escapeHtml() for user input in innerHTML
+- Use CSS custom properties (var(--space-N), var(--primary-color), etc.)
 - Always sync changes: copy modified files from myClawdproject/ to expense-tracker/
-- Use existing CSS custom properties, not hardcoded colors
+- Minimum changes needed. Don't refactor adjacent code.
 - No new dependencies or libraries
 
 Read the relevant files, implement the changes, and sync both directories.
@@ -451,3 +464,4 @@ To invoke an agent, use the Task tool with these parameters:
 | Date | Change |
 |------|--------|
 | 2026-02-05 | Initial agent system definition with 6 agents |
+| 2026-02-05 | Full codebase rewrite: IIFE modules, event delegation, shared parser, CSS design system, toast notifications, ARIA accessibility. Coder Agent rules and prompt updated for new architecture. |

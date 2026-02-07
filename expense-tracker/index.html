@@ -97,6 +97,13 @@
                 </div>
             </div>
 
+            <div class="card forecast-card">
+                <h3>Annual Financial Forecast</h3>
+                <div id="financial-forecast">
+                    <p class="empty-state">Add expenses and income to see your annual forecast.</p>
+                </div>
+            </div>
+
             <div class="analytics-row">
                 <div class="card analytics-card">
                     <h3>Monthly Expense vs Income</h3>
@@ -202,6 +209,60 @@
                         <p class="empty-state">No expenses recorded yet. Add your first expense above.</p>
                     </div>
                 </div>
+
+                <div class="card planned-expenses-card">
+                    <h3>Planned / Future Expenses</h3>
+                    <details class="planned-expenses-details" open>
+                        <summary>Add Planned Expense</summary>
+                        <form id="planned-expense-form">
+                            <div class="form-group">
+                                <label for="planned-description">Description</label>
+                                <input type="text" id="planned-description" placeholder="e.g., Annual Insurance Premium" required>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="planned-amount">Amount</label>
+                                    <input type="number" id="planned-amount" step="0.01" min="0" placeholder="0.00" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="planned-category">Category</label>
+                                    <select id="planned-category">
+                                        <option value="housing">Housing</option>
+                                        <option value="transportation">Transportation</option>
+                                        <option value="food">Food & Groceries</option>
+                                        <option value="utilities">Utilities</option>
+                                        <option value="healthcare">Healthcare</option>
+                                        <option value="entertainment">Entertainment</option>
+                                        <option value="shopping">Shopping</option>
+                                        <option value="education">Education</option>
+                                        <option value="personal">Personal Care</option>
+                                        <option value="other" selected>Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="planned-date">Planned Date</label>
+                                    <input type="date" id="planned-date" required>
+                                </div>
+                                <div class="form-group checkbox-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="planned-recurring">
+                                        <span>Recurring Monthly</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="form-group recurring-end-group" id="recurring-end-group" style="display: none;">
+                                <label for="planned-end-date">End Date (optional)</label>
+                                <input type="date" id="planned-end-date">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Add Planned Expense</button>
+                        </form>
+                    </details>
+                    <div class="planned-expenses-list" id="planned-expenses-list">
+                        <p class="empty-state">No planned expenses. Add future expenses to see them in your projections.</p>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -279,6 +340,13 @@
                         <button class="btn btn-secondary" id="calculate-payoff">Calculate Payoff Timeline</button>
                     </div>
                     <div class="payoff-summary" id="payoff-summary"></div>
+                </div>
+
+                <div class="card debt-projection-card">
+                    <h3>12-Month Amortization Projection</h3>
+                    <div id="debt-projection">
+                        <p class="empty-state">Add debts to see your 12-month amortization projection.</p>
+                    </div>
                 </div>
             </div>
         </section>
@@ -375,7 +443,8 @@
                 </div>
 
                 <div class="card projection-card">
-                    <h3>Investment Growth Projection</h3>
+                    <h3>10-Year Investment Projection</h3>
+                    <div id="projection-controls"></div>
                     <div class="chart-wrapper">
                         <canvas id="investment-chart"></canvas>
                     </div>

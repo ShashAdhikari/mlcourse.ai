@@ -696,6 +696,115 @@ h2 {
     margin-bottom: var(--space-2);
 }
 
+/* ==================== DEBT PROJECTION ==================== */
+.debt-projection-card {
+    grid-column: 1 / -1;
+}
+
+.debt-projection-summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
+}
+
+.debt-projection-summary .projection-stat {
+    background: var(--background-color);
+    padding: var(--space-4);
+    border-radius: var(--border-radius);
+    text-align: center;
+}
+
+.debt-projection-summary .projection-label {
+    display: block;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+}
+
+.debt-projection-summary .projection-value {
+    display: block;
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.debt-projection-summary .projection-value.principal {
+    color: var(--success-color);
+}
+
+.debt-projection-summary .projection-value.interest {
+    color: var(--danger-color);
+}
+
+.amortization-table-wrapper {
+    overflow-x: auto;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.amortization-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-sm);
+}
+
+.amortization-table th,
+.amortization-table td {
+    padding: var(--space-3);
+    text-align: right;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.amortization-table th {
+    background: var(--background-color);
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+}
+
+.amortization-table th:first-child,
+.amortization-table td:first-child {
+    text-align: left;
+}
+
+.amortization-table td.principal {
+    color: var(--success-color);
+    font-weight: 500;
+}
+
+.amortization-table td.interest {
+    color: var(--danger-color);
+    font-weight: 500;
+}
+
+.debt-item.planned {
+    border-left: 3px dashed var(--primary-color);
+    opacity: 0.8;
+}
+
+.planned-badge {
+    font-size: var(--font-size-xs);
+    padding: 2px 6px;
+    background: var(--primary-light);
+    color: var(--primary-color);
+    border-radius: 10px;
+    font-weight: 500;
+}
+
+@media (max-width: 900px) {
+    .debt-projection-summary {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .debt-projection-summary {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* ==================== INVESTMENTS ==================== */
 .investment-total {
     display: flex;
@@ -781,6 +890,151 @@ h2 {
     width: 12px;
     height: 12px;
     border-radius: 3px;
+}
+
+/* ==================== INVESTMENT PROJECTION CONTROLS ==================== */
+#projection-controls {
+    margin-bottom: var(--space-4);
+}
+
+.projection-controls-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    align-items: flex-start;
+}
+
+.rate-slider-group {
+    flex: 1;
+    min-width: 200px;
+}
+
+.rate-slider-group label {
+    display: block;
+    margin-bottom: var(--space-2);
+    font-size: var(--font-size-sm);
+}
+
+.rate-slider-group input[type="range"] {
+    width: 100%;
+    height: 8px;
+    border-radius: 4px;
+    background: var(--border-color);
+    outline: none;
+    cursor: pointer;
+}
+
+.rate-slider-group input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.rate-slider-group input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+}
+
+.rate-range {
+    display: block;
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+    margin-top: var(--space-1);
+}
+
+.scenario-toggle {
+    flex: 1;
+    min-width: 300px;
+}
+
+.scenario-toggle label {
+    display: block;
+    margin-bottom: var(--space-2);
+    font-size: var(--font-size-sm);
+}
+
+.scenario-buttons {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.scenario-btn {
+    flex: 1;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    background: var(--card-background);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.scenario-btn:hover {
+    border-color: var(--primary-color);
+}
+
+.scenario-btn.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.projection-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-4);
+    margin-top: var(--space-4);
+}
+
+.projection-summary-grid .projection-stat {
+    background: var(--background-color);
+    padding: var(--space-3);
+    border-radius: var(--border-radius-sm);
+    text-align: center;
+}
+
+.projection-summary-grid .projection-label {
+    display: block;
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    margin-bottom: var(--space-1);
+}
+
+.projection-summary-grid .projection-value {
+    display: block;
+    font-size: var(--font-size-md);
+    font-weight: 600;
+}
+
+.projection-summary-grid .projection-value.positive {
+    color: var(--success-color);
+}
+
+.projection-range {
+    margin-top: var(--space-4);
+    padding: var(--space-3);
+    background: var(--primary-light);
+    border-radius: var(--border-radius-sm);
+    font-size: var(--font-size-sm);
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .projection-controls-row {
+        flex-direction: column;
+    }
+
+    .scenario-buttons {
+        flex-wrap: wrap;
+    }
+
+    .projection-summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
 /* ==================== UPLOAD ==================== */
@@ -1099,6 +1353,132 @@ h2 {
     justify-content: flex-end;
 }
 
+/* ==================== FORECAST CARD ==================== */
+.forecast-card {
+    margin-top: var(--space-6);
+}
+
+.forecast-card h3 {
+    margin-bottom: var(--space-4);
+}
+
+.forecast-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
+}
+
+.forecast-stat {
+    background: var(--background-color);
+    padding: var(--space-4);
+    border-radius: var(--border-radius);
+    text-align: center;
+}
+
+.forecast-stat.income-stat {
+    border-left: 4px solid var(--success-color);
+}
+
+.forecast-stat.expense-stat {
+    border-left: 4px solid var(--danger-color);
+}
+
+.forecast-stat.savings-stat {
+    border-left: 4px solid var(--primary-color);
+}
+
+.forecast-stat.rate-stat {
+    border-left: 4px solid var(--warning-color);
+}
+
+.forecast-label {
+    display: block;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+}
+
+.forecast-value {
+    display: block;
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.forecast-value.positive {
+    color: var(--success-color);
+}
+
+.forecast-value.negative {
+    color: var(--danger-color);
+}
+
+.forecast-confidence {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    background: var(--primary-light);
+    border-radius: var(--border-radius-sm);
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+.forecast-confidence .confidence-icon {
+    font-size: var(--font-size-base);
+}
+
+.forecast-confidence.low-confidence {
+    background: rgba(245, 158, 11, 0.1);
+}
+
+.forecast-confidence.low-confidence .confidence-icon {
+    color: var(--warning-color);
+}
+
+.forecast-savings-bar {
+    margin-top: var(--space-4);
+}
+
+.savings-bar-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--space-2);
+}
+
+.savings-bar-track {
+    height: 12px;
+    background: var(--border-color);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.savings-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-color), var(--success-color));
+    border-radius: 6px;
+    transition: width 0.5s ease;
+}
+
+.savings-bar-fill.negative {
+    background: linear-gradient(90deg, var(--danger-color), var(--warning-color));
+}
+
+@media (max-width: 900px) {
+    .forecast-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .forecast-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* ==================== ANALYTICS & PROJECTION ==================== */
 .analytics-row {
     display: grid;
@@ -1264,6 +1644,167 @@ h2 {
 .projection-badge.projected {
     background: var(--cat-utilities-bg);
     color: var(--cat-utilities-fg);
+}
+
+/* ==================== PLANNED EXPENSES ==================== */
+.planned-expenses-card {
+    grid-column: 1 / -1;
+}
+
+.planned-expenses-details {
+    margin-bottom: var(--space-4);
+}
+
+.planned-expenses-details summary {
+    cursor: pointer;
+    padding: var(--space-3);
+    background: var(--background-color);
+    border-radius: var(--border-radius-sm);
+    font-weight: 500;
+    margin-bottom: var(--space-3);
+}
+
+.planned-expenses-details summary:hover {
+    background: var(--border-color);
+}
+
+.planned-expenses-details[open] summary {
+    margin-bottom: var(--space-4);
+}
+
+.planned-expenses-details form {
+    padding: var(--space-3);
+    background: var(--background-color);
+    border-radius: var(--border-radius-sm);
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    cursor: pointer;
+    font-weight: 400;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.recurring-end-group {
+    margin-top: var(--space-3);
+}
+
+.planned-expenses-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.planned-expense-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--border-color);
+    transition: background-color 0.2s;
+}
+
+.planned-expense-item:last-child {
+    border-bottom: none;
+}
+
+.planned-expense-item:hover {
+    background: var(--background-color);
+}
+
+.planned-expense-item.completed {
+    opacity: 0.6;
+    text-decoration: line-through;
+}
+
+.planned-expense-item.cancelled {
+    opacity: 0.4;
+    text-decoration: line-through;
+}
+
+.planned-expense-item .item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.planned-expense-item .item-info h4 {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0 0 var(--space-1);
+    font-size: var(--font-size-base);
+    font-weight: 500;
+}
+
+.planned-expense-item .item-info p {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+.planned-expense-item .item-amount {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.planned-expense-item .item-actions {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.action-btn {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-sm);
+    transition: background-color 0.2s, transform 0.2s;
+}
+
+.action-btn:hover {
+    transform: scale(1.1);
+}
+
+.complete-btn {
+    background: var(--success-color);
+    color: white;
+}
+
+.complete-btn:hover {
+    background: #059669;
+}
+
+.cancel-btn {
+    background: var(--secondary-color);
+    color: white;
+}
+
+.cancel-btn:hover {
+    background: #475569;
+}
+
+.recurring-badge {
+    font-size: var(--font-size-xs);
+    padding: 2px 6px;
+    background: var(--primary-light);
+    color: var(--primary-color);
+    border-radius: 10px;
+    font-weight: 500;
 }
 
 /* ==================== PARSED TRANSACTIONS ==================== */

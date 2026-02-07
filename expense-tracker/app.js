@@ -89,7 +89,8 @@
             investments: Utils.safeParse('investments', []),
             incomes: Utils.safeParse('incomes', []),
             uploads: Utils.safeParse('uploads', []),
-            investmentProfile: Utils.safeParse('investmentProfile', null)
+            investmentProfile: Utils.safeParse('investmentProfile', null),
+            plannedExpenses: Utils.safeParse('plannedExpenses', [])
         },
 
         save(key) {
@@ -763,6 +764,160 @@
         }
     };
 
+    // ==================== PLANNED EXPENSES ====================
+
+    const PlannedExpenses = {
+        render() {
+            const container = document.getElementById('planned-expenses-list');
+            if (!container) return;
+
+            if (State.data.plannedExpenses.length === 0) {
+                container.innerHTML = '<p class="empty-state">No planned expenses. Add future expenses to see them in your projections.</p>';
+                return;
+            }
+
+            const sorted = [...State.data.plannedExpenses].sort((a, b) =>
+                new Date(a.plannedDate) - new Date(b.plannedDate)
+            );
+
+            container.innerHTML = sorted.map(exp => {
+                const dateStr = new Date(exp.plannedDate).toLocaleDateString('en-US', {
+                    year: 'numeric', month: 'short', day: 'numeric'
+                });
+                const statusClass = exp.status === 'completed' ? 'completed' :
+                                   exp.status === 'cancelled' ? 'cancelled' : '';
+                const recurringBadge = exp.isRecurring ?
+                    '<span class="badge recurring-badge">Recurring</span>' : '';
+
+                return `
+                <div class="planned-expense-item ${statusClass}">
+                    <div class="item-info">
+                        <h4>${Utils.escapeHtml(exp.description)} ${recurringBadge}</h4>
+                        <p>${dateStr} · ${Utils.capitalizeFirst(exp.category)}</p>
+                    </div>
+                    <span class="item-amount expense">${Currency.format(exp.amount)}</span>
+                    <div class="item-actions">
+                        ${exp.status === 'planned' ? `
+                            <button class="action-btn complete-btn" data-action="complete-planned" data-id="${exp.id}" title="Mark Complete">✓</button>
+                            <button class="action-btn cancel-btn" data-action="cancel-planned" data-id="${exp.id}" title="Cancel">✕</button>
+                        ` : ''}
+                        <button class="delete-btn" data-action="delete-planned" data-id="${exp.id}" aria-label="Delete" title="Delete">🗑️</button>
+                    </div>
+                </div>`;
+            }).join('');
+        },
+
+        add(e) {
+            e.preventDefault();
+            const form = e.target;
+            const description = form.querySelector('#planned-description').value.trim();
+            const amount = parseFloat(form.querySelector('#planned-amount').value);
+            const category = form.querySelector('#planned-category').value;
+            const plannedDate = form.querySelector('#planned-date').value;
+            const isRecurring = form.querySelector('#planned-recurring').checked;
+            const recurringEndDate = form.querySelector('#planned-end-date')?.value || null;
+
+            if (!description || !amount || !plannedDate) {
+                Notify.show('Please fill in all required fields', 'warning');
+                return;
+            }
+
+            const monthKey = plannedDate.substring(0, 7);
+
+            State.modify('plannedExpenses', arr => arr.push({
+                id: Utils.generateId(),
+                description,
+                amount,
+                category: category || 'other',
+                plannedDate,
+                monthKey,
+                isRecurring,
+                recurringEndDate: isRecurring ? recurringEndDate : null,
+                status: 'planned'
+            }));
+
+            form.reset();
+            PlannedExpenses.render();
+            Dashboard.update();
+            Notify.show('Planned expense added', 'success');
+        },
+
+        complete(id) {
+            const planned = State.data.plannedExpenses.find(p => p.id === id);
+            if (!planned) return;
+
+            // Move to actual expenses
+            State.modify('expenses', arr => arr.push({
+                id: Utils.generateId(),
+                description: planned.description,
+                amount: planned.amount,
+                category: planned.category,
+                date: planned.plannedDate,
+                monthKey: planned.monthKey
+            }));
+
+            // Update status
+            const idx = State.data.plannedExpenses.findIndex(p => p.id === id);
+            if (idx !== -1) {
+                State.data.plannedExpenses[idx].status = 'completed';
+                State.save('plannedExpenses');
+            }
+
+            PlannedExpenses.render();
+            Expenses.render();
+            Dashboard.update();
+            Notify.show('Expense marked as completed and added to expenses', 'success');
+        },
+
+        cancel(id) {
+            const idx = State.data.plannedExpenses.findIndex(p => p.id === id);
+            if (idx !== -1) {
+                State.data.plannedExpenses[idx].status = 'cancelled';
+                State.save('plannedExpenses');
+            }
+            PlannedExpenses.render();
+            Dashboard.update();
+            Notify.show('Planned expense cancelled', 'info');
+        },
+
+        delete(id) {
+            State.set('plannedExpenses', State.data.plannedExpenses.filter(p => p.id !== id));
+            PlannedExpenses.render();
+            Dashboard.update();
+            Notify.show('Planned expense deleted', 'info');
+        },
+
+        getProjectedExpenses(monthKey) {
+            // Get planned expenses for a specific month (including recurring)
+            let total = 0;
+            const targetDate = new Date(monthKey + '-01');
+
+            State.data.plannedExpenses.forEach(exp => {
+                if (exp.status !== 'planned') return;
+
+                const expDate = new Date(exp.plannedDate);
+                const expMonthKey = exp.monthKey;
+
+                if (exp.isRecurring) {
+                    // Check if this recurring expense applies to the target month
+                    const startMonth = new Date(exp.plannedDate);
+                    const endMonth = exp.recurringEndDate ? new Date(exp.recurringEndDate) : null;
+
+                    if (targetDate >= startMonth && (!endMonth || targetDate <= endMonth)) {
+                        total += exp.amount;
+                    }
+                } else {
+                    // One-time expense - only count if it matches the month
+                    if (expMonthKey === monthKey) {
+                        total += exp.amount;
+                    }
+                }
+            });
+
+            return total;
+        }
+    };
+
     // ==================== DEBTS ====================
 
     const Debts = {
@@ -776,19 +931,23 @@
                 return;
             }
 
-            container.innerHTML = State.data.debts.map(debt => `
-                <div class="debt-item">
+            container.innerHTML = State.data.debts.map(debt => {
+                const statusBadge = debt.status === 'planned' ?
+                    '<span class="badge planned-badge">Planned</span>' : '';
+                return `
+                <div class="debt-item ${debt.status === 'planned' ? 'planned' : ''}">
                     <div class="item-info">
-                        <h4>${Utils.escapeHtml(debt.name)}</h4>
+                        <h4>${Utils.escapeHtml(debt.name)} ${statusBadge}</h4>
                         <p>${Utils.capitalizeFirst(debt.type.replace('-', ' '))} &bull; ${debt.rate}% APR</p>
                         <p>Min payment: ${Currency.format(debt.minimum)}/mo</p>
                     </div>
                     <span class="item-amount debt">${Currency.format(debt.balance)}</span>
                     <button class="delete-btn" data-action="delete-debt" data-id="${debt.id}" aria-label="Delete debt" title="Delete">&#128465;</button>
-                </div>
-            `).join('');
+                </div>`;
+            }).join('');
 
             Debts.updatePayoffPlan();
+            Debts.renderDebtProjection();
         },
 
         add(e) {
@@ -803,7 +962,9 @@
 
             State.modify('debts', arr => arr.push({
                 id: Utils.generateId(),
-                name, balance, rate, minimum, type
+                name, balance, rate, minimum, type,
+                startDate: new Date().toISOString().split('T')[0],
+                status: 'active'
             }));
 
             e.target.reset();
@@ -894,6 +1055,168 @@
                 <p><strong>Total amount paid:</strong> ${Currency.format(totalPaid)}</p>
                 ${extraPayment > 0 ? `<p><strong>Extra payment:</strong> ${Currency.format(extraPayment)}/month saves you time and interest!</p>` : ''}
             `;
+        },
+
+        generateAmortization(debtId, months = 12) {
+            const debt = State.data.debts.find(d => d.id === debtId);
+            if (!debt) return [];
+
+            const schedule = [];
+            let balance = debt.balance;
+            const monthlyRate = debt.rate / 100 / 12;
+            const payment = debt.minimum;
+
+            for (let month = 1; month <= months && balance > 0; month++) {
+                const interest = balance * monthlyRate;
+                const principal = Math.min(payment - interest, balance);
+                balance = Math.max(0, balance - principal);
+
+                schedule.push({
+                    month,
+                    payment: principal + interest,
+                    principal,
+                    interest,
+                    remainingBalance: balance
+                });
+
+                if (payment <= interest) break; // Payment doesn't cover interest
+            }
+
+            return schedule;
+        },
+
+        getAggregateAmortization(months = 12) {
+            // Aggregate all debts into a single schedule
+            const aggregate = [];
+
+            for (let month = 1; month <= months; month++) {
+                let totalPayment = 0;
+                let totalPrincipal = 0;
+                let totalInterest = 0;
+                let totalRemaining = 0;
+
+                State.data.debts.forEach(debt => {
+                    const schedule = Debts.generateAmortization(debt.id, month);
+                    if (schedule.length >= month) {
+                        const entry = schedule[month - 1];
+                        totalPayment += entry.payment;
+                        totalPrincipal += entry.principal;
+                        totalInterest += entry.interest;
+                        totalRemaining += entry.remainingBalance;
+                    }
+                });
+
+                aggregate.push({
+                    month,
+                    payment: totalPayment,
+                    principal: totalPrincipal,
+                    interest: totalInterest,
+                    remainingBalance: totalRemaining
+                });
+            }
+
+            return aggregate;
+        },
+
+        calculateDebtFreeDate() {
+            if (State.data.debts.length === 0) return null;
+
+            let maxMonths = 0;
+
+            State.data.debts.forEach(debt => {
+                let balance = debt.balance;
+                const monthlyRate = debt.rate / 100 / 12;
+                let months = 0;
+                const payment = debt.minimum;
+
+                while (balance > 0 && months < 600) {
+                    const interest = balance * monthlyRate;
+                    if (payment <= interest) return null; // Can never pay off
+                    balance = balance + interest - payment;
+                    months++;
+                }
+                if (months > maxMonths) maxMonths = months;
+            });
+
+            if (maxMonths === 0 || maxMonths >= 600) return null;
+
+            const debtFreeDate = new Date();
+            debtFreeDate.setMonth(debtFreeDate.getMonth() + maxMonths);
+            return debtFreeDate;
+        },
+
+        renderDebtProjection() {
+            const container = document.getElementById('debt-projection');
+            if (!container) return;
+
+            if (State.data.debts.length === 0) {
+                container.innerHTML = '<p class="empty-state">Add debts to see your 12-month amortization projection.</p>';
+                return;
+            }
+
+            const aggregate = Debts.getAggregateAmortization(12);
+            const debtFreeDate = Debts.calculateDebtFreeDate();
+            const totalDebt = State.data.debts.reduce((s, d) => s + d.balance, 0);
+
+            let debtFreeDateStr = 'More than 50 years';
+            if (debtFreeDate) {
+                debtFreeDateStr = debtFreeDate.toLocaleDateString('en-US', {
+                    year: 'numeric', month: 'long'
+                });
+            }
+
+            const now = new Date();
+
+            const tableRows = aggregate.map((entry, idx) => {
+                const monthDate = new Date(now.getFullYear(), now.getMonth() + idx, 1);
+                const monthLabel = monthDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+
+                return `<tr>
+                    <td>${monthLabel}</td>
+                    <td>${Currency.format(entry.payment)}</td>
+                    <td class="principal">${Currency.format(entry.principal)}</td>
+                    <td class="interest">${Currency.format(entry.interest)}</td>
+                    <td>${Currency.format(entry.remainingBalance)}</td>
+                </tr>`;
+            }).join('');
+
+            const totalPrincipal12m = aggregate.reduce((s, e) => s + e.principal, 0);
+            const totalInterest12m = aggregate.reduce((s, e) => s + e.interest, 0);
+
+            container.innerHTML = `
+                <div class="debt-projection-summary">
+                    <div class="projection-stat">
+                        <span class="projection-label">Total Debt</span>
+                        <span class="projection-value">${Currency.format(totalDebt)}</span>
+                    </div>
+                    <div class="projection-stat">
+                        <span class="projection-label">Debt-Free Date</span>
+                        <span class="projection-value">${debtFreeDateStr}</span>
+                    </div>
+                    <div class="projection-stat">
+                        <span class="projection-label">12-Month Principal</span>
+                        <span class="projection-value principal">${Currency.format(totalPrincipal12m)}</span>
+                    </div>
+                    <div class="projection-stat">
+                        <span class="projection-label">12-Month Interest</span>
+                        <span class="projection-value interest">${Currency.format(totalInterest12m)}</span>
+                    </div>
+                </div>
+                <div class="amortization-table-wrapper">
+                    <table class="amortization-table">
+                        <thead>
+                            <tr>
+                                <th>Month</th>
+                                <th>Payment</th>
+                                <th>Principal</th>
+                                <th>Interest</th>
+                                <th>Remaining</th>
+                            </tr>
+                        </thead>
+                        <tbody>${tableRows}</tbody>
+                    </table>
+                </div>
+            `;
         }
     };
 
@@ -928,6 +1251,9 @@
             `).join('');
         },
 
+        customRate: null, // User-adjustable rate override
+        scenario: 'expected', // pessimistic, expected, optimistic
+
         add(e) {
             e.preventDefault();
             const name = document.getElementById('investment-name').value.trim();
@@ -938,12 +1264,16 @@
 
             State.modify('investments', arr => arr.push({
                 id: Utils.generateId(),
-                name, value, type
+                name, value, type,
+                expectedReturn: null, // Use default based on risk tolerance
+                startDate: new Date().toISOString().split('T')[0],
+                status: 'active'
             }));
 
             e.target.reset();
             Investments.render();
             Dashboard.update();
+            Investments.generateProjection();
             Notify.show('Investment added', 'success');
         },
 
@@ -1030,37 +1360,117 @@
             return recommendations[goal] || recommendations.other;
         },
 
-        generateProjection() {
-            const detailsEl = document.getElementById('projection-details');
-            if (!State.data.investmentProfile) return;
-
-            const { timeline, riskTolerance, monthlyAmount } = State.data.investmentProfile;
-            const currentPortfolio = State.data.investments.reduce((s, inv) => s + inv.value, 0);
-
-            const rates = { conservative: 0.06, moderate: 0.08, aggressive: 0.10 };
-            const annualRate = rates[riskTolerance] || 0.08;
+        calculateProjection(annualRate, years, monthlyAmount, currentPortfolio) {
             const monthlyRate = annualRate / 12;
-
-            const labels = [];
-            const data = [];
-            const years = parseInt(timeline) || 10;
-
+            const data = [currentPortfolio];
             let balance = currentPortfolio;
-            labels.push('Now');
-            data.push(balance);
 
             for (let y = 1; y <= years; y++) {
                 for (let m = 0; m < 12; m++) {
                     balance = balance * (1 + monthlyRate) + monthlyAmount;
                 }
-                labels.push('Year ' + y);
                 data.push(Math.round(balance));
             }
 
-            const totalContributed = currentPortfolio + (monthlyAmount * 12 * years);
-            const totalGrowth = balance - totalContributed;
+            return data;
+        },
 
-            // Render chart
+        getScenarioRates(baseRate) {
+            return {
+                pessimistic: Math.max(0, baseRate - 0.04),
+                expected: baseRate,
+                optimistic: baseRate + 0.04
+            };
+        },
+
+        generateProjection() {
+            const detailsEl = document.getElementById('projection-details');
+            const controlsEl = document.getElementById('projection-controls');
+            const currentPortfolio = State.data.investments.reduce((s, inv) => s + inv.value, 0);
+
+            // Default values if no profile set
+            let riskTolerance = 'moderate';
+            let monthlyAmount = 0;
+
+            if (State.data.investmentProfile) {
+                riskTolerance = State.data.investmentProfile.riskTolerance;
+                monthlyAmount = parseFloat(State.data.investmentProfile.monthlyAmount) || 0;
+            }
+
+            // Base rates by risk tolerance
+            const baseRates = { conservative: 0.06, moderate: 0.08, aggressive: 0.10 };
+            const defaultRate = baseRates[riskTolerance] || 0.08;
+
+            // Use custom rate if set, otherwise use default
+            const annualRate = Investments.customRate !== null ? Investments.customRate : defaultRate;
+
+            // Always project 10 years
+            const years = 10;
+
+            // Generate labels
+            const labels = ['Now'];
+            for (let y = 1; y <= years; y++) {
+                labels.push('Year ' + y);
+            }
+
+            // Get scenario rates
+            const scenarioRates = Investments.getScenarioRates(annualRate);
+
+            // Calculate projections for all scenarios
+            const pessimisticData = Investments.calculateProjection(scenarioRates.pessimistic, years, monthlyAmount, currentPortfolio);
+            const expectedData = Investments.calculateProjection(scenarioRates.expected, years, monthlyAmount, currentPortfolio);
+            const optimisticData = Investments.calculateProjection(scenarioRates.optimistic, years, monthlyAmount, currentPortfolio);
+
+            // Choose which data to show based on scenario
+            let primaryData;
+            if (Investments.scenario === 'pessimistic') primaryData = pessimisticData;
+            else if (Investments.scenario === 'optimistic') primaryData = optimisticData;
+            else primaryData = expectedData;
+
+            const finalBalance = primaryData[years];
+            const totalContributed = currentPortfolio + (monthlyAmount * 12 * years);
+            const totalGrowth = finalBalance - totalContributed;
+
+            // Render controls (rate slider + scenario toggle)
+            if (controlsEl) {
+                const sliderValue = (annualRate * 100).toFixed(1);
+                controlsEl.innerHTML = `
+                    <div class="projection-controls-row">
+                        <div class="rate-slider-group">
+                            <label for="rate-slider">Adjust Rate of Return: <strong>${sliderValue}%</strong></label>
+                            <input type="range" id="rate-slider" min="0" max="15" step="0.5" value="${sliderValue}">
+                            <span class="rate-range">0% - 15%</span>
+                        </div>
+                        <div class="scenario-toggle">
+                            <label>Scenario:</label>
+                            <div class="scenario-buttons">
+                                <button class="scenario-btn ${Investments.scenario === 'pessimistic' ? 'active' : ''}" data-scenario="pessimistic">Pessimistic (${(scenarioRates.pessimistic * 100).toFixed(0)}%)</button>
+                                <button class="scenario-btn ${Investments.scenario === 'expected' ? 'active' : ''}" data-scenario="expected">Expected (${(scenarioRates.expected * 100).toFixed(0)}%)</button>
+                                <button class="scenario-btn ${Investments.scenario === 'optimistic' ? 'active' : ''}" data-scenario="optimistic">Optimistic (${(scenarioRates.optimistic * 100).toFixed(0)}%)</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Wire up slider
+                const slider = document.getElementById('rate-slider');
+                if (slider) {
+                    slider.addEventListener('input', (e) => {
+                        Investments.customRate = parseFloat(e.target.value) / 100;
+                        Investments.generateProjection();
+                    });
+                }
+
+                // Wire up scenario buttons
+                controlsEl.querySelectorAll('.scenario-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        Investments.scenario = btn.dataset.scenario;
+                        Investments.generateProjection();
+                    });
+                });
+            }
+
+            // Render chart with all three scenarios
             const ctx = document.getElementById('investment-chart');
             if (ctx) {
                 if (Investments.chart) Investments.chart.destroy();
@@ -1068,19 +1478,45 @@
                     type: 'line',
                     data: {
                         labels,
-                        datasets: [{
-                            label: 'Portfolio Value',
-                            data,
-                            borderColor: '#2563eb',
-                            backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                            fill: true,
-                            tension: 0.3
-                        }]
+                        datasets: [
+                            {
+                                label: 'Optimistic',
+                                data: optimisticData,
+                                borderColor: 'rgba(16, 185, 129, 0.4)',
+                                backgroundColor: 'transparent',
+                                borderDash: [5, 5],
+                                pointRadius: 0,
+                                tension: 0.3
+                            },
+                            {
+                                label: 'Expected',
+                                data: expectedData,
+                                borderColor: '#2563eb',
+                                backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                                fill: true,
+                                tension: 0.3
+                            },
+                            {
+                                label: 'Pessimistic',
+                                data: pessimisticData,
+                                borderColor: 'rgba(239, 68, 68, 0.4)',
+                                backgroundColor: 'transparent',
+                                borderDash: [5, 5],
+                                pointRadius: 0,
+                                tension: 0.3
+                            }
+                        ]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: { usePointStyle: true }
+                            }
+                        },
                         scales: {
                             y: {
                                 ticks: { callback: v => Currency.format(v) }
@@ -1091,13 +1527,32 @@
             }
 
             if (detailsEl) {
+                const rangeMin = Currency.format(pessimisticData[years]);
+                const rangeMax = Currency.format(optimisticData[years]);
+
                 detailsEl.innerHTML = `
-                    <div class="investment-total" style="margin-top:1rem">
-                        <div>
-                            <p><strong>Projected Value (${years}yr):</strong> ${Currency.format(balance)}</p>
-                            <p>Total Contributed: ${Currency.format(totalContributed)} &bull; Growth: ${Currency.format(totalGrowth)}</p>
+                    <div class="projection-summary-grid">
+                        <div class="projection-stat">
+                            <span class="projection-label">Current Portfolio</span>
+                            <span class="projection-value">${Currency.format(currentPortfolio)}</span>
                         </div>
-                    </div>`;
+                        <div class="projection-stat">
+                            <span class="projection-label">10-Year Projection</span>
+                            <span class="projection-value">${Currency.format(finalBalance)}</span>
+                        </div>
+                        <div class="projection-stat">
+                            <span class="projection-label">Total Contributions</span>
+                            <span class="projection-value">${Currency.format(totalContributed)}</span>
+                        </div>
+                        <div class="projection-stat">
+                            <span class="projection-label">Projected Growth</span>
+                            <span class="projection-value positive">${Currency.format(totalGrowth)}</span>
+                        </div>
+                    </div>
+                    <div class="projection-range">
+                        <span>Your portfolio could be between <strong>${rangeMin}</strong> and <strong>${rangeMax}</strong> in 10 years.</span>
+                    </div>
+                `;
             }
         }
     };
@@ -1359,17 +1814,21 @@
         },
 
         addSampleIncome() {
+            const currentMonth = new Date().toISOString().substring(0, 7);
             State.data.incomes.push({
                 id: Utils.generateId(),
                 source: 'Primary Job (from payslip)',
                 amount: 5000,
-                type: 'salary'
+                type: 'salary',
+                monthKey: currentMonth,
+                isRecurring: true
             });
             State.save('incomes');
             Upload.sampleIncomeAdded = true;
             localStorage.setItem('sampleIncomeAdded', 'true');
             Income.render();
             Dashboard.update();
+            Notify.show('Projections updated with new income data', 'success');
         }
     };
 
@@ -1392,6 +1851,7 @@
 
             Dashboard.updateHealthScore(totalIncome, totalExpenses, totalDebt, netSavings);
             Dashboard.updateExpenseChart();
+            Dashboard.renderFinancialForecast();
             Dashboard.renderMonthlyAnalytics();
             Dashboard.renderYearlyProjection();
         },
@@ -1496,6 +1956,132 @@
         parseMonthKey(monthKey) {
             const [year, month] = monthKey.split('-').map(Number);
             return new Date(year, month - 1, 1);
+        },
+
+        calculateYearlyForecast() {
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const currentMonth = now.getMonth(); // 0-indexed
+            const monthsElapsed = currentMonth + 1;
+            const monthsRemaining = 12 - monthsElapsed;
+
+            // Get monthly expense breakdown
+            const monthlyBreakdown = Dashboard.getMonthlyBreakdown();
+            const allMonths = Object.keys(monthlyBreakdown).sort();
+            const monthCount = allMonths.length || 1;
+
+            // Calculate actual expenses for current year so far
+            const currentYearMonths = allMonths.filter(m => m.startsWith(String(currentYear)));
+            const actualExpensesYTD = currentYearMonths.reduce((sum, m) => sum + monthlyBreakdown[m], 0);
+
+            // Calculate average monthly expense from available data
+            const totalExpenses = State.data.expenses.reduce((s, e) => s + e.amount, 0);
+            const avgMonthlyExpense = totalExpenses / monthCount;
+
+            // Calculate planned expenses for remaining months of the year
+            let plannedExpensesTotal = 0;
+            for (let m = currentMonth; m < 12; m++) {
+                const monthKey = `${currentYear}-${String(m + 1).padStart(2, '0')}`;
+                plannedExpensesTotal += PlannedExpenses.getProjectedExpenses(monthKey);
+            }
+
+            // Project remaining expenses (average + planned)
+            const projectedRemainingExpenses = (avgMonthlyExpense * monthsRemaining) + plannedExpensesTotal;
+            const projectedAnnualExpenses = actualExpensesYTD + projectedRemainingExpenses;
+
+            // Calculate annual income (monthly recurring × 12)
+            const monthlyRecurringIncome = State.data.incomes
+                .filter(inc => inc.isRecurring !== false)
+                .reduce((s, i) => s + i.amount, 0);
+            const oneTimeIncome = State.data.incomes
+                .filter(inc => inc.isRecurring === false)
+                .reduce((s, i) => s + i.amount, 0);
+            const projectedAnnualIncome = (monthlyRecurringIncome * 12) + oneTimeIncome;
+
+            // Net savings
+            const projectedNetSavings = projectedAnnualIncome - projectedAnnualExpenses;
+
+            // Savings rate (as percentage of income)
+            const savingsRate = projectedAnnualIncome > 0
+                ? (projectedNetSavings / projectedAnnualIncome) * 100
+                : 0;
+
+            // Confidence level based on data availability
+            let confidenceLevel = 'high';
+            let confidenceMessage = `Based on ${monthCount} months of expense data`;
+            if (monthCount < 3) {
+                confidenceLevel = 'low';
+                confidenceMessage = `Limited data: only ${monthCount} month(s) of expenses. Add more data for accurate projections.`;
+            } else if (monthCount < 6) {
+                confidenceLevel = 'medium';
+                confidenceMessage = `Based on ${monthCount} months of data. More history improves accuracy.`;
+            }
+
+            return {
+                projectedAnnualIncome,
+                projectedAnnualExpenses,
+                projectedNetSavings,
+                savingsRate,
+                monthlyRecurringIncome,
+                avgMonthlyExpense,
+                monthsOfData: monthCount,
+                confidenceLevel,
+                confidenceMessage,
+                actualExpensesYTD,
+                projectedRemainingExpenses
+            };
+        },
+
+        renderFinancialForecast() {
+            const container = document.getElementById('financial-forecast');
+            if (!container) return;
+
+            const hasData = State.data.expenses.length > 0 || State.data.incomes.length > 0;
+            if (!hasData) {
+                container.innerHTML = '<p class="empty-state">Add expenses and income to see your annual forecast.</p>';
+                return;
+            }
+
+            const forecast = Dashboard.calculateYearlyForecast();
+            const savingsClass = forecast.projectedNetSavings >= 0 ? 'positive' : 'negative';
+            const savingsBarWidth = Math.min(Math.max(forecast.savingsRate, 0), 100);
+            const barClass = forecast.savingsRate < 0 ? 'negative' : '';
+            const confidenceClass = forecast.confidenceLevel === 'low' ? 'low-confidence' : '';
+            const confidenceIcon = forecast.confidenceLevel === 'low' ? '⚠️' : 'ℹ️';
+
+            container.innerHTML = `
+                <div class="forecast-grid">
+                    <div class="forecast-stat income-stat">
+                        <span class="forecast-label">Projected Annual Income</span>
+                        <span class="forecast-value">${Currency.format(forecast.projectedAnnualIncome)}</span>
+                    </div>
+                    <div class="forecast-stat expense-stat">
+                        <span class="forecast-label">Projected Annual Expenses</span>
+                        <span class="forecast-value">${Currency.format(forecast.projectedAnnualExpenses)}</span>
+                    </div>
+                    <div class="forecast-stat savings-stat">
+                        <span class="forecast-label">Projected Net Savings</span>
+                        <span class="forecast-value ${savingsClass}">${Currency.format(forecast.projectedNetSavings)}</span>
+                    </div>
+                    <div class="forecast-stat rate-stat">
+                        <span class="forecast-label">Savings Rate</span>
+                        <span class="forecast-value ${savingsClass}">${forecast.savingsRate.toFixed(1)}%</span>
+                    </div>
+                </div>
+                <div class="forecast-savings-bar">
+                    <div class="savings-bar-label">
+                        <span>Savings Progress</span>
+                        <span>${forecast.savingsRate >= 0 ? forecast.savingsRate.toFixed(1) : 0}% of income</span>
+                    </div>
+                    <div class="savings-bar-track">
+                        <div class="savings-bar-fill ${barClass}" style="width: ${savingsBarWidth}%"></div>
+                    </div>
+                </div>
+                <div class="forecast-confidence ${confidenceClass}">
+                    <span class="confidence-icon">${confidenceIcon}</span>
+                    <span>${forecast.confidenceMessage}</span>
+                </div>
+            `;
         },
 
         renderMonthlyAnalytics() {
@@ -1719,6 +2305,7 @@
 
             // Initial renders
             Expenses.render();
+            PlannedExpenses.render();
             Debts.render();
             Investments.render();
             Income.render();
@@ -1779,6 +2366,9 @@
                     case 'delete-investment': Investments.delete(id); break;
                     case 'delete-income': Income.delete(id); break;
                     case 'delete-upload': Upload.deleteUpload(id); break;
+                    case 'complete-planned': PlannedExpenses.complete(id); break;
+                    case 'cancel-planned': PlannedExpenses.cancel(id); break;
+                    case 'delete-planned': PlannedExpenses.delete(id); break;
                 }
             });
         },
@@ -1795,6 +2385,29 @@
 
             // Income form
             document.getElementById('income-form').addEventListener('submit', (e) => Income.add(e));
+
+            // Planned expense form
+            const plannedForm = document.getElementById('planned-expense-form');
+            if (plannedForm) {
+                plannedForm.addEventListener('submit', (e) => PlannedExpenses.add(e));
+
+                // Toggle recurring end date visibility
+                const recurringCheckbox = document.getElementById('planned-recurring');
+                const endDateGroup = document.getElementById('recurring-end-group');
+                if (recurringCheckbox && endDateGroup) {
+                    recurringCheckbox.addEventListener('change', () => {
+                        endDateGroup.style.display = recurringCheckbox.checked ? 'block' : 'none';
+                    });
+                }
+
+                // Set default planned date to tomorrow
+                const plannedDateInput = document.getElementById('planned-date');
+                if (plannedDateInput) {
+                    const tomorrow = new Date();
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    plannedDateInput.valueAsDate = tomorrow;
+                }
+            }
 
             // Expense filter
             document.getElementById('filter-category').addEventListener('change', (e) => Expenses.render(e.target.value));

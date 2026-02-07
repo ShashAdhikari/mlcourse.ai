@@ -267,9 +267,39 @@
             return isNaN(num) ? null : Math.abs(num);
         },
 
+        parseMonth(value) {
+            // Parse month column value to YYYY-MM format
+            if (!value) return null;
+            const str = String(value).trim();
+            if (!str) return null;
+
+            // Already YYYY-MM format
+            let m = str.match(/^(\d{4})-(\d{2})$/);
+            if (m) return str;
+
+            // Month Year format: "January 2024", "Jan 2024", "01/2024"
+            m = str.match(/^([A-Za-z]+)\s+(\d{4})$/);
+            if (m) {
+                const months = { jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06',
+                                 jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12' };
+                const monthNum = months[m[1].toLowerCase().substring(0, 3)];
+                if (monthNum) return `${m[2]}-${monthNum}`;
+            }
+
+            // MM/YYYY or MM-YYYY format
+            m = str.match(/^(\d{1,2})[\/\-](\d{4})$/);
+            if (m) return `${m[2]}-${m[1].padStart(2, '0')}`;
+
+            // Try to extract from a full date if provided
+            m = str.match(/^(\d{4})-(\d{2})-\d{2}$/);
+            if (m) return `${m[1]}-${m[2]}`;
+
+            return null;
+        },
+
         detectColumns(headers) {
             const lower = headers.map(h => String(h).toLowerCase().trim());
-            const result = { date: -1, description: -1, debit: -1, credit: -1, balance: -1 };
+            const result = { date: -1, description: -1, debit: -1, credit: -1, balance: -1, month: -1 };
             const assigned = new Set();
 
             // Pass 1: Date
@@ -318,6 +348,14 @@
                 }
             }
 
+            // Pass 6: Month / Period / Statement
+            for (let i = 0; i < lower.length; i++) {
+                if (assigned.has(i)) continue;
+                if (/\b(month|period|statement\s*month|billing\s*period)\b/.test(lower[i])) {
+                    result.month = i; assigned.add(i); break;
+                }
+            }
+
             // Fallback: generic "amount" → debit
             if (result.debit === -1 && result.credit === -1) {
                 for (let i = 0; i < lower.length; i++) {
@@ -335,7 +373,7 @@
             if (rows.length < 2) return [];
 
             // Scan first 10 rows for best header row
-            let cols = { date: -1, description: -1, debit: -1, credit: -1, balance: -1 };
+            let cols = { date: -1, description: -1, debit: -1, credit: -1, balance: -1, month: -1 };
             let dataStartIdx = 1;
             let bestScore = 0;
             const scanLimit = Math.min(rows.length - 1, 10);
@@ -367,7 +405,8 @@
             Parser.columnInfo = {
                 hasDebit: cols.debit >= 0,
                 hasCredit: cols.credit >= 0,
-                hasBalance: cols.balance >= 0
+                hasBalance: cols.balance >= 0,
+                hasMonth: cols.month >= 0
             };
 
             const transactions = [];
@@ -380,6 +419,8 @@
                 const debitRaw = cols.debit >= 0 ? Parser.parseAmount(row[cols.debit]) : null;
                 const creditRaw = cols.credit >= 0 ? Parser.parseAmount(row[cols.credit]) : null;
                 const balanceRaw = cols.balance >= 0 ? Parser.parseAmount(row[cols.balance]) : null;
+                const monthRaw = cols.month >= 0 ? Parser.parseMonth(row[cols.month]) : null;
+                const monthKey = monthRaw || (date ? date.substring(0, 7) : null);
 
                 let rowType, amount;
                 if (debitRaw !== null && debitRaw > 0) {
@@ -400,7 +441,8 @@
                     rowType,
                     debitRaw,
                     creditRaw,
-                    balanceRaw
+                    balanceRaw,
+                    monthKey
                 });
             }
             return transactions;
@@ -574,7 +616,8 @@
                     description: t.description,
                     amount: t.amount,
                     category: t.category,
-                    date: t.date
+                    date: t.date,
+                    monthKey: t.monthKey || (t.date ? t.date.substring(0, 7) : null)
                 });
             });
             State.save('expenses');
@@ -1091,9 +1134,12 @@
 
             if (!source || !amount || !type) return;
 
+            const currentMonth = new Date().toISOString().substring(0, 7);
             State.modify('incomes', arr => arr.push({
                 id: Utils.generateId(),
-                source, amount, type
+                source, amount, type,
+                monthKey: currentMonth,
+                isRecurring: true  // Default to recurring for most income types
             }));
 
             e.target.reset();
@@ -1423,10 +1469,28 @@
         getMonthlyBreakdown() {
             const monthlyExpenses = {};
             State.data.expenses.forEach(exp => {
-                const key = exp.date.substring(0, 7);
-                monthlyExpenses[key] = (monthlyExpenses[key] || 0) + exp.amount;
+                // Prefer explicit monthKey, fall back to deriving from date
+                const key = exp.monthKey || (exp.date ? exp.date.substring(0, 7) : null);
+                if (key) {
+                    monthlyExpenses[key] = (monthlyExpenses[key] || 0) + exp.amount;
+                }
             });
             return monthlyExpenses;
+        },
+
+        getMonthlyIncome(targetMonth) {
+            // Calculate income for a specific month considering recurring status
+            let total = 0;
+            State.data.incomes.forEach(inc => {
+                if (inc.isRecurring === true || inc.isRecurring === undefined) {
+                    // Recurring income applies to all months
+                    total += inc.amount;
+                } else if (inc.monthKey === targetMonth) {
+                    // One-time income only applies to its specific month
+                    total += inc.amount;
+                }
+            });
+            return total;
         },
 
         parseMonthKey(monthKey) {

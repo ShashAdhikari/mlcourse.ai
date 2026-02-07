@@ -72,11 +72,11 @@ Feature 4 (Investment Projection) ─────────┘
    - In `Parser.parseRows()`, set `monthKey = date.substring(0, 7)` if no explicit month
 
 **Acceptance Criteria:**
-- [ ] Parser detects month column in bank statements
-- [ ] Transactions have `monthKey` field populated
-- [ ] Incomes can be assigned to specific months
-- [ ] Existing expense filtering still works
-- [ ] Monthly analytics uses `monthKey` for grouping
+- [x] Parser detects month column in bank statements
+- [x] Transactions have `monthKey` field populated
+- [x] Incomes can be assigned to specific months
+- [x] Existing expense filtering still works
+- [x] Monthly analytics uses `monthKey` for grouping
 
 ---
 
@@ -327,10 +327,10 @@ Feature 4 (Investment Projection) ─────────┘
 
 | Task | Priority | Status | Agents |
 |------|----------|--------|--------|
-| Add month column detection to Parser | P0 | Pending | Coder |
-| Add monthKey to transaction objects | P0 | Pending | Coder |
-| Update income data structure with monthKey | P0 | Pending | Coder |
-| Update Dashboard grouping to use monthKey | P0 | Pending | Coder |
+| Add month column detection to Parser | P0 | ✅ Done | Coder |
+| Add monthKey to transaction objects | P0 | ✅ Done | Coder |
+| Update income data structure with monthKey | P0 | ✅ Done | Coder |
+| Update Dashboard grouping to use monthKey | P0 | ✅ Done | Coder |
 
 ### Phase 2: Core Projections (Feature 1)
 **Estimated Tasks:** 6

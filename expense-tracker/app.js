@@ -90,7 +90,9 @@
             incomes: Utils.safeParse('incomes', []),
             uploads: Utils.safeParse('uploads', []),
             investmentProfile: Utils.safeParse('investmentProfile', null),
-            plannedExpenses: Utils.safeParse('plannedExpenses', [])
+            plannedExpenses: Utils.safeParse('plannedExpenses', []),
+            plannedDebts: Utils.safeParse('plannedDebts', []),
+            plannedInvestments: Utils.safeParse('plannedInvestments', [])
         },
 
         save(key) {
@@ -1220,6 +1222,107 @@
         }
     };
 
+    // ==================== PLANNED DEBTS ====================
+
+    const PlannedDebts = {
+        render() {
+            const container = document.getElementById('planned-debts-list');
+            if (!container) return;
+
+            if (State.data.plannedDebts.length === 0) {
+                container.innerHTML = '<p class="empty-state">No planned debts. Add future debts to see how they\'ll affect your projections.</p>';
+                return;
+            }
+
+            const sorted = [...State.data.plannedDebts].sort((a, b) =>
+                new Date(a.startDate) - new Date(b.startDate)
+            );
+
+            container.innerHTML = sorted.map(debt => {
+                const startDateStr = new Date(debt.startDate).toLocaleDateString('en-US', {
+                    year: 'numeric', month: 'short', day: 'numeric'
+                });
+                const isActive = new Date(debt.startDate) <= new Date();
+
+                return `
+                <div class="planned-debt-item ${isActive ? 'ready-to-activate' : ''}">
+                    <div class="item-info">
+                        <h4>${Utils.escapeHtml(debt.name)}</h4>
+                        <p>${Utils.capitalizeFirst(debt.type.replace('-', ' '))} &bull; ${debt.rate}% APR</p>
+                        <p>Starts: ${startDateStr} &bull; Payment: ${Currency.format(debt.minimum)}/mo</p>
+                    </div>
+                    <span class="item-amount debt">${Currency.format(debt.balance)}</span>
+                    <div class="item-actions">
+                        ${isActive ? `<button class="action-btn complete-btn" data-action="activate-planned-debt" data-id="${debt.id}" title="Activate Now">&#x2713;</button>` : ''}
+                        <button class="delete-btn" data-action="delete-planned-debt" data-id="${debt.id}" aria-label="Delete" title="Delete">&#128465;</button>
+                    </div>
+                </div>`;
+            }).join('');
+        },
+
+        add(e) {
+            e.preventDefault();
+            const form = e.target;
+            const name = form.querySelector('#planned-debt-name').value.trim();
+            const balance = parseFloat(form.querySelector('#planned-debt-balance').value);
+            const rate = parseFloat(form.querySelector('#planned-debt-rate').value);
+            const minimum = parseFloat(form.querySelector('#planned-debt-minimum').value);
+            const startDate = form.querySelector('#planned-debt-start').value;
+            const type = form.querySelector('#planned-debt-type').value;
+
+            if (!name || !balance || !rate || !minimum || !startDate || !type) {
+                Notify.show('Please fill in all required fields', 'warning');
+                return;
+            }
+
+            State.modify('plannedDebts', arr => arr.push({
+                id: Utils.generateId(),
+                name, balance, rate, minimum, type, startDate
+            }));
+
+            form.reset();
+            PlannedDebts.render();
+            Dashboard.update();
+            Notify.show('Planned debt added', 'success');
+        },
+
+        activate(id) {
+            const planned = State.data.plannedDebts.find(d => d.id === id);
+            if (!planned) return;
+
+            // Move to active debts
+            State.modify('debts', arr => arr.push({
+                id: Utils.generateId(),
+                name: planned.name,
+                balance: planned.balance,
+                rate: planned.rate,
+                minimum: planned.minimum,
+                type: planned.type,
+                startDate: new Date().toISOString().split('T')[0],
+                status: 'active'
+            }));
+
+            // Remove from planned
+            State.set('plannedDebts', State.data.plannedDebts.filter(d => d.id !== id));
+
+            PlannedDebts.render();
+            Debts.render();
+            Dashboard.update();
+            Notify.show('Debt activated and moved to your debts', 'success');
+        },
+
+        delete(id) {
+            State.set('plannedDebts', State.data.plannedDebts.filter(d => d.id !== id));
+            PlannedDebts.render();
+            Dashboard.update();
+            Notify.show('Planned debt deleted', 'info');
+        },
+
+        getTotalPlanned() {
+            return State.data.plannedDebts.reduce((s, d) => s + d.balance, 0);
+        }
+    };
+
     // ==================== INVESTMENTS ====================
 
     const Investments = {
@@ -1557,6 +1660,115 @@
         }
     };
 
+    // ==================== PLANNED INVESTMENTS ====================
+
+    const PlannedInvestments = {
+        render() {
+            const container = document.getElementById('planned-investments-list');
+            if (!container) return;
+
+            if (State.data.plannedInvestments.length === 0) {
+                container.innerHTML = '<p class="empty-state">No planned investments. Add future contributions to see them in projections.</p>';
+                return;
+            }
+
+            const sorted = [...State.data.plannedInvestments].sort((a, b) =>
+                new Date(a.targetDate) - new Date(b.targetDate)
+            );
+
+            container.innerHTML = sorted.map(inv => {
+                const dateStr = new Date(inv.targetDate).toLocaleDateString('en-US', {
+                    year: 'numeric', month: 'short', day: 'numeric'
+                });
+                const isReady = new Date(inv.targetDate) <= new Date();
+                const recurringBadge = inv.isRecurring ?
+                    '<span class="badge recurring-badge">Recurring</span>' : '';
+
+                return `
+                <div class="planned-investment-item ${isReady ? 'ready-to-activate' : ''}">
+                    <div class="item-info">
+                        <h4>${Utils.escapeHtml(inv.name)} ${recurringBadge}</h4>
+                        <p>${Utils.capitalizeFirst(inv.type.replace('-', ' '))} &bull; Target: ${dateStr}</p>
+                    </div>
+                    <span class="item-amount investment">${Currency.format(inv.amount)}</span>
+                    <div class="item-actions">
+                        ${isReady ? `<button class="action-btn complete-btn" data-action="activate-planned-investment" data-id="${inv.id}" title="Add to Portfolio">&#x2713;</button>` : ''}
+                        <button class="delete-btn" data-action="delete-planned-investment" data-id="${inv.id}" aria-label="Delete" title="Delete">&#128465;</button>
+                    </div>
+                </div>`;
+            }).join('');
+        },
+
+        add(e) {
+            e.preventDefault();
+            const form = e.target;
+            const name = form.querySelector('#planned-investment-name').value.trim();
+            const amount = parseFloat(form.querySelector('#planned-investment-amount').value);
+            const type = form.querySelector('#planned-investment-type').value;
+            const targetDate = form.querySelector('#planned-investment-date').value;
+            const isRecurring = form.querySelector('#planned-investment-recurring').checked;
+
+            if (!name || !amount || !type || !targetDate) {
+                Notify.show('Please fill in all required fields', 'warning');
+                return;
+            }
+
+            State.modify('plannedInvestments', arr => arr.push({
+                id: Utils.generateId(),
+                name, amount, type, targetDate, isRecurring
+            }));
+
+            form.reset();
+            PlannedInvestments.render();
+            Investments.generateProjection();
+            Dashboard.update();
+            Notify.show('Planned investment added', 'success');
+        },
+
+        activate(id) {
+            const planned = State.data.plannedInvestments.find(i => i.id === id);
+            if (!planned) return;
+
+            // Add to investments
+            State.modify('investments', arr => arr.push({
+                id: Utils.generateId(),
+                name: planned.name,
+                value: planned.amount,
+                type: planned.type,
+                expectedReturn: null,
+                startDate: new Date().toISOString().split('T')[0],
+                status: 'active'
+            }));
+
+            // Remove from planned
+            State.set('plannedInvestments', State.data.plannedInvestments.filter(i => i.id !== id));
+
+            PlannedInvestments.render();
+            Investments.render();
+            Investments.generateProjection();
+            Dashboard.update();
+            Notify.show('Investment activated and added to portfolio', 'success');
+        },
+
+        delete(id) {
+            State.set('plannedInvestments', State.data.plannedInvestments.filter(i => i.id !== id));
+            PlannedInvestments.render();
+            Investments.generateProjection();
+            Dashboard.update();
+            Notify.show('Planned investment deleted', 'info');
+        },
+
+        getTotalPlanned() {
+            return State.data.plannedInvestments.reduce((s, i) => s + i.amount, 0);
+        },
+
+        getRecurringTotal() {
+            return State.data.plannedInvestments
+                .filter(i => i.isRecurring)
+                .reduce((s, i) => s + i.amount, 0);
+        }
+    };
+
     // ==================== INCOME ====================
 
     const Income = {
@@ -1854,6 +2066,7 @@
             Dashboard.renderFinancialForecast();
             Dashboard.renderMonthlyAnalytics();
             Dashboard.renderYearlyProjection();
+            Dashboard.renderPlannedSummary();
         },
 
         updateHealthScore(income, expenses, debt, savings) {
@@ -2088,7 +2301,9 @@
             const container = document.getElementById('monthly-analytics');
             if (!container) return;
 
-            const totalIncome = State.data.incomes.reduce((s, i) => s + i.amount, 0);
+            const monthlyRecurringIncome = State.data.incomes
+                .filter(inc => inc.isRecurring !== false)
+                .reduce((s, i) => s + i.amount, 0);
             const totalExpenses = State.data.expenses.reduce((s, e) => s + e.amount, 0);
 
             if (State.data.expenses.length === 0 && State.data.incomes.length === 0) {
@@ -2100,7 +2315,7 @@
             const months = Object.keys(monthlyBreakdown);
             const monthCount = months.length || 1;
             const avgMonthlyExpense = totalExpenses / monthCount;
-            const diff = totalIncome - avgMonthlyExpense;
+            const diff = monthlyRecurringIncome - avgMonthlyExpense;
             const diffClass = diff >= 0 ? 'positive' : 'negative';
             const diffLabel = diff >= 0 ? 'surplus' : 'deficit';
 
@@ -2110,27 +2325,28 @@
             if (sortedMonths.length > 0) {
                 monthRows = sortedMonths.map(m => {
                     const mExp = monthlyBreakdown[m];
-                    const mDiff = totalIncome - mExp;
+                    const mIncome = Dashboard.getMonthlyIncome(m);
+                    const mDiff = mIncome - mExp;
                     const mClass = mDiff >= 0 ? 'positive' : 'negative';
                     const monthLabel = Dashboard.parseMonthKey(m).toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
-                    return `<tr><td>${monthLabel}</td><td>${Currency.format(mExp)}</td><td>${Currency.format(totalIncome)}</td><td class="${mClass}">${Currency.format(mDiff)}</td></tr>`;
+                    return `<tr><td>${monthLabel}</td><td>${Currency.format(mExp)}</td><td>${Currency.format(mIncome)}</td><td class="${mClass}">${Currency.format(mDiff)}</td></tr>`;
                 }).join('');
             } else {
                 monthRows = '<tr><td colspan="4" class="empty-state">No expense data yet</td></tr>';
             }
 
-            const ratio = totalIncome > 0 ? avgMonthlyExpense / totalIncome : 0;
+            const ratio = monthlyRecurringIncome > 0 ? avgMonthlyExpense / monthlyRecurringIncome : 0;
             const ratioPercent = Math.min(100, ratio * 100).toFixed(1);
             const ratioClass = ratio > 0.9 ? 'danger' : ratio > 0.7 ? 'warning' : 'good';
 
             container.innerHTML = `
                 <div class="analytics-summary">
                     <div class="analytics-stat"><span class="analytics-label">Avg Monthly Expense</span><span class="analytics-value expense">${Currency.format(avgMonthlyExpense)}</span></div>
-                    <div class="analytics-stat"><span class="analytics-label">Monthly Income</span><span class="analytics-value income">${Currency.format(totalIncome)}</span></div>
-                    <div class="analytics-stat"><span class="analytics-label">Monthly ${Utils.capitalizeFirst(diffLabel)}</span><span class="analytics-value ${diffClass}">${Currency.format(diff)}</span></div>
+                    <div class="analytics-stat"><span class="analytics-label">Monthly Income</span><span class="analytics-value income">${Currency.format(monthlyRecurringIncome)}</span></div>
+                    <div class="analytics-stat"><span class="analytics-label">Monthly ${Utils.capitalizeFirst(diffLabel)}</span><span class="analytics-value ${diffClass}">${Currency.format(Math.abs(diff))}</span></div>
                     <div class="analytics-stat"><span class="analytics-label">Months Tracked</span><span class="analytics-value">${months.length}</span></div>
                 </div>
-                ${totalIncome > 0 ? `
+                ${monthlyRecurringIncome > 0 ? `
                 <div class="analytics-bar-container">
                     <div class="analytics-bar-label">Expense-to-Income Ratio</div>
                     <div class="analytics-bar-track"><div class="analytics-bar-fill ${ratioClass}" style="width:${ratioPercent}%">${ratioPercent}%</div></div>
@@ -2210,6 +2426,56 @@
                         <tfoot><tr><td><strong>Total</strong></td><td><strong>${Currency.format(runningExpense)}</strong></td><td><strong>${Currency.format(runningIncome)}</strong></td><td class="${netClass}"><strong>${Currency.format(runningIncome - runningExpense)}</strong></td><td></td></tr></tfoot>
                     </table>
                 </div>`;
+        },
+
+        renderPlannedSummary() {
+            const container = document.getElementById('planned-items-summary');
+            if (!container) return;
+
+            const plannedExpensesCount = State.data.plannedExpenses.filter(e => e.status === 'planned').length;
+            const plannedDebtsCount = State.data.plannedDebts.length;
+            const plannedInvestmentsCount = State.data.plannedInvestments.length;
+
+            const totalPlannedExpenses = State.data.plannedExpenses
+                .filter(e => e.status === 'planned')
+                .reduce((s, e) => s + e.amount, 0);
+            const totalPlannedDebts = PlannedDebts.getTotalPlanned();
+            const totalPlannedInvestments = PlannedInvestments.getTotalPlanned();
+
+            if (plannedExpensesCount === 0 && plannedDebtsCount === 0 && plannedInvestmentsCount === 0) {
+                container.innerHTML = '<p class="empty-state">Add planned expenses, debts, or investments to see a summary here.</p>';
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="planned-summary-grid">
+                    <div class="planned-summary-stat expenses">
+                        <span class="planned-summary-icon">📋</span>
+                        <div class="planned-summary-content">
+                            <span class="planned-summary-label">Planned Expenses</span>
+                            <span class="planned-summary-value">${plannedExpensesCount} items</span>
+                            <span class="planned-summary-amount expense">${Currency.format(totalPlannedExpenses)}</span>
+                        </div>
+                    </div>
+                    <div class="planned-summary-stat debts">
+                        <span class="planned-summary-icon">💳</span>
+                        <div class="planned-summary-content">
+                            <span class="planned-summary-label">Planned Debts</span>
+                            <span class="planned-summary-value">${plannedDebtsCount} items</span>
+                            <span class="planned-summary-amount debt">${Currency.format(totalPlannedDebts)}</span>
+                        </div>
+                    </div>
+                    <div class="planned-summary-stat investments">
+                        <span class="planned-summary-icon">📈</span>
+                        <div class="planned-summary-content">
+                            <span class="planned-summary-label">Planned Investments</span>
+                            <span class="planned-summary-value">${plannedInvestmentsCount} items</span>
+                            <span class="planned-summary-amount investment">${Currency.format(totalPlannedInvestments)}</span>
+                        </div>
+                    </div>
+                </div>
+                <p class="planned-summary-note">These planned items are factored into your financial projections.</p>
+            `;
         }
     };
 
@@ -2307,7 +2573,9 @@
             Expenses.render();
             PlannedExpenses.render();
             Debts.render();
+            PlannedDebts.render();
             Investments.render();
+            PlannedInvestments.render();
             Income.render();
             Upload.renderHistory();
             Dashboard.update();
@@ -2369,6 +2637,10 @@
                     case 'complete-planned': PlannedExpenses.complete(id); break;
                     case 'cancel-planned': PlannedExpenses.cancel(id); break;
                     case 'delete-planned': PlannedExpenses.delete(id); break;
+                    case 'activate-planned-debt': PlannedDebts.activate(id); break;
+                    case 'delete-planned-debt': PlannedDebts.delete(id); break;
+                    case 'activate-planned-investment': PlannedInvestments.activate(id); break;
+                    case 'delete-planned-investment': PlannedInvestments.delete(id); break;
                 }
             });
         },
@@ -2380,8 +2652,34 @@
             // Debt form
             document.getElementById('debt-form').addEventListener('submit', (e) => Debts.add(e));
 
+            // Planned debt form
+            const plannedDebtForm = document.getElementById('planned-debt-form');
+            if (plannedDebtForm) {
+                plannedDebtForm.addEventListener('submit', (e) => PlannedDebts.add(e));
+                // Set default start date to next month
+                const startInput = document.getElementById('planned-debt-start');
+                if (startInput) {
+                    const nextMonth = new Date();
+                    nextMonth.setMonth(nextMonth.getMonth() + 1);
+                    startInput.valueAsDate = nextMonth;
+                }
+            }
+
             // Investment form
             document.getElementById('add-investment-form').addEventListener('submit', (e) => Investments.add(e));
+
+            // Planned investment form
+            const plannedInvestmentForm = document.getElementById('planned-investment-form');
+            if (plannedInvestmentForm) {
+                plannedInvestmentForm.addEventListener('submit', (e) => PlannedInvestments.add(e));
+                // Set default target date to next month
+                const targetInput = document.getElementById('planned-investment-date');
+                if (targetInput) {
+                    const nextMonth = new Date();
+                    nextMonth.setMonth(nextMonth.getMonth() + 1);
+                    targetInput.valueAsDate = nextMonth;
+                }
+            }
 
             // Income form
             document.getElementById('income-form').addEventListener('submit', (e) => Income.add(e));

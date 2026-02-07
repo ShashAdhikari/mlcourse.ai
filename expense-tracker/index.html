@@ -119,6 +119,13 @@
                 </div>
             </div>
 
+            <div class="card planned-summary-card">
+                <h3>Planned Items Overview</h3>
+                <div id="planned-items-summary">
+                    <p class="empty-state">Add planned expenses, debts, or investments to see a summary here.</p>
+                </div>
+            </div>
+
             <div class="card quick-upload-card">
                 <h3>Quick Import</h3>
                 <p class="upload-description">Upload your expense report or payslip to auto-import transactions. Personal details (names, account numbers) are automatically redacted.</p>
@@ -317,6 +324,56 @@
                     </div>
                 </div>
 
+                <div class="card planned-debts-card">
+                    <h3>Planned / Future Debts</h3>
+                    <details class="planned-debts-details">
+                        <summary>Add Planned Debt</summary>
+                        <form id="planned-debt-form">
+                            <div class="form-group">
+                                <label for="planned-debt-name">Debt Name</label>
+                                <input type="text" id="planned-debt-name" placeholder="e.g., Future Car Loan" required>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="planned-debt-balance">Expected Amount ($)</label>
+                                    <input type="number" id="planned-debt-balance" step="0.01" min="0" placeholder="0.00" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="planned-debt-rate">Expected Rate (%)</label>
+                                    <input type="number" id="planned-debt-rate" step="0.01" min="0" max="100" placeholder="0.00" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="planned-debt-minimum">Expected Payment ($)</label>
+                                    <input type="number" id="planned-debt-minimum" step="0.01" min="0" placeholder="0.00" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="planned-debt-start">Expected Start Date</label>
+                                    <input type="date" id="planned-debt-start" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="planned-debt-type">Debt Type</label>
+                                <select id="planned-debt-type" required>
+                                    <option value="">Select type</option>
+                                    <option value="credit-card">Credit Card</option>
+                                    <option value="student-loan">Student Loan</option>
+                                    <option value="car-loan">Car Loan</option>
+                                    <option value="mortgage">Mortgage</option>
+                                    <option value="personal-loan">Personal Loan</option>
+                                    <option value="medical">Medical Debt</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Add Planned Debt</button>
+                        </form>
+                    </details>
+                    <div class="planned-debts-list" id="planned-debts-list">
+                        <p class="empty-state">No planned debts. Add future debts to see how they'll affect your projections.</p>
+                    </div>
+                </div>
+
                 <div class="card payoff-card">
                     <h3>Debt Payoff Strategies</h3>
                     <div class="payoff-strategies">
@@ -432,6 +489,55 @@
                     <div class="investment-total">
                         <span>Total Portfolio Value:</span>
                         <span class="amount" id="total-investments">$0.00</span>
+                    </div>
+                </div>
+
+                <div class="card planned-investments-card">
+                    <h3>Planned / Future Investments</h3>
+                    <details class="planned-investments-details">
+                        <summary>Add Planned Investment</summary>
+                        <form id="planned-investment-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="planned-investment-name">Investment Name</label>
+                                    <input type="text" id="planned-investment-name" placeholder="e.g., New 401k Contribution" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="planned-investment-amount">Amount ($)</label>
+                                    <input type="number" id="planned-investment-amount" step="0.01" min="0" placeholder="0.00" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="planned-investment-type">Investment Type</label>
+                                    <select id="planned-investment-type" required>
+                                        <option value="">Select type</option>
+                                        <option value="401k">401(k)</option>
+                                        <option value="ira">IRA</option>
+                                        <option value="roth-ira">Roth IRA</option>
+                                        <option value="brokerage">Brokerage Account</option>
+                                        <option value="savings">High-Yield Savings</option>
+                                        <option value="etf">ETFs</option>
+                                        <option value="stocks">Individual Stocks</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="planned-investment-date">Target Date</label>
+                                    <input type="date" id="planned-investment-date" required>
+                                </div>
+                            </div>
+                            <div class="form-group checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="planned-investment-recurring">
+                                    <span>Recurring Monthly Contribution</span>
+                                </label>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Add Planned Investment</button>
+                        </form>
+                    </details>
+                    <div class="planned-investments-list" id="planned-investments-list">
+                        <p class="empty-state">No planned investments. Add future contributions to see them in projections.</p>
                     </div>
                 </div>
 

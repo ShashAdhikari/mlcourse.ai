@@ -287,11 +287,16 @@ h2 {
     min-height: 300px;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .chart-card h3,
 .projection-card h3 {
     flex-shrink: 0;
+}
+
+#projection-details {
+    overflow-x: auto;
 }
 
 /* Prevent Chart.js infinite resize */
@@ -805,6 +810,286 @@ h2 {
     }
 }
 
+/* ==================== PLANNED DEBTS ==================== */
+.planned-debts-card {
+    grid-column: 1 / -1;
+}
+
+.planned-debts-details {
+    margin-bottom: var(--space-4);
+}
+
+.planned-debts-details summary {
+    cursor: pointer;
+    padding: var(--space-3);
+    background: var(--background-color);
+    border-radius: var(--border-radius-sm);
+    font-weight: 500;
+    margin-bottom: var(--space-3);
+}
+
+.planned-debts-details summary:hover {
+    background: var(--border-color);
+}
+
+.planned-debts-details[open] summary {
+    margin-bottom: var(--space-4);
+}
+
+.planned-debts-details form {
+    padding: var(--space-3);
+    background: var(--background-color);
+    border-radius: var(--border-radius-sm);
+}
+
+.planned-debts-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.planned-debt-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--border-color);
+    border-left: 3px dashed var(--warning-color);
+    transition: background-color 0.2s;
+}
+
+.planned-debt-item:last-child {
+    border-bottom: none;
+}
+
+.planned-debt-item:hover {
+    background: var(--background-color);
+}
+
+.planned-debt-item.ready-to-activate {
+    border-left-color: var(--success-color);
+    border-left-style: solid;
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.planned-debt-item .item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.planned-debt-item .item-info h4 {
+    margin: 0 0 var(--space-1);
+    font-size: var(--font-size-base);
+    font-weight: 500;
+}
+
+.planned-debt-item .item-info p {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+.planned-debt-item .item-amount {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.planned-debt-item .item-actions {
+    display: flex;
+    gap: var(--space-2);
+}
+
+/* ==================== PLANNED INVESTMENTS ==================== */
+.planned-investments-card {
+    grid-column: 1 / -1;
+}
+
+.planned-investments-details {
+    margin-bottom: var(--space-4);
+}
+
+.planned-investments-details summary {
+    cursor: pointer;
+    padding: var(--space-3);
+    background: var(--background-color);
+    border-radius: var(--border-radius-sm);
+    font-weight: 500;
+    margin-bottom: var(--space-3);
+}
+
+.planned-investments-details summary:hover {
+    background: var(--border-color);
+}
+
+.planned-investments-details[open] summary {
+    margin-bottom: var(--space-4);
+}
+
+.planned-investments-details form {
+    padding: var(--space-3);
+    background: var(--background-color);
+    border-radius: var(--border-radius-sm);
+}
+
+.planned-investments-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.planned-investment-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--border-color);
+    border-left: 3px dashed var(--primary-color);
+    transition: background-color 0.2s;
+}
+
+.planned-investment-item:last-child {
+    border-bottom: none;
+}
+
+.planned-investment-item:hover {
+    background: var(--background-color);
+}
+
+.planned-investment-item.ready-to-activate {
+    border-left-color: var(--success-color);
+    border-left-style: solid;
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.planned-investment-item .item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.planned-investment-item .item-info h4 {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0 0 var(--space-1);
+    font-size: var(--font-size-base);
+    font-weight: 500;
+}
+
+.planned-investment-item .item-info p {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+.planned-investment-item .item-amount {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.planned-investment-item .item-actions {
+    display: flex;
+    gap: var(--space-2);
+}
+
+/* ==================== PLANNED SUMMARY (Dashboard) ==================== */
+.planned-summary-card {
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+    border: 1px solid var(--border-color);
+}
+
+.planned-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--space-4);
+}
+
+.planned-summary-stat {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    background: white;
+    border-radius: var(--border-radius-sm);
+    border: 1px solid var(--border-color);
+}
+
+.planned-summary-stat.expenses {
+    border-left: 4px solid var(--danger-color);
+}
+
+.planned-summary-stat.debts {
+    border-left: 4px solid var(--warning-color);
+}
+
+.planned-summary-stat.investments {
+    border-left: 4px solid var(--success-color);
+}
+
+.planned-summary-icon {
+    font-size: 1.5rem;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--border-radius-sm);
+    background: var(--background-color);
+}
+
+.planned-summary-stat.expenses .planned-summary-icon {
+    background: #fef2f2;
+}
+
+.planned-summary-stat.debts .planned-summary-icon {
+    background: #fffbeb;
+}
+
+.planned-summary-stat.investments .planned-summary-icon {
+    background: #f0fdf4;
+}
+
+.planned-summary-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.planned-summary-label {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    margin-bottom: var(--space-1);
+}
+
+.planned-summary-value {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+.planned-summary-count {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.planned-summary-amount {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+.planned-summary-note {
+    margin-top: var(--space-4);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--border-color);
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+.planned-summary-empty {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: var(--space-4);
+}
+
 /* ==================== INVESTMENTS ==================== */
 .investment-total {
     display: flex;
@@ -995,6 +1280,8 @@ h2 {
     padding: var(--space-3);
     border-radius: var(--border-radius-sm);
     text-align: center;
+    overflow: hidden;
+    min-width: 0;
 }
 
 .projection-summary-grid .projection-label {
@@ -1002,12 +1289,16 @@ h2 {
     font-size: var(--font-size-sm);
     color: var(--text-secondary);
     margin-bottom: var(--space-1);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .projection-summary-grid .projection-value {
     display: block;
-    font-size: var(--font-size-md);
+    font-size: var(--font-size-base);
     font-weight: 600;
+    word-break: break-word;
 }
 
 .projection-summary-grid .projection-value.positive {

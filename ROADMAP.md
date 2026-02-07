@@ -122,11 +122,11 @@ Feature 4 (Investment Projection) ─────────┘
    - Warning if <3 months of data
 
 **Acceptance Criteria:**
-- [ ] Dashboard shows annual income/expense/savings projection
-- [ ] Projection updates automatically when payslip uploaded
-- [ ] Monthly breakdown shows actual vs projected clearly
-- [ ] Net savings estimate calculated correctly
-- [ ] Confidence indicator based on data availability
+- [x] Dashboard shows annual income/expense/savings projection
+- [x] Projection updates automatically when payslip uploaded
+- [x] Monthly breakdown shows actual vs projected clearly
+- [x] Net savings estimate calculated correctly
+- [x] Confidence indicator based on data availability
 
 ---
 
@@ -171,11 +171,11 @@ Feature 4 (Investment Projection) ─────────┘
    - Stop at `recurringEndDate` or 12 months ahead
 
 **Acceptance Criteria:**
-- [ ] Can add planned expenses with future dates
-- [ ] Planned expenses appear in projections
-- [ ] Recurring expenses expand into multiple months
-- [ ] Can mark planned expense as completed
-- [ ] Projections update dynamically when planned expenses change
+- [x] Can add planned expenses with future dates
+- [x] Planned expenses appear in projections
+- [x] Recurring expenses expand into multiple months
+- [x] Can mark planned expense as completed
+- [x] Projections update dynamically when planned expenses change
 
 ---
 
@@ -240,12 +240,12 @@ Feature 4 (Investment Projection) ─────────┘
    - Warning if debt payments exceed income
 
 **Acceptance Criteria:**
-- [ ] Each debt shows principal/interest breakdown per month
-- [ ] 12-month amortization schedule displayed
-- [ ] Can add planned/future debts
-- [ ] Planned debts affect projections before start date
-- [ ] Aggregate view shows total debt trajectory
-- [ ] Debt-free date calculated and displayed
+- [x] Each debt shows principal/interest breakdown per month
+- [x] 12-month amortization schedule displayed
+- [x] Can add planned/future debts
+- [x] Planned debts affect projections before start date
+- [x] Aggregate view shows total debt trajectory
+- [x] Debt-free date calculated and displayed
 
 ---
 
@@ -310,12 +310,12 @@ Feature 4 (Investment Projection) ─────────┘
    - Table shows range: "Your portfolio could be between X and Y"
 
 **Acceptance Criteria:**
-- [ ] 10-year projection chart displayed
-- [ ] Rate of return adjustable via slider
-- [ ] Chart updates in real-time as rate changes
-- [ ] Can add planned/future investments
-- [ ] Planned contributions affect projections
-- [ ] Multiple scenarios shown (pessimistic/expected/optimistic)
+- [x] 10-year projection chart displayed
+- [x] Rate of return adjustable via slider
+- [x] Chart updates in real-time as rate changes
+- [x] Can add planned/future investments
+- [x] Planned contributions affect projections
+- [x] Multiple scenarios shown (pessimistic/expected/optimistic)
 
 ---
 
@@ -338,16 +338,16 @@ Feature 4 (Investment Projection) ─────────┘
 
 | Task | Priority | Status | Agents |
 |------|----------|--------|--------|
-| Design Financial Forecast Card (UI/UX) | P0 | Pending | UI + UX |
-| Implement forecast calculation logic | P0 | Pending | Coder |
-| Build forecast card HTML/CSS | P0 | Pending | Coder |
-| Wire payslip upload to projection update | P0 | Pending | Coder |
-| Add confidence indicator | P1 | Pending | Coder |
-| QA and accessibility review | P0 | Pending | Tester |
+| Design Financial Forecast Card (UI/UX) | P0 | ✅ Done | UI + UX |
+| Implement forecast calculation logic | P0 | ✅ Done | Coder |
+| Build forecast card HTML/CSS | P0 | ✅ Done | Coder |
+| Wire payslip upload to projection update | P0 | ✅ Done | Coder |
+| Add confidence indicator | P1 | ✅ Done | Coder |
+| QA and accessibility review | P0 | ✅ Done | Tester |
 
 ### Phase 3: Planned Items (Features 2, 3, 4 - Parallel)
 **Estimated Tasks:** 15+
-**Can run in parallel after Phase 2**
+**Status:** ✅ Complete
 
 ---
 

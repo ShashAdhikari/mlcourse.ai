@@ -224,7 +224,7 @@ styles.css (~1529 lines) - CSS design system with custom properties, 19 organize
 ### Development Notes
 - Branch: `claude/expense-tracker-financial-analysis-EyKk5`
 - Both `/expense-tracker/` and `/myClawdproject/` should be kept identical
-- **Agent system defined in `agents.md`** - 6 agents (Designer, Coder, Reviewer, Debugger, Tester, Super) with orchestration protocol
+- **Agent system defined in `agents.md`** - 9 agents (UI, UX, Project Manager, Designer, Coder, Reviewer, Debugger, Tester, Super) with orchestration protocol. UI + UX agents run in parallel upstream of Designer. PM coordinates task breakdown and documentation.
 - The app uses no package manager or build step - edit files directly and open `index.html` in a browser
 - **Module pattern**: All code lives inside the IIFE. To add a new feature, create a new `const ModuleName = { ... }` object inside the closure. Never add `window.*` globals.
 - **Adding new actions**: Add `data-action="action-name"` and `data-id="${id}"` to the button HTML, then add a `case 'action-name':` to the switch in `App.setupEventDelegation()`.

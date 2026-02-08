@@ -142,6 +142,37 @@
                 </div>
             </div>
 
+            <!-- Financial Ratios Section -->
+            <div class="card ratios-card">
+                <h3>Financial Health Ratios</h3>
+                <div class="ratios-grid" id="financial-ratios">
+                    <div class="ratio-item" data-tooltip="Healthy ratio: Below 70%. Under 50% is excellent. This shows what percentage of your income goes to expenses.">
+                        <div class="ratio-label">Expense to Income</div>
+                        <div class="ratio-value" id="expense-income-ratio">--%</div>
+                        <div class="ratio-bar">
+                            <div class="ratio-fill" id="expense-income-bar" style="width: 0%"></div>
+                        </div>
+                        <div class="ratio-status" id="expense-income-status">Add data to calculate</div>
+                    </div>
+                    <div class="ratio-item" data-tooltip="Healthy ratio: Below 100%. Under 50% is excellent. High debt relative to investments may limit wealth building.">
+                        <div class="ratio-label">Debt to Investment</div>
+                        <div class="ratio-value" id="debt-investment-ratio">--%</div>
+                        <div class="ratio-bar">
+                            <div class="ratio-fill" id="debt-investment-bar" style="width: 0%"></div>
+                        </div>
+                        <div class="ratio-status" id="debt-investment-status">Add data to calculate</div>
+                    </div>
+                    <div class="ratio-item" data-tooltip="Healthy ratio: Below 36%. Under 20% is excellent. This is your debt-to-income ratio used by lenders.">
+                        <div class="ratio-label">Debt to Annual Income</div>
+                        <div class="ratio-value" id="debt-income-ratio">--%</div>
+                        <div class="ratio-bar">
+                            <div class="ratio-fill" id="debt-income-bar" style="width: 0%"></div>
+                        </div>
+                        <div class="ratio-status" id="debt-income-status">Add data to calculate</div>
+                    </div>
+                </div>
+            </div>
+
             <div class="card forecast-card">
                 <h3>Annual Financial Forecast</h3>
                 <div id="financial-forecast">
@@ -262,6 +293,68 @@
                     </div>
                     <div class="expense-list" id="expense-list">
                         <p class="empty-state">No expenses recorded yet. Add your first expense above.</p>
+                    </div>
+                </div>
+
+                <!-- Monthly Budget Management -->
+                <div class="card budget-card">
+                    <h3>Monthly Budget</h3>
+                    <p class="budget-description">Set monthly spending limits by category to track your budget vs actual expenses.</p>
+                    <details class="budget-form-details">
+                        <summary>Set Category Budgets</summary>
+                        <form id="budget-form">
+                            <div class="budget-grid" id="budget-inputs">
+                                <div class="budget-input-row">
+                                    <label for="budget-housing">Housing</label>
+                                    <input type="number" id="budget-housing" data-category="housing" step="0.01" min="0" placeholder="0.00">
+                                </div>
+                                <div class="budget-input-row">
+                                    <label for="budget-transportation">Transportation</label>
+                                    <input type="number" id="budget-transportation" data-category="transportation" step="0.01" min="0" placeholder="0.00">
+                                </div>
+                                <div class="budget-input-row">
+                                    <label for="budget-food">Food & Groceries</label>
+                                    <input type="number" id="budget-food" data-category="food" step="0.01" min="0" placeholder="0.00">
+                                </div>
+                                <div class="budget-input-row">
+                                    <label for="budget-utilities">Utilities</label>
+                                    <input type="number" id="budget-utilities" data-category="utilities" step="0.01" min="0" placeholder="0.00">
+                                </div>
+                                <div class="budget-input-row">
+                                    <label for="budget-healthcare">Healthcare</label>
+                                    <input type="number" id="budget-healthcare" data-category="healthcare" step="0.01" min="0" placeholder="0.00">
+                                </div>
+                                <div class="budget-input-row">
+                                    <label for="budget-entertainment">Entertainment</label>
+                                    <input type="number" id="budget-entertainment" data-category="entertainment" step="0.01" min="0" placeholder="0.00">
+                                </div>
+                                <div class="budget-input-row">
+                                    <label for="budget-shopping">Shopping</label>
+                                    <input type="number" id="budget-shopping" data-category="shopping" step="0.01" min="0" placeholder="0.00">
+                                </div>
+                                <div class="budget-input-row">
+                                    <label for="budget-education">Education</label>
+                                    <input type="number" id="budget-education" data-category="education" step="0.01" min="0" placeholder="0.00">
+                                </div>
+                                <div class="budget-input-row">
+                                    <label for="budget-personal">Personal Care</label>
+                                    <input type="number" id="budget-personal" data-category="personal" step="0.01" min="0" placeholder="0.00">
+                                </div>
+                                <div class="budget-input-row">
+                                    <label for="budget-other">Other</label>
+                                    <input type="number" id="budget-other" data-category="other" step="0.01" min="0" placeholder="0.00">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Save Budgets</button>
+                        </form>
+                    </details>
+
+                    <!-- Budget vs Actual Comparison -->
+                    <div class="budget-comparison" id="budget-comparison">
+                        <h4>Budget vs Actual (This Month)</h4>
+                        <div class="budget-summary" id="budget-summary">
+                            <p class="empty-state">Set budgets above to see your spending comparison.</p>
+                        </div>
                     </div>
                 </div>
 

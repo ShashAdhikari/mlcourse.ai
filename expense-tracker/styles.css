@@ -658,6 +658,303 @@ h2 {
     line-height: 1.8;
 }
 
+/* ==================== FINANCIAL RATIOS ==================== */
+.ratios-card {
+    margin-top: var(--space-6);
+}
+
+.ratios-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-6);
+}
+
+@media (max-width: 1024px) {
+    .ratios-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .ratios-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.ratio-item {
+    padding: var(--space-4);
+    background: var(--background-color);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+}
+
+.ratio-label {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: var(--space-2);
+}
+
+.ratio-value {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    font-family: var(--font-sans);
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+}
+
+.ratio-bar {
+    height: 8px;
+    background: var(--border-color);
+    border-radius: var(--border-radius-pill);
+    overflow: hidden;
+    margin-bottom: var(--space-2);
+}
+
+.ratio-fill {
+    height: 100%;
+    border-radius: var(--border-radius-pill);
+    transition: width 0.5s ease, background-color 0.3s ease;
+    background: var(--primary-color);
+}
+
+.ratio-fill.excellent {
+    background: var(--success-color);
+}
+
+.ratio-fill.good {
+    background: var(--info-color);
+}
+
+.ratio-fill.warning {
+    background: var(--warning-color);
+}
+
+.ratio-fill.danger {
+    background: var(--danger-color);
+}
+
+.ratio-status {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.ratio-status.excellent {
+    color: var(--success-color);
+}
+
+.ratio-status.good {
+    color: var(--info-color);
+}
+
+.ratio-status.warning {
+    color: var(--warning-color);
+}
+
+.ratio-status.danger {
+    color: var(--danger-color);
+}
+
+/* ==================== BUDGET MANAGEMENT ==================== */
+.budget-card {
+    grid-column: 1 / -1; /* Full width */
+}
+
+.budget-description {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--space-4);
+}
+
+.budget-form-details {
+    margin-bottom: var(--space-6);
+}
+
+.budget-form-details summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--primary-color);
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: var(--space-4);
+}
+
+.budget-form-details summary:hover {
+    color: var(--primary-dark);
+}
+
+.budget-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
+}
+
+@media (max-width: 600px) {
+    .budget-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.budget-input-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.budget-input-row label {
+    flex: 1;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.budget-input-row input {
+    width: 120px;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    font-size: var(--font-size-sm);
+    text-align: right;
+}
+
+.budget-input-row input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px var(--primary-light);
+}
+
+/* Budget Comparison Display */
+.budget-comparison {
+    border-top: 1px solid var(--border-color);
+    padding-top: var(--space-4);
+}
+
+.budget-comparison h4 {
+    font-family: var(--font-serif);
+    font-size: var(--font-size-md);
+    margin-bottom: var(--space-4);
+    color: var(--text-primary);
+}
+
+.budget-summary {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.budget-item {
+    padding: var(--space-3);
+    background: var(--background-color);
+    border-radius: var(--border-radius-sm);
+    border: 1px solid var(--border-color);
+}
+
+.budget-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-2);
+}
+
+.budget-item-category {
+    font-weight: 600;
+    font-size: var(--font-size-sm);
+    color: var(--text-primary);
+}
+
+.budget-item-amounts {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+.budget-item-amounts .actual {
+    font-weight: 600;
+}
+
+.budget-item-amounts .actual.over {
+    color: var(--danger-color);
+}
+
+.budget-item-amounts .actual.under {
+    color: var(--success-color);
+}
+
+.budget-progress {
+    height: 8px;
+    background: var(--border-color);
+    border-radius: var(--border-radius-pill);
+    overflow: hidden;
+    position: relative;
+}
+
+.budget-progress-fill {
+    height: 100%;
+    border-radius: var(--border-radius-pill);
+    transition: width 0.3s ease;
+    background: var(--success-color);
+}
+
+.budget-progress-fill.warning {
+    background: var(--warning-color);
+}
+
+.budget-progress-fill.over {
+    background: var(--danger-color);
+}
+
+.budget-item-status {
+    font-size: var(--font-size-xs);
+    margin-top: var(--space-2);
+    color: var(--text-muted);
+}
+
+.budget-item-status.under {
+    color: var(--success-color);
+}
+
+.budget-item-status.warning {
+    color: var(--warning-color);
+}
+
+.budget-item-status.over {
+    color: var(--danger-color);
+}
+
+/* Budget Total Summary */
+.budget-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-4);
+    background: var(--primary-light);
+    border-radius: var(--border-radius);
+    margin-top: var(--space-4);
+    border: 1px solid rgba(26, 54, 93, 0.1);
+}
+
+.budget-total-label {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.budget-total-value {
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.budget-total-value.over {
+    color: var(--danger-color);
+}
+
+.budget-total-value.under {
+    color: var(--success-color);
+}
+
 /* ==================== FORMS ==================== */
 .form-group {
     margin-bottom: var(--space-4);

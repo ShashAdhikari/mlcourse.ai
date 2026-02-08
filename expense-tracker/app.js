@@ -183,7 +183,8 @@
             investmentProfile: Utils.safeParse('investmentProfile', null),
             plannedExpenses: Utils.safeParse('plannedExpenses', []),
             plannedDebts: Utils.safeParse('plannedDebts', []),
-            plannedInvestments: Utils.safeParse('plannedInvestments', [])
+            plannedInvestments: Utils.safeParse('plannedInvestments', []),
+            budgets: Utils.safeParse('budgets', {})
         },
 
         save(key) {
@@ -721,6 +722,7 @@
             document.getElementById('parsed-transactions-card').style.display = 'none';
 
             Expenses.render();
+            Budget.renderComparison();
             Dashboard.update();
             Notify.show(toImport.length + ' transactions imported', 'success');
         },
@@ -730,6 +732,149 @@
             Parser.columnInfo = null;
             document.getElementById('parsed-transactions-card').style.display = 'none';
             Notify.show('Parsed transactions discarded', 'info');
+        }
+    };
+
+    // ==================== BUDGET ====================
+
+    const Budget = {
+        categories: ['housing', 'transportation', 'food', 'utilities', 'healthcare',
+                     'entertainment', 'shopping', 'education', 'personal', 'other'],
+
+        init() {
+            Budget.loadBudgets();
+            Budget.setupForm();
+            Budget.renderComparison();
+        },
+
+        loadBudgets() {
+            // Load saved budgets into form inputs
+            const budgets = State.data.budgets || {};
+            Budget.categories.forEach(cat => {
+                const input = document.getElementById(`budget-${cat}`);
+                if (input && budgets[cat]) {
+                    input.value = budgets[cat];
+                }
+            });
+        },
+
+        setupForm() {
+            const form = document.getElementById('budget-form');
+            if (!form) return;
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                Budget.saveBudgets();
+            });
+        },
+
+        saveBudgets() {
+            const budgets = {};
+            Budget.categories.forEach(cat => {
+                const input = document.getElementById(`budget-${cat}`);
+                if (input && input.value) {
+                    budgets[cat] = parseFloat(input.value) || 0;
+                }
+            });
+
+            State.set('budgets', budgets);
+            Budget.renderComparison();
+            Notify.show('Budgets saved successfully', 'success');
+        },
+
+        getMonthlyExpenses() {
+            // Get expenses for the current month
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+
+            return State.data.expenses.filter(exp => {
+                const expDate = new Date(exp.date);
+                return expDate.getMonth() === currentMonth && expDate.getFullYear() === currentYear;
+            });
+        },
+
+        renderComparison() {
+            const container = document.getElementById('budget-summary');
+            if (!container) return;
+
+            const budgets = State.data.budgets || {};
+            const hasBudgets = Object.values(budgets).some(v => v > 0);
+
+            if (!hasBudgets) {
+                container.innerHTML = '<p class="empty-state">Set budgets above to see your spending comparison.</p>';
+                return;
+            }
+
+            // Calculate actual spending by category for current month
+            const monthlyExpenses = Budget.getMonthlyExpenses();
+            const actualByCategory = {};
+            monthlyExpenses.forEach(exp => {
+                actualByCategory[exp.category] = (actualByCategory[exp.category] || 0) + exp.amount;
+            });
+
+            let html = '';
+            let totalBudget = 0;
+            let totalActual = 0;
+
+            Budget.categories.forEach(cat => {
+                const budget = budgets[cat] || 0;
+                if (budget <= 0) return; // Skip categories without budget
+
+                const actual = actualByCategory[cat] || 0;
+                totalBudget += budget;
+                totalActual += actual;
+
+                const percentage = Math.min((actual / budget) * 100, 100);
+                const remaining = budget - actual;
+                const isOver = actual > budget;
+                const isWarning = percentage >= 80 && percentage < 100;
+
+                let statusClass = 'under';
+                let statusText = `${Currency.format(remaining)} remaining`;
+                if (isOver) {
+                    statusClass = 'over';
+                    statusText = `${Currency.format(Math.abs(remaining))} over budget`;
+                } else if (isWarning) {
+                    statusClass = 'warning';
+                    statusText = `${Currency.format(remaining)} remaining (${percentage.toFixed(0)}% used)`;
+                }
+
+                const progressClass = isOver ? 'over' : (isWarning ? 'warning' : '');
+
+                html += `
+                    <div class="budget-item">
+                        <div class="budget-item-header">
+                            <span class="budget-item-category">${CategoryEngine.labels[cat] || cat}</span>
+                            <span class="budget-item-amounts">
+                                <span class="actual ${statusClass}">${Currency.format(actual)}</span>
+                                / ${Currency.format(budget)}
+                            </span>
+                        </div>
+                        <div class="budget-progress">
+                            <div class="budget-progress-fill ${progressClass}" style="width: ${percentage}%"></div>
+                        </div>
+                        <div class="budget-item-status ${statusClass}">${statusText}</div>
+                    </div>
+                `;
+            });
+
+            // Add total summary
+            const totalRemaining = totalBudget - totalActual;
+            const totalOver = totalActual > totalBudget;
+            const totalClass = totalOver ? 'over' : 'under';
+
+            html += `
+                <div class="budget-total">
+                    <span class="budget-total-label">Total Budget</span>
+                    <span class="budget-total-value ${totalClass}">
+                        ${Currency.format(totalActual)} / ${Currency.format(totalBudget)}
+                        ${totalOver ? '(Over by ' + Currency.format(Math.abs(totalRemaining)) + ')' : '(' + Currency.format(totalRemaining) + ' remaining)'}
+                    </span>
+                </div>
+            `;
+
+            container.innerHTML = html;
         }
     };
 
@@ -782,6 +927,7 @@
             e.target.reset();
             document.getElementById('expense-date').valueAsDate = new Date();
             Expenses.render();
+            Budget.renderComparison();
             Dashboard.update();
             Notify.show('Expense added', 'success');
         },
@@ -789,6 +935,7 @@
         delete(id) {
             State.set('expenses', State.data.expenses.filter(e => e.id !== id));
             Expenses.render();
+            Budget.renderComparison();
             Dashboard.update();
             Notify.show('Expense deleted', 'info');
         },
@@ -848,6 +995,7 @@
             State.save('expenses');
 
             Expenses.render();
+            Budget.renderComparison();
             Dashboard.update();
             Notify.show('Expense updated', 'success');
         },
@@ -860,6 +1008,7 @@
             if (!confirm('Are you sure you want to delete all expenses? This cannot be undone.')) return;
             State.set('expenses', []);
             Expenses.render();
+            Budget.renderComparison();
             Dashboard.update();
             Notify.show('All expenses have been reset', 'info');
         }
@@ -966,6 +1115,7 @@
 
             PlannedExpenses.render();
             Expenses.render();
+            Budget.renderComparison();
             Dashboard.update();
             Notify.show('Expense marked as completed and added to expenses', 'success');
         },
@@ -2257,6 +2407,7 @@
             }
 
             Dashboard.updateHealthScore(totalIncome, totalExpenses, totalDebt, netSavings);
+            Dashboard.updateFinancialRatios(totalIncome, totalExpenses, totalDebt, totalInvestments);
             Dashboard.updateExpenseChart();
             Dashboard.renderFinancialForecast();
             Dashboard.renderMonthlyAnalytics();
@@ -2296,6 +2447,77 @@
             else if (score >= 40) msg = 'Fair financial health. Consider reducing expenses or paying down debt.';
             else msg = 'Needs attention. Focus on reducing debt and building an emergency fund.';
             message.textContent = msg;
+        },
+
+        updateFinancialRatios(income, expenses, debt, investments) {
+            // Helper to update a ratio display
+            const updateRatio = (id, value, thresholds) => {
+                const valueEl = document.getElementById(`${id}-ratio`);
+                const barEl = document.getElementById(`${id}-bar`);
+                const statusEl = document.getElementById(`${id}-status`);
+                if (!valueEl || !barEl || !statusEl) return;
+
+                if (value === null || value === Infinity || isNaN(value)) {
+                    valueEl.textContent = '--%';
+                    barEl.style.width = '0%';
+                    barEl.className = 'ratio-fill';
+                    statusEl.textContent = 'Add data to calculate';
+                    statusEl.className = 'ratio-status';
+                    return;
+                }
+
+                const percentage = Math.min(value * 100, 200); // Cap at 200% for display
+                valueEl.textContent = `${(value * 100).toFixed(1)}%`;
+                barEl.style.width = `${Math.min(percentage / 2, 100)}%`; // Scale bar to 100%
+
+                // Determine status based on thresholds
+                let status, statusClass;
+                if (value <= thresholds.excellent) {
+                    status = 'Excellent';
+                    statusClass = 'excellent';
+                } else if (value <= thresholds.good) {
+                    status = 'Good';
+                    statusClass = 'good';
+                } else if (value <= thresholds.warning) {
+                    status = 'Needs improvement';
+                    statusClass = 'warning';
+                } else {
+                    status = 'High risk';
+                    statusClass = 'danger';
+                }
+
+                barEl.className = `ratio-fill ${statusClass}`;
+                statusEl.textContent = status;
+                statusEl.className = `ratio-status ${statusClass}`;
+            };
+
+            // 1. Expense to Income Ratio
+            // Thresholds: <50% excellent, <70% good, <90% warning, >90% danger
+            const expenseIncomeRatio = income > 0 ? expenses / income : null;
+            updateRatio('expense-income', expenseIncomeRatio, {
+                excellent: 0.50,
+                good: 0.70,
+                warning: 0.90
+            });
+
+            // 2. Debt to Investment Ratio
+            // Thresholds: <50% excellent, <100% good, <150% warning, >150% danger
+            const debtInvestmentRatio = investments > 0 ? debt / investments : (debt > 0 ? Infinity : null);
+            updateRatio('debt-investment', debtInvestmentRatio, {
+                excellent: 0.50,
+                good: 1.00,
+                warning: 1.50
+            });
+
+            // 3. Debt to Annual Income Ratio
+            // Thresholds: <20% excellent, <36% good, <50% warning, >50% danger
+            const annualIncome = income * 12;
+            const debtIncomeRatio = annualIncome > 0 ? debt / annualIncome : null;
+            updateRatio('debt-income', debtIncomeRatio, {
+                excellent: 0.20,
+                good: 0.36,
+                warning: 0.50
+            });
         },
 
         updateExpenseChart() {
@@ -2818,6 +3040,9 @@
             const discardBtn = document.getElementById('discard-parsed-btn');
             if (importBtn) importBtn.addEventListener('click', () => Parser.import());
             if (discardBtn) discardBtn.addEventListener('click', () => Parser.discard());
+
+            // Initialize budget module
+            Budget.init();
 
             // Initial renders
             Expenses.render();

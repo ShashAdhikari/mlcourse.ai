@@ -49,11 +49,75 @@
             MXN: 'MX$', SEK: 'kr ', NOK: 'kr ', NPR: '\u20A8'
         },
 
+        investmentTypes: {
+            INR: [
+                { value: 'provident-fund', label: 'Provident Fund (PF/EPF)' },
+                { value: 'nps', label: 'National Pension Scheme (NPS)' },
+                { value: 'ppf', label: 'Public Provident Fund (PPF)' },
+                { value: 'nsc', label: 'National Savings Certificate (NSC)' },
+                { value: 'mutual-funds', label: 'Mutual Funds' },
+                { value: 'equity', label: 'Equity/Stocks' },
+                { value: 'bonds', label: 'Bonds' },
+                { value: 'fd', label: 'Fixed Deposit (FD)' },
+                { value: 'rd', label: 'Recurring Deposit (RD)' },
+                { value: 'gold', label: 'Gold/SGBs' },
+                { value: 'real-estate', label: 'Real Estate' },
+                { value: 'other', label: 'Other' }
+            ],
+            NPR: [
+                { value: 'provident-fund', label: 'Provident Fund' },
+                { value: 'citizen-investment', label: 'Citizen Investment Trust' },
+                { value: 'mutual-funds', label: 'Mutual Funds' },
+                { value: 'equity', label: 'Equity/Shares' },
+                { value: 'bonds', label: 'Bonds/Debentures' },
+                { value: 'fd', label: 'Fixed Deposit' },
+                { value: 'gold', label: 'Gold' },
+                { value: 'real-estate', label: 'Real Estate' },
+                { value: 'other', label: 'Other' }
+            ],
+            default: [
+                { value: '401k', label: '401(k)' },
+                { value: 'ira', label: 'IRA' },
+                { value: 'roth-ira', label: 'Roth IRA' },
+                { value: 'stocks', label: 'Stocks' },
+                { value: 'etfs', label: 'ETFs' },
+                { value: 'bonds', label: 'Bonds' },
+                { value: 'mutual-funds', label: 'Mutual Funds' },
+                { value: 'index-funds', label: 'Index Funds' },
+                { value: 'real-estate', label: 'Real Estate/REITs' },
+                { value: 'crypto', label: 'Cryptocurrency' },
+                { value: 'savings', label: 'High-Yield Savings' },
+                { value: 'other', label: 'Other' }
+            ]
+        },
+
         selected: localStorage.getItem('selectedCurrency') || 'USD',
 
-        format(amount) {
+        format(amount, preserveSign = false) {
             const sym = Currency.symbols[Currency.selected] || '$';
+            if (preserveSign && amount < 0) {
+                return '-' + sym + Math.abs(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
             return sym + Math.abs(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        },
+
+        getInvestmentTypes() {
+            return Currency.investmentTypes[Currency.selected] || Currency.investmentTypes.default;
+        },
+
+        updateInvestmentTypeSelects() {
+            const types = Currency.getInvestmentTypes();
+            const selects = document.querySelectorAll('#investment-type, #planned-investment-type');
+            selects.forEach(select => {
+                if (!select) return;
+                const currentValue = select.value;
+                select.innerHTML = types.map(t =>
+                    `<option value="${t.value}">${t.label}</option>`
+                ).join('');
+                // Try to preserve selected value if it exists in new list
+                const exists = types.some(t => t.value === currentValue);
+                if (exists) select.value = currentValue;
+            });
         },
 
         setupSelector() {
@@ -63,6 +127,7 @@
             select.addEventListener('change', () => {
                 Currency.selected = select.value;
                 localStorage.setItem('selectedCurrency', select.value);
+                Currency.updateInvestmentTypeSelects();
                 Expenses.render();
                 Debts.render();
                 Investments.render();
@@ -77,6 +142,8 @@
                     Parser.render(Parser.pending);
                 }
             });
+            // Initialize investment types on load
+            Currency.updateInvestmentTypeSelects();
         }
     };
 
@@ -763,6 +830,14 @@
 
         cancelEdit() {
             Expenses.render();
+        },
+
+        reset() {
+            if (!confirm('Are you sure you want to delete all expenses? This cannot be undone.')) return;
+            State.set('expenses', []);
+            Expenses.render();
+            Dashboard.update();
+            Notify.show('All expenses have been reset', 'info');
         }
     };
 
@@ -980,6 +1055,16 @@
             Debts.render();
             Dashboard.update();
             Notify.show('Debt deleted', 'info');
+        },
+
+        reset() {
+            if (!confirm('Are you sure you want to delete all debts? This cannot be undone.')) return;
+            State.set('debts', []);
+            State.set('plannedDebts', []);
+            Debts.render();
+            PlannedDebts.render();
+            Dashboard.update();
+            Notify.show('All debts have been reset', 'info');
         },
 
         updatePayoffPlan() {
@@ -1387,6 +1472,32 @@
             Notify.show('Investment deleted', 'info');
         },
 
+        reset() {
+            if (!confirm('Are you sure you want to delete all investments? This cannot be undone.')) return;
+            State.set('investments', []);
+            State.set('plannedInvestments', []);
+            State.set('investmentProfile', null);
+            Investments.render();
+            PlannedInvestments.render();
+            Investments.customRate = null;
+            Investments.scenario = 'expected';
+            // Clear recommendations and projection
+            const recsEl = document.getElementById('investment-recommendations');
+            const projEl = document.getElementById('projection-details');
+            const ctrlEl = document.getElementById('projection-controls');
+            if (recsEl) recsEl.innerHTML = '';
+            if (projEl) projEl.innerHTML = '';
+            if (ctrlEl) ctrlEl.innerHTML = '';
+            if (Investments.chart) {
+                Investments.chart.destroy();
+                Investments.chart = null;
+            }
+            // Reset form
+            document.getElementById('investment-profile-form').reset();
+            Dashboard.update();
+            Notify.show('All investments have been reset', 'info');
+        },
+
         generateRecommendations() {
             const container = document.getElementById('investment-recommendations');
             if (!container || !State.data.investmentProfile) return;
@@ -1781,16 +1892,22 @@
                 return;
             }
 
-            container.innerHTML = State.data.incomes.map(inc => `
-                <div class="income-item">
+            container.innerHTML = State.data.incomes.map(inc => {
+                const isOneTime = inc.isRecurring === false;
+                const badge = isOneTime ? '<span class="badge one-time-badge">One-time</span>' : '';
+                const amountLabel = isOneTime ? '' : '/mo';
+                const monthInfo = isOneTime && inc.monthKey ? ` (${inc.monthKey})` : '';
+
+                return `
+                <div class="income-item ${isOneTime ? 'one-time' : ''}">
                     <div class="item-info">
-                        <h4>${Utils.escapeHtml(inc.source)}</h4>
-                        <p>${Utils.capitalizeFirst(inc.type.replace('-', ' '))}</p>
+                        <h4>${Utils.escapeHtml(inc.source)} ${badge}</h4>
+                        <p>${Utils.capitalizeFirst(inc.type.replace('-', ' '))}${monthInfo}</p>
                     </div>
-                    <span class="item-amount income">${Currency.format(inc.amount)}/mo</span>
+                    <span class="item-amount income">${Currency.format(inc.amount)}${amountLabel}</span>
                     <button class="delete-btn" data-action="delete-income" data-id="${inc.id}" aria-label="Delete income" title="Delete">&#128465;</button>
-                </div>
-            `).join('');
+                </div>`;
+            }).join('');
         },
 
         add(e) {
@@ -1798,21 +1915,48 @@
             const source = document.getElementById('income-source').value.trim();
             const amount = parseFloat(document.getElementById('income-amount').value);
             const type = document.getElementById('income-type').value;
+            const isOneTime = document.getElementById('income-one-time').checked;
+            const monthInput = document.getElementById('income-month');
 
             if (!source || !amount || !type) return;
 
-            const currentMonth = new Date().toISOString().substring(0, 7);
+            let monthKey;
+            if (isOneTime && monthInput && monthInput.value) {
+                monthKey = monthInput.value;
+            } else {
+                monthKey = new Date().toISOString().substring(0, 7);
+            }
+
             State.modify('incomes', arr => arr.push({
                 id: Utils.generateId(),
                 source, amount, type,
-                monthKey: currentMonth,
-                isRecurring: true  // Default to recurring for most income types
+                monthKey,
+                isRecurring: !isOneTime
             }));
 
             e.target.reset();
+            document.getElementById('income-month-group').style.display = 'none';
             Income.render();
             Dashboard.update();
-            Notify.show('Income added', 'success');
+
+            const msg = isOneTime ? 'One-time income added' : 'Recurring income added';
+            Notify.show(msg, 'success');
+        },
+
+        setupOneTimeToggle() {
+            const checkbox = document.getElementById('income-one-time');
+            const monthGroup = document.getElementById('income-month-group');
+            const monthInput = document.getElementById('income-month');
+
+            if (!checkbox || !monthGroup) return;
+
+            checkbox.addEventListener('change', () => {
+                monthGroup.style.display = checkbox.checked ? 'block' : 'none';
+                if (checkbox.checked && monthInput) {
+                    // Set default to current month
+                    monthInput.value = new Date().toISOString().substring(0, 7);
+                }
+            });
         },
 
         delete(id) {
@@ -1973,8 +2117,28 @@
         },
 
         deleteUpload(id) {
+            const upload = State.data.uploads.find(u => u.id === id);
             State.set('uploads', State.data.uploads.filter(u => u.id !== id));
             Upload.renderHistory();
+
+            // If all expense uploads are deleted, offer to reset expenses
+            const remainingExpenseUploads = State.data.uploads.filter(u => u.type === 'expense');
+            if (upload && upload.type === 'expense' && remainingExpenseUploads.length === 0) {
+                if (State.data.expenses.length > 0) {
+                    if (confirm('All bank statement uploads have been removed. Would you like to reset all expenses as well?')) {
+                        State.set('expenses', []);
+                        Upload.sampleExpensesAdded = false;
+                        localStorage.removeItem('sampleExpensesAdded');
+                        Parser.pending = [];
+                        Parser.columnInfo = null;
+                        const parsedCard = document.getElementById('parsed-transactions-card');
+                        if (parsedCard) parsedCard.style.display = 'none';
+                        Expenses.render();
+                        Dashboard.update();
+                        Notify.show('Expenses have been reset', 'info');
+                    }
+                }
+            }
         },
 
         setupDashboard() {
@@ -2059,7 +2223,14 @@
             document.getElementById('total-income').textContent = Currency.format(totalIncome);
             document.getElementById('total-expenses').textContent = Currency.format(totalExpenses);
             document.getElementById('total-debt').textContent = Currency.format(totalDebt);
-            document.getElementById('net-savings').textContent = Currency.format(netSavings);
+            document.getElementById('net-savings').textContent = Currency.format(netSavings, true);
+
+            // Update net savings styling based on value
+            const netSavingsEl = document.getElementById('net-savings');
+            if (netSavingsEl) {
+                netSavingsEl.classList.remove('positive', 'negative');
+                netSavingsEl.classList.add(netSavings >= 0 ? 'positive' : 'negative');
+            }
 
             Dashboard.updateHealthScore(totalIncome, totalExpenses, totalDebt, netSavings);
             Dashboard.updateExpenseChart();
@@ -2112,9 +2283,26 @@
                 categoryTotals[exp.category] = (categoryTotals[exp.category] || 0) + exp.amount;
             });
 
-            const labels = Object.keys(categoryTotals).map(c => CategoryEngine.labels[c] || c);
+            const categories = Object.keys(categoryTotals);
+            const labels = categories.map(c => CategoryEngine.labels[c] || c);
             const data = Object.values(categoryTotals);
-            const colors = ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#06b6d4', '#64748b'];
+
+            // Enhanced color palette with gradients
+            const colorMap = {
+                housing: '#3b82f6',
+                transportation: '#f59e0b',
+                food: '#10b981',
+                utilities: '#6366f1',
+                healthcare: '#ec4899',
+                entertainment: '#8b5cf6',
+                shopping: '#f97316',
+                education: '#14b8a6',
+                personal: '#e879f9',
+                other: '#64748b'
+            };
+
+            const colors = categories.map(c => colorMap[c] || '#64748b');
+            const hoverColors = colors.map(c => c + 'dd'); // Slightly transparent on hover
 
             if (Dashboard.expenseChart) Dashboard.expenseChart.destroy();
 
@@ -2127,13 +2315,50 @@
                 type: 'doughnut',
                 data: {
                     labels,
-                    datasets: [{ data, backgroundColor: colors.slice(0, data.length), borderWidth: 2, borderColor: '#fff' }]
+                    datasets: [{
+                        data,
+                        backgroundColor: colors,
+                        hoverBackgroundColor: hoverColors,
+                        borderWidth: 3,
+                        borderColor: '#ffffff',
+                        hoverBorderColor: '#ffffff',
+                        hoverBorderWidth: 4,
+                        hoverOffset: 8
+                    }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    cutout: '60%',
                     plugins: {
-                        legend: { position: 'right', labels: { padding: 15, usePointStyle: true } }
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                padding: 16,
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                                font: { size: 12, weight: '500' }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                            titleFont: { size: 14, weight: '600' },
+                            bodyFont: { size: 13 },
+                            padding: 12,
+                            cornerRadius: 8,
+                            displayColors: true,
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((context.raw / total) * 100).toFixed(1);
+                                    return ` ${Currency.format(context.raw)} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        animateRotate: true,
+                        animateScale: true
                     }
                 }
             });
@@ -2559,6 +2784,7 @@
             App.setupForms();
             Currency.setupSelector();
             TagSuggestions.setup();
+            Income.setupOneTimeToggle();
             Upload.setupDashboard();
             Upload.setupZone('expense-upload-zone', 'expense-file-input', 'expense-upload-preview', 'expense');
             Upload.setupZone('payslip-upload-zone', 'payslip-file-input', 'payslip-upload-preview', 'payslip');
@@ -2641,6 +2867,9 @@
                     case 'delete-planned-debt': PlannedDebts.delete(id); break;
                     case 'activate-planned-investment': PlannedInvestments.activate(id); break;
                     case 'delete-planned-investment': PlannedInvestments.delete(id); break;
+                    case 'reset-expenses': Expenses.reset(); break;
+                    case 'reset-debts': Debts.reset(); break;
+                    case 'reset-investments': Investments.reset(); break;
                 }
             });
         },

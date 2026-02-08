@@ -260,6 +260,10 @@ h2 {
 .trend.positive { color: var(--success-color); }
 .trend.negative { color: var(--danger-color); }
 
+/* Net savings styling */
+#net-savings.positive { color: var(--success-color); }
+#net-savings.negative { color: var(--danger-color); }
+
 /* ==================== CHARTS ==================== */
 .charts-container {
     display: grid;
@@ -453,6 +457,107 @@ h2 {
     font-size: var(--font-size-sm);
 }
 
+/* ==================== SECTION HEADERS ==================== */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-6);
+}
+
+.section-header h2 {
+    margin-bottom: 0;
+}
+
+.reset-btn {
+    position: relative;
+}
+
+/* Tooltip system */
+[data-tooltip] {
+    position: relative;
+    cursor: help;
+}
+
+[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--text-primary);
+    color: white;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--border-radius-sm);
+    font-size: var(--font-size-xs);
+    white-space: nowrap;
+    margin-bottom: var(--space-2);
+    z-index: 100;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    pointer-events: none;
+    max-width: 250px;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.4;
+}
+
+[data-tooltip]:hover::after {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Tooltip arrow */
+[data-tooltip]::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: var(--text-primary);
+    margin-bottom: calc(var(--space-2) - 6px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    z-index: 101;
+}
+
+[data-tooltip]:hover::before {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Right-aligned tooltip for reset buttons */
+.reset-btn[data-tooltip]::after {
+    left: auto;
+    right: 0;
+    transform: none;
+}
+
+.reset-btn[data-tooltip]::before {
+    left: auto;
+    right: 10px;
+    transform: none;
+}
+
+/* Info icon for tooltips */
+.info-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--text-secondary);
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    margin-left: var(--space-1);
+    vertical-align: middle;
+}
+
 /* ==================== CONTENT CONTAINERS ==================== */
 .expense-container,
 .debt-container,
@@ -468,8 +573,17 @@ h2 {
 .debt-list,
 .investment-list,
 .income-list {
-    max-height: 400px;
+    max-height: 600px;
     overflow-y: auto;
+}
+
+/* Expense list card - make it larger */
+.expense-list-card {
+    min-height: 450px;
+}
+
+.expense-list-card .expense-list {
+    max-height: 550px;
 }
 
 .expense-item,
@@ -496,6 +610,57 @@ h2 {
 .investment-item:last-child,
 .income-item:last-child {
     border-bottom: none;
+}
+
+/* Badge styles */
+.badge {
+    display: inline-block;
+    padding: 2px 8px;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    border-radius: 999px;
+    margin-left: var(--space-2);
+    vertical-align: middle;
+}
+
+.one-time-badge {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.recurring-badge {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.planned-badge {
+    background: #e0e7ff;
+    color: #3730a3;
+}
+
+/* Checkbox group */
+.checkbox-group {
+    display: flex;
+    align-items: center;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary-color);
+}
+
+.income-item.one-time {
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
 }
 
 .item-info {

@@ -54,22 +54,22 @@
         <section id="dashboard" class="section active" role="tabpanel" aria-labelledby="tab-dashboard">
             <h2>Financial Dashboard</h2>
             <div class="dashboard-grid">
-                <div class="card summary-card income">
+                <div class="card summary-card income" data-tooltip="Your total recurring monthly income from all sources like salary, freelance, etc.">
                     <h3>Monthly Income</h3>
                     <p class="amount" id="total-income">$0.00</p>
                     <span class="trend positive">From payslips</span>
                 </div>
-                <div class="card summary-card expenses">
+                <div class="card summary-card expenses" data-tooltip="Sum of all recorded expenses across all categories. Used to calculate your spending patterns.">
                     <h3>Total Expenses</h3>
                     <p class="amount" id="total-expenses">$0.00</p>
                     <span class="trend negative">All time</span>
                 </div>
-                <div class="card summary-card debt">
+                <div class="card summary-card debt" data-tooltip="Total outstanding balance across all debts including credit cards, loans, and mortgages.">
                     <h3>Total Debt</h3>
                     <p class="amount" id="total-debt">$0.00</p>
                     <span class="trend">Outstanding</span>
                 </div>
-                <div class="card summary-card savings">
+                <div class="card summary-card savings" data-tooltip="Income minus expenses. A positive value means you're saving money each month.">
                     <h3>Net Savings</h3>
                     <p class="amount" id="net-savings">$0.00</p>
                     <span class="trend">Available to invest</span>
@@ -84,7 +84,7 @@
                     </div>
                 </div>
                 <div class="card chart-card">
-                    <h3>Financial Health Score</h3>
+                    <h3 data-tooltip="A 0-100 score based on your income/expense ratio, savings rate, and debt levels. Higher is better!">Financial Health Score</h3>
                     <div class="health-score">
                         <div class="score-circle" id="health-score" role="img" aria-label="Financial health score">
                             <span class="score-value">--</span>
@@ -155,7 +155,10 @@
 
         <!-- Expenses Section -->
         <section id="expenses" class="section" role="tabpanel" aria-labelledby="tab-expenses">
-            <h2>Expense Tracker</h2>
+            <div class="section-header">
+                <h2>Expense Tracker</h2>
+                <button class="btn btn-danger btn-sm reset-btn" data-action="reset-expenses" data-tooltip="Delete all expenses and start fresh">Reset All</button>
+            </div>
             <div class="expense-container">
                 <div class="card add-expense-card">
                     <h3>Add New Expense</h3>
@@ -275,7 +278,10 @@
 
         <!-- Debt Analysis Section -->
         <section id="debt" class="section" role="tabpanel" aria-labelledby="tab-debt">
-            <h2>Debt Analysis & Payoff Plan</h2>
+            <div class="section-header">
+                <h2>Debt Analysis & Payoff Plan</h2>
+                <button class="btn btn-danger btn-sm reset-btn" data-action="reset-debts" data-tooltip="Delete all debts and planned debts">Reset All</button>
+            </div>
             <div class="debt-container">
                 <div class="card add-debt-card">
                     <h3>Add Debt</h3>
@@ -286,7 +292,7 @@
                         </div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="debt-balance">Balance ($)</label>
+                                <label for="debt-balance">Balance</label>
                                 <input type="number" id="debt-balance" step="0.01" min="0" placeholder="0.00" required>
                             </div>
                             <div class="form-group">
@@ -296,7 +302,7 @@
                         </div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="debt-minimum">Minimum Payment ($)</label>
+                                <label for="debt-minimum">Minimum Payment</label>
                                 <input type="number" id="debt-minimum" step="0.01" min="0" placeholder="0.00" required>
                             </div>
                             <div class="form-group">
@@ -335,7 +341,7 @@
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="planned-debt-balance">Expected Amount ($)</label>
+                                    <label for="planned-debt-balance">Expected Amount</label>
                                     <input type="number" id="planned-debt-balance" step="0.01" min="0" placeholder="0.00" required>
                                 </div>
                                 <div class="form-group">
@@ -345,7 +351,7 @@
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="planned-debt-minimum">Expected Payment ($)</label>
+                                    <label for="planned-debt-minimum">Expected Payment</label>
                                     <input type="number" id="planned-debt-minimum" step="0.01" min="0" placeholder="0.00" required>
                                 </div>
                                 <div class="form-group">
@@ -392,7 +398,7 @@
                         </div>
                     </div>
                     <div class="extra-payment">
-                        <label for="extra-payment-amount">Extra Monthly Payment ($)</label>
+                        <label for="extra-payment-amount">Extra Monthly Payment</label>
                         <input type="number" id="extra-payment-amount" step="0.01" min="0" placeholder="0.00">
                         <button class="btn btn-secondary" id="calculate-payoff">Calculate Payoff Timeline</button>
                     </div>
@@ -410,7 +416,10 @@
 
         <!-- Investments Section -->
         <section id="investments" class="section" role="tabpanel" aria-labelledby="tab-investments">
-            <h2>Investment Analysis & Recommendations</h2>
+            <div class="section-header">
+                <h2>Investment Analysis & Recommendations</h2>
+                <button class="btn btn-danger btn-sm reset-btn" data-action="reset-investments" data-tooltip="Delete all investments and reset profile">Reset All</button>
+            </div>
             <div class="investment-container">
                 <div class="card investment-profile-card">
                     <h3>Your Investment Profile</h3>
@@ -429,11 +438,11 @@
                         </div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="investment-timeline">Time Horizon (Years)</label>
+                                <label for="investment-timeline" data-tooltip="How many years until you need this money? Longer horizons allow for more aggressive investments.">Time Horizon (Years)</label>
                                 <input type="number" id="investment-timeline" min="1" max="50" placeholder="10" required>
                             </div>
                             <div class="form-group">
-                                <label for="risk-tolerance">Risk Tolerance</label>
+                                <label for="risk-tolerance" data-tooltip="Conservative: Lower returns, stable growth. Moderate: Balanced approach. Aggressive: Higher potential returns with more volatility.">Risk Tolerance</label>
                                 <select id="risk-tolerance" required>
                                     <option value="">Select risk level</option>
                                     <option value="conservative">Conservative</option>
@@ -443,7 +452,7 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label for="monthly-investment">Monthly Investment Amount ($)</label>
+                            <label for="monthly-investment">Monthly Investment Amount</label>
                             <input type="number" id="monthly-investment" step="0.01" min="0" placeholder="0.00" required>
                         </div>
                         <button type="submit" class="btn btn-primary">Get Recommendations</button>
@@ -459,7 +468,7 @@
                                 <input type="text" id="investment-name" placeholder="e.g., 401k, IRA" required>
                             </div>
                             <div class="form-group">
-                                <label for="investment-value">Current Value ($)</label>
+                                <label for="investment-value">Current Value</label>
                                 <input type="number" id="investment-value" step="0.01" min="0" placeholder="0.00" required>
                             </div>
                         </div>
@@ -503,7 +512,7 @@
                                     <input type="text" id="planned-investment-name" placeholder="e.g., New 401k Contribution" required>
                                 </div>
                                 <div class="form-group">
-                                    <label for="planned-investment-amount">Amount ($)</label>
+                                    <label for="planned-investment-amount">Amount</label>
                                     <input type="number" id="planned-investment-amount" step="0.01" min="0" placeholder="0.00" required>
                                 </div>
                             </div>
@@ -618,25 +627,40 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="income-source">Income Source</label>
-                                <input type="text" id="income-source" placeholder="e.g., Primary Job" required>
+                                <input type="text" id="income-source" placeholder="e.g., Primary Job, Annual Bonus" required>
                             </div>
                             <div class="form-group">
-                                <label for="income-amount">Monthly Amount ($)</label>
+                                <label for="income-amount" id="income-amount-label">Amount</label>
                                 <input type="number" id="income-amount" step="0.01" min="0" placeholder="0.00" required>
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label for="income-type">Income Type</label>
-                            <select id="income-type" required>
-                                <option value="">Select type</option>
-                                <option value="salary">Salary</option>
-                                <option value="hourly">Hourly Wages</option>
-                                <option value="freelance">Freelance/Contract</option>
-                                <option value="business">Business Income</option>
-                                <option value="investment">Investment Income</option>
-                                <option value="rental">Rental Income</option>
-                                <option value="other">Other</option>
-                            </select>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="income-type">Income Type</label>
+                                <select id="income-type" required>
+                                    <option value="">Select type</option>
+                                    <option value="salary">Salary</option>
+                                    <option value="hourly">Hourly Wages</option>
+                                    <option value="freelance">Freelance/Contract</option>
+                                    <option value="business">Business Income</option>
+                                    <option value="investment">Investment Income</option>
+                                    <option value="rental">Rental Income</option>
+                                    <option value="bonus">Bonus</option>
+                                    <option value="gift">Gift/Windfall</option>
+                                    <option value="tax-refund">Tax Refund</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div class="form-group checkbox-group">
+                                <label class="checkbox-label" data-tooltip="One-time payments like bonuses are not included in recurring monthly income projections.">
+                                    <input type="checkbox" id="income-one-time">
+                                    <span>One-time payment (not recurring)</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group" id="income-month-group" style="display: none;">
+                            <label for="income-month">Payment Month</label>
+                            <input type="month" id="income-month">
                         </div>
                         <button type="submit" class="btn btn-primary">Add Income</button>
                     </form>

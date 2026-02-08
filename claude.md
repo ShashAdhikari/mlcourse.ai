@@ -142,6 +142,12 @@ File Upload → Upload.processFile() → FileReader → Parser.parseCSV()/parseE
 - **Planned/future investments** - Add potential investments to Investments page with name, amount, type, expected return, recurring contribution, and planned start date. Activate to convert to real investment or delete
 - **Planned items dashboard summary** - Overview card on Dashboard showing counts and totals for all planned expenses, debts, and investments with visual icons and color coding
 - **Enhanced monthly analytics** - Uses per-month income calculation via `Dashboard.getMonthlyIncome(monthKey)` for accurate income vs expense comparison in table rows
+- **Reset buttons** - Each section (Expenses, Debts, Investments) has a "Reset All" button to clear data. Auto-reset offered when all bank statement uploads are deleted.
+- **Dynamic currency symbols** - Currency symbols update everywhere based on selector; no hardcoded $ signs in labels
+- **Currency-specific investment types** - Investment type dropdown shows region-appropriate options (INR: PF, NPS, PPF; NPR: CIT; USD: 401k, IRA, Roth IRA)
+- **Hover tooltips** - Data cards and form labels show explanatory tooltips on hover for better UX
+- **Enhanced expense pie chart** - Doughnut chart with category-matched colors, hover effects, percentage tooltips, and smooth animations
+- **One-time income payments** - Income form supports one-time payments (bonuses, tax refunds) with month selection. One-time income shown with badge and excluded from recurring projections.
 
 ### Common Bugs to Watch For
 1. **Allocation percentages must sum to 100%** - derive the last category as `100 - sum(others)`
@@ -164,6 +170,11 @@ File Upload → Upload.processFile() → FileReader → Parser.parseCSV()/parseE
 18. **Monthly income calculation** - For per-month income in analytics, use `Dashboard.getMonthlyIncome(monthKey)` which aggregates recurring income plus one-time income for that specific month. Don't use `totalIncome` for monthly comparisons.
 19. **Projection card overflow** - Investment projection values can overflow card boundaries. Apply `overflow: hidden` to `.projection-card`, `overflow-x: auto` to `#projection-details`, and `word-break: break-word` to large values.
 20. **Planned items activate pattern** - When activating a planned item, copy relevant fields to the real item, then delete from planned array. Use `State.modify()` for both operations to ensure persistence.
+21. **Net savings sign preservation** - Use `Currency.format(amount, true)` to show negative amounts correctly. Dashboard updates net savings class to 'positive'/'negative' for color styling.
+22. **Reset confirmation required** - All reset functions must call `confirm()` before clearing data to prevent accidental data loss.
+23. **Auto-reset on upload delete** - When last expense upload is deleted, prompt user to reset expenses. Clears `Parser.pending`, hides parsed transactions card.
+24. **Currency investment types** - Call `Currency.updateInvestmentTypeSelects()` on currency change and page load to populate correct investment types.
+25. **One-time income toggle** - `Income.setupOneTimeToggle()` shows/hides month picker when checkbox changes. Must be called in `App.init()`.
 
 ### QA Test Results (Agent-Automated)
 
@@ -237,13 +248,35 @@ File Upload → Upload.processFile() → FileReader → Parser.parseCSV()/parseE
 | Planned items persisted to localStorage | PASS |
 | Event delegation routes planned item actions | PASS |
 
+**Feature & Bug Fix Tests (Session 2):**
+
+| Scenario | Result |
+|---|---|
+| Reset button on Expenses page clears data | PASS |
+| Reset button on Debts page clears debts + planned debts | PASS |
+| Reset button on Investments page clears all + profile | PASS |
+| Auto-reset prompt when all uploads deleted | PASS |
+| Currency symbols update on selector change | PASS |
+| Investment types change for INR currency | PASS |
+| Investment types change for NPR currency | PASS |
+| Tooltip hover on dashboard cards | PASS |
+| Tooltip hover on form labels | PASS |
+| Expense pie chart shows category colors | PASS |
+| Expense pie chart shows percentages in tooltip | PASS |
+| One-time income checkbox shows month picker | PASS |
+| One-time income displays with badge | PASS |
+| One-time income excluded from recurring projections | PASS |
+| Expense list card increased height | PASS |
+| Net savings shows negative when expenses > income | PASS (after fix) |
+| Net savings styled red when negative | PASS |
+
 ### File Structure
 ```
-app.js    (~2100 lines) - IIFE with 17 modules: Utils, Currency, State, Notify, CategoryEngine,
+app.js    (~2980 lines) - IIFE with 17 modules: Utils, Currency, State, Notify, CategoryEngine,
                           Anonymizer, Parser, Expenses, Debts, Investments, Income, Upload,
                           Dashboard, TagSuggestions, PlannedDebts, PlannedInvestments, App
-index.html (~550 lines) - Semantic HTML with ARIA accessibility, Chart.js + SheetJS CDNs
-styles.css (~1130 lines) - CSS design system with custom properties, 21 organized sections
+index.html (~685 lines) - Semantic HTML with ARIA accessibility, Chart.js + SheetJS CDNs
+styles.css (~2525 lines) - CSS design system with custom properties, 22+ organized sections
 ```
 
 ### Development Notes

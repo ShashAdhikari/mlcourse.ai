@@ -151,8 +151,11 @@ Do NOT write implementation code. Output only the design document.
 - State management: `State.modify(key, fn)` / `State.set(key, value)` with auto-persistence
 - Toast notifications: `Notify.show(message, type, duration)` for user feedback
 - File APIs: `FileReader`, `ArrayBuffer`, SheetJS integration
-- Chart.js: canvas rendering, responsive options, dataset management
+- Chart.js: canvas rendering, responsive options, dataset management, enhanced styling
 - Pattern replication: Identify existing patterns (e.g., PlannedExpenses) and replicate for new modules (PlannedDebts, PlannedInvestments)
+- Tooltip system: CSS-only tooltips with `data-tooltip` attributes, arrow pseudo-elements, transitions
+- Dynamic form fields: Toggle visibility based on checkbox state, conditional input validation
+- Currency module extension: Investment types by region, format with sign preservation
 
 **Coding Rules:**
 - **No over-engineering.** Don't add features, configs, or abstractions beyond what was asked. A bug fix doesn't need surrounding code cleaned up.
@@ -866,3 +869,4 @@ To invoke an agent, use the Task tool with these parameters:
 | 2026-02-05 | Full codebase rewrite: IIFE modules, event delegation, shared parser, CSS design system, toast notifications, ARIA accessibility. Coder Agent rules and prompt updated for new architecture. |
 | 2026-02-07 | Added UI Agent, UX Agent, and Project Manager Agent (9 agents total). Updated coordination flow for parallel UI/UX execution. Designer receives and synthesizes UI/UX specs. Super Agent delegates to PM for task breakdown. New communication contracts and invocation reference. |
 | 2026-02-07 | Bug fix + feature implementation session: Fixed monthly analytics income calculation, investment projection overflow. Added PlannedDebts and PlannedInvestments modules following established patterns. Dashboard planned summary added. Super Agent successfully orchestrated multi-task pipeline. |
+| 2026-02-08 | Major feature session (6 features, 2 bug fixes): Reset buttons with auto-reset on upload delete, dynamic currency symbols, currency-specific investment types (INR/NPR/default), hover tooltips system, enhanced expense pie chart, one-time income support. Bug fixes: increased expense card size, net savings sign preservation. Super Agent sequentially coordinated all tasks via todo tracking. |

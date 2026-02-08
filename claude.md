@@ -11,9 +11,10 @@ Two synchronized copies exist:
 
 ### Architecture
 - **Single-page app** with 5 tab-based sections: Dashboard, Expenses, Debt Analysis, Investments, Upload
-- **IIFE module pattern** - entire app.js wrapped in `(function () { 'use strict'; ... })();` with 15 named module objects: Utils, Currency, State, Notify, CategoryEngine, Anonymizer, Parser, Expenses, Debts, Investments, Income, Upload, Dashboard, TagSuggestions, App
+- **IIFE module pattern** - entire app.js wrapped in `(function () { 'use strict'; ... })();` with 17 named module objects: Utils, Currency, State, Notify, CategoryEngine, Anonymizer, Parser, Expenses, Debts, Investments, Income, Upload, Dashboard, TagSuggestions, PlannedDebts, PlannedInvestments, App
 - **State management** via centralized `State` module with `State.data`, `State.modify(key, fn)` (mutate + auto-persist), and `State.set(key, value)` (replace + auto-persist). All data persisted to `localStorage`
 - **Event delegation** - single `document.body` click listener routes `data-action`/`data-id` attributes through a switch/case in `App.setupEventDelegation()`. No `window.*` globals or inline `onclick` handlers
+- **Planned items system** - Three parallel modules (`PlannedExpenses`, `PlannedDebts`, `PlannedInvestments`) for future/potential items. Each supports add, activate (convert to real item), and delete. State stored in `State.data.plannedExpenses`, `plannedDebts`, `plannedInvestments`
 - **Toast notification system** - `Notify.show(message, type, duration)` provides user feedback for all CRUD operations via `#toast-container` with `aria-live="polite"`
 - **CSS design system** - `:root` custom properties for spacing scale (--space-1 through --space-12), typography scale (--font-size-xs through --font-size-2xl), category colors (10 categories with bg/fg pairs), elevation (--shadow, --shadow-lg), layout tokens
 - **ARIA accessibility** - `role="tablist"/"tab"/"tabpanel"`, `aria-selected`, `aria-controls`, `aria-labelledby`, skip-link, `.sr-only`, `:focus-visible`, `aria-hidden` on decorative emojis
@@ -118,6 +119,9 @@ File Upload → Upload.processFile() → FileReader → Parser.parseCSV()/parseE
 23. **Shared parser pipeline**: `Parser.parseRows(rows)` is the single entry point for row processing, called by both `Parser.parseCSV()` and `Parser.parseExcel()`. Eliminates duplicated column detection and row classification logic.
 24. **Toast notification system**: `Notify.show(message, type, duration)` provides user feedback for all CRUD operations. Uses `#toast-container` with `aria-live="polite"` for screen reader announcements. Fallback `setTimeout` ensures cleanup if `transitionend` doesn't fire.
 25. **CSS design system tokens**: All colors, spacing, typography, and elevation defined as CSS custom properties in `:root`. Components reference tokens (`var(--space-4)`, `var(--primary-color)`) instead of hardcoded values.
+26. **Planned items module pattern**: `PlannedDebts` and `PlannedInvestments` follow the same pattern as `PlannedExpenses`: `render()`, `add(e)`, `activate(id)`, `delete(id)`, `getTotalPlanned()`. Each stores items in `State.data.planned*` arrays.
+27. **Dashboard planned summary**: `Dashboard.renderPlannedSummary()` aggregates all three planned item types into a single overview card with counts, totals, and visual indicators.
+28. **Monthly recurring income calculation**: `Dashboard.getMonthlyIncome(monthKey)` returns recurring income (incomes with `isRecurring !== false`) plus one-time income matching the specific month.
 
 ### Features
 - Expense tracking with add/edit/delete, category filtering, date sorting
@@ -134,6 +138,10 @@ File Upload → Upload.processFile() → FileReader → Parser.parseCSV()/parseE
 - **Yearly projection** - 12-month table mixing actual data with projected months based on average spending, with annual totals
 - **Toast notifications** - `Notify.show()` provides feedback for all CRUD operations (add, edit, delete, import, discard)
 - **Financial health score** - conic-gradient circle scoring 0-100 based on income/expense ratio, savings, and debt levels
+- **Planned/future debts** - Add potential debts to Debt Analysis page with name, balance, interest rate, type, and planned start date. Activate to convert to real debt or delete
+- **Planned/future investments** - Add potential investments to Investments page with name, amount, type, expected return, recurring contribution, and planned start date. Activate to convert to real investment or delete
+- **Planned items dashboard summary** - Overview card on Dashboard showing counts and totals for all planned expenses, debts, and investments with visual icons and color coding
+- **Enhanced monthly analytics** - Uses per-month income calculation via `Dashboard.getMonthlyIncome(monthKey)` for accurate income vs expense comparison in table rows
 
 ### Common Bugs to Watch For
 1. **Allocation percentages must sum to 100%** - derive the last category as `100 - sum(others)`
@@ -153,6 +161,9 @@ File Upload → Upload.processFile() → FileReader → Parser.parseCSV()/parseE
 15. **Toast element cleanup** - `Notify.show()` uses both `transitionend` listener AND a 500ms fallback `setTimeout` to ensure toast elements are removed from DOM.
 16. **Event delegation requires `data-action`** - when adding new interactive buttons, add `data-action="action-name"` and `data-id="${id}"` attributes, then add the case to `App.setupEventDelegation()`.
 17. **State mutations must use `State.modify()` or `State.set()`** - never mutate `State.data` directly without calling `State.save()`. The modify/set methods ensure automatic localStorage persistence.
+18. **Monthly income calculation** - For per-month income in analytics, use `Dashboard.getMonthlyIncome(monthKey)` which aggregates recurring income plus one-time income for that specific month. Don't use `totalIncome` for monthly comparisons.
+19. **Projection card overflow** - Investment projection values can overflow card boundaries. Apply `overflow: hidden` to `.projection-card`, `overflow-x: auto` to `#projection-details`, and `word-break: break-word` to large values.
+20. **Planned items activate pattern** - When activating a planned item, copy relevant fields to the real item, then delete from planned array. Use `State.modify()` for both operations to ensure persistence.
 
 ### QA Test Results (Agent-Automated)
 
@@ -212,13 +223,27 @@ File Upload → Upload.processFile() → FileReader → Parser.parseCSV()/parseE
 | Empty state placeholders for all panels | PASS |
 | Currency change re-renders all sections | PASS |
 
+**Planned Items & Bug Fixes Tests:**
+
+| Scenario | Result |
+|---|---|
+| Monthly income vs expense uses per-month income | PASS (after fix) |
+| Investment projection values contained within card | PASS (after fix) |
+| PlannedDebts add/render/activate/delete cycle | PASS |
+| PlannedInvestments add/render/activate/delete cycle | PASS |
+| PlannedDebts activate converts to real debt | PASS |
+| PlannedInvestments activate converts to real investment | PASS |
+| Dashboard planned summary shows all three item types | PASS |
+| Planned items persisted to localStorage | PASS |
+| Event delegation routes planned item actions | PASS |
+
 ### File Structure
 ```
-app.js    (~1775 lines) - IIFE with 15 modules: Utils, Currency, State, Notify, CategoryEngine,
+app.js    (~2100 lines) - IIFE with 17 modules: Utils, Currency, State, Notify, CategoryEngine,
                           Anonymizer, Parser, Expenses, Debts, Investments, Income, Upload,
-                          Dashboard, TagSuggestions, App
-index.html (~487 lines) - Semantic HTML with ARIA accessibility, Chart.js + SheetJS CDNs
-styles.css (~1529 lines) - CSS design system with custom properties, 19 organized sections
+                          Dashboard, TagSuggestions, PlannedDebts, PlannedInvestments, App
+index.html (~550 lines) - Semantic HTML with ARIA accessibility, Chart.js + SheetJS CDNs
+styles.css (~1130 lines) - CSS design system with custom properties, 21 organized sections
 ```
 
 ### Development Notes

@@ -152,6 +152,7 @@ Do NOT write implementation code. Output only the design document.
 - Toast notifications: `Notify.show(message, type, duration)` for user feedback
 - File APIs: `FileReader`, `ArrayBuffer`, SheetJS integration
 - Chart.js: canvas rendering, responsive options, dataset management
+- Pattern replication: Identify existing patterns (e.g., PlannedExpenses) and replicate for new modules (PlannedDebts, PlannedInvestments)
 
 **Coding Rules:**
 - **No over-engineering.** Don't add features, configs, or abstractions beyond what was asked. A bug fix doesn't need surrounding code cleaned up.
@@ -274,6 +275,7 @@ Do NOT fix bugs yourself. Only report them.
 - DOM event propagation analysis (capture, target, bubble phases)
 - Regex debugging (test against positive and negative cases)
 - Race condition identification (async operations, event ordering)
+- CSS overflow debugging: identifying content overflow issues and applying appropriate `overflow`, `word-break`, and container constraints
 
 **Debugging Protocol:**
 1. **Reproduce** - Understand the exact steps and conditions that trigger the bug
@@ -863,3 +865,4 @@ To invoke an agent, use the Task tool with these parameters:
 | 2026-02-05 | Initial agent system definition with 6 agents |
 | 2026-02-05 | Full codebase rewrite: IIFE modules, event delegation, shared parser, CSS design system, toast notifications, ARIA accessibility. Coder Agent rules and prompt updated for new architecture. |
 | 2026-02-07 | Added UI Agent, UX Agent, and Project Manager Agent (9 agents total). Updated coordination flow for parallel UI/UX execution. Designer receives and synthesizes UI/UX specs. Super Agent delegates to PM for task breakdown. New communication contracts and invocation reference. |
+| 2026-02-07 | Bug fix + feature implementation session: Fixed monthly analytics income calculation, investment projection overflow. Added PlannedDebts and PlannedInvestments modules following established patterns. Dashboard planned summary added. Super Agent successfully orchestrated multi-task pipeline. |

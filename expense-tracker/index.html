@@ -9,47 +9,92 @@
 <body>
     <a href="#main-content" class="skip-link">Skip to content</a>
 
-    <header>
-        <nav aria-label="Main navigation">
+    <div class="app-container">
+        <!-- Mobile Header (visible only on mobile) -->
+        <div class="mobile-header">
             <div class="logo">
                 <span class="logo-icon" aria-hidden="true">💰</span>
                 <h1>FinanceTracker</h1>
             </div>
-            <ul class="nav-links" role="tablist" aria-label="App sections">
-                <li role="presentation"><a href="#dashboard" role="tab" id="tab-dashboard" aria-selected="true" aria-controls="dashboard" class="active">Dashboard</a></li>
-                <li role="presentation"><a href="#expenses" role="tab" id="tab-expenses" aria-selected="false" aria-controls="expenses">Expenses</a></li>
-                <li role="presentation"><a href="#debt" role="tab" id="tab-debt" aria-selected="false" aria-controls="debt">Debt Analysis</a></li>
-                <li role="presentation"><a href="#investments" role="tab" id="tab-investments" aria-selected="false" aria-controls="investments">Investments</a></li>
-                <li role="presentation"><a href="#upload" role="tab" id="tab-upload" aria-selected="false" aria-controls="upload">Upload</a></li>
-            </ul>
-            <div class="currency-selector">
-                <label for="currency-select">Currency:</label>
-                <select id="currency-select">
+            <div class="currency-selector-mobile">
+                <select id="currency-select-mobile" aria-label="Select currency">
                     <option value="USD">$ USD</option>
                     <option value="EUR">&#8364; EUR</option>
                     <option value="GBP">&#163; GBP</option>
                     <option value="JPY">&#165; JPY</option>
-                    <option value="AUD">A$ AUD</option>
-                    <option value="CAD">C$ CAD</option>
-                    <option value="CHF">CHF</option>
-                    <option value="CNY">&#165; CNY</option>
                     <option value="INR">&#8377; INR</option>
-                    <option value="NZD">NZ$ NZD</option>
-                    <option value="SGD">S$ SGD</option>
-                    <option value="HKD">HK$ HKD</option>
-                    <option value="KRW">&#8361; KRW</option>
-                    <option value="BRL">R$ BRL</option>
-                    <option value="ZAR">R ZAR</option>
-                    <option value="MXN">MX$ MXN</option>
-                    <option value="SEK">kr SEK</option>
-                    <option value="NOK">kr NOK</option>
                     <option value="NPR">&#8360; NPR</option>
                 </select>
             </div>
-        </nav>
-    </header>
+        </div>
 
-    <main id="main-content">
+        <!-- Sidebar Navigation (desktop) / Bottom Navigation (mobile) -->
+        <header>
+            <nav aria-label="Main navigation">
+                <div class="logo">
+                    <span class="logo-icon" aria-hidden="true">💰</span>
+                    <h1>FinanceTracker</h1>
+                </div>
+                <ul class="nav-links" role="tablist" aria-label="App sections">
+                    <li role="presentation">
+                        <a href="#dashboard" role="tab" id="tab-dashboard" aria-selected="true" aria-controls="dashboard" class="active">
+                            <span class="nav-icon" aria-hidden="true">📊</span>
+                            <span class="nav-text">Dashboard</span>
+                        </a>
+                    </li>
+                    <li role="presentation">
+                        <a href="#expenses" role="tab" id="tab-expenses" aria-selected="false" aria-controls="expenses">
+                            <span class="nav-icon" aria-hidden="true">💸</span>
+                            <span class="nav-text">Expenses</span>
+                        </a>
+                    </li>
+                    <li role="presentation">
+                        <a href="#debt" role="tab" id="tab-debt" aria-selected="false" aria-controls="debt">
+                            <span class="nav-icon" aria-hidden="true">📉</span>
+                            <span class="nav-text">Debt</span>
+                        </a>
+                    </li>
+                    <li role="presentation">
+                        <a href="#investments" role="tab" id="tab-investments" aria-selected="false" aria-controls="investments">
+                            <span class="nav-icon" aria-hidden="true">📈</span>
+                            <span class="nav-text">Invest</span>
+                        </a>
+                    </li>
+                    <li role="presentation">
+                        <a href="#upload" role="tab" id="tab-upload" aria-selected="false" aria-controls="upload">
+                            <span class="nav-icon" aria-hidden="true">📤</span>
+                            <span class="nav-text">Upload</span>
+                        </a>
+                    </li>
+                </ul>
+                <div class="currency-selector">
+                    <label for="currency-select">Currency</label>
+                    <select id="currency-select">
+                        <option value="USD">$ USD</option>
+                        <option value="EUR">&#8364; EUR</option>
+                        <option value="GBP">&#163; GBP</option>
+                        <option value="JPY">&#165; JPY</option>
+                        <option value="AUD">A$ AUD</option>
+                        <option value="CAD">C$ CAD</option>
+                        <option value="CHF">CHF</option>
+                        <option value="CNY">&#165; CNY</option>
+                        <option value="INR">&#8377; INR</option>
+                        <option value="NZD">NZ$ NZD</option>
+                        <option value="SGD">S$ SGD</option>
+                        <option value="HKD">HK$ HKD</option>
+                        <option value="KRW">&#8361; KRW</option>
+                        <option value="BRL">R$ BRL</option>
+                        <option value="ZAR">R ZAR</option>
+                        <option value="MXN">MX$ MXN</option>
+                        <option value="SEK">kr SEK</option>
+                        <option value="NOK">kr NOK</option>
+                        <option value="NPR">&#8360; NPR</option>
+                    </select>
+                </div>
+            </nav>
+        </header>
+
+        <main id="main-content">
         <!-- Dashboard Section -->
         <section id="dashboard" class="section active" role="tabpanel" aria-labelledby="tab-dashboard">
             <h2>Financial Dashboard</h2>
@@ -670,11 +715,12 @@
                 </div>
             </div>
         </section>
-    </main>
+        </main>
 
-    <footer>
-        <p>&copy; <script>document.write(new Date().getFullYear())</script> FinanceTracker. All rights reserved. This tool provides general financial guidance and should not be considered professional financial advice.</p>
-    </footer>
+        <footer>
+            <p>&copy; <script>document.write(new Date().getFullYear())</script> FinanceTracker. All rights reserved. This tool provides general financial guidance and should not be considered professional financial advice.</p>
+        </footer>
+    </div><!-- /.app-container -->
 
     <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
 

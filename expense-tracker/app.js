@@ -122,11 +122,10 @@
 
         setupSelector() {
             const select = document.getElementById('currency-select');
-            if (!select) return;
-            select.value = Currency.selected;
-            select.addEventListener('change', () => {
-                Currency.selected = select.value;
-                localStorage.setItem('selectedCurrency', select.value);
+            const mobileSelect = document.getElementById('currency-select-mobile');
+
+            // Helper to update all views
+            const updateViews = () => {
                 Currency.updateInvestmentTypeSelects();
                 Expenses.render();
                 Debts.render();
@@ -141,7 +140,32 @@
                 if (Parser.pending.length > 0) {
                     Parser.render(Parser.pending);
                 }
-            });
+            };
+
+            // Setup main (desktop) selector
+            if (select) {
+                select.value = Currency.selected;
+                select.addEventListener('change', () => {
+                    Currency.selected = select.value;
+                    localStorage.setItem('selectedCurrency', select.value);
+                    // Sync mobile selector
+                    if (mobileSelect) mobileSelect.value = select.value;
+                    updateViews();
+                });
+            }
+
+            // Setup mobile selector
+            if (mobileSelect) {
+                mobileSelect.value = Currency.selected;
+                mobileSelect.addEventListener('change', () => {
+                    Currency.selected = mobileSelect.value;
+                    localStorage.setItem('selectedCurrency', mobileSelect.value);
+                    // Sync desktop selector
+                    if (select) select.value = mobileSelect.value;
+                    updateViews();
+                });
+            }
+
             // Initialize investment types on load
             Currency.updateInvestmentTypeSelects();
         }

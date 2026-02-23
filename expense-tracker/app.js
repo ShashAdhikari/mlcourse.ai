@@ -3021,6 +3021,87 @@
         }
     };
 
+    // ==================== LAYOUT TOGGLE ====================
+
+    const LayoutToggle = {
+        currentLayout: 'web', // 'web' or 'mobile'
+
+        init() {
+            // Load saved preference
+            const saved = localStorage.getItem('layoutPreference');
+            if (saved === 'mobile') {
+                LayoutToggle.currentLayout = 'mobile';
+                LayoutToggle.applyLayout('mobile');
+            }
+
+            LayoutToggle.setupToggle();
+        },
+
+        setupToggle() {
+            // Desktop toggle (in sidebar)
+            const desktopToggle = document.getElementById('layout-toggle-desktop');
+            if (desktopToggle) {
+                desktopToggle.addEventListener('click', (e) => {
+                    const option = e.target.closest('.toggle-option');
+                    if (option) {
+                        const layout = option.dataset.layout;
+                        LayoutToggle.setLayout(layout);
+                    }
+                });
+            }
+
+            // Mobile toggle button
+            const mobileToggle = document.getElementById('layout-toggle-mobile');
+            if (mobileToggle) {
+                mobileToggle.addEventListener('click', () => {
+                    const newLayout = LayoutToggle.currentLayout === 'web' ? 'mobile' : 'web';
+                    LayoutToggle.setLayout(newLayout);
+                });
+            }
+        },
+
+        setLayout(layout) {
+            LayoutToggle.currentLayout = layout;
+            localStorage.setItem('layoutPreference', layout);
+            LayoutToggle.applyLayout(layout);
+            LayoutToggle.updateToggleUI(layout);
+        },
+
+        applyLayout(layout) {
+            const container = document.querySelector('.app-container');
+            if (!container) return;
+
+            if (layout === 'mobile') {
+                container.classList.add('force-mobile');
+            } else {
+                container.classList.remove('force-mobile');
+            }
+        },
+
+        updateToggleUI(layout) {
+            // Update desktop toggle
+            const desktopToggle = document.getElementById('layout-toggle-desktop');
+            if (desktopToggle) {
+                desktopToggle.querySelectorAll('.toggle-option').forEach(opt => {
+                    opt.classList.toggle('active', opt.dataset.layout === layout);
+                });
+            }
+
+            // Update mobile toggle button
+            const mobileToggle = document.getElementById('layout-toggle-mobile');
+            if (mobileToggle) {
+                mobileToggle.classList.toggle('mobile-active', layout === 'mobile');
+                const icon = mobileToggle.querySelector('.toggle-icon');
+                if (icon) {
+                    icon.textContent = layout === 'mobile' ? '🖥️' : '📱';
+                }
+                mobileToggle.setAttribute('data-tooltip',
+                    layout === 'mobile' ? 'Switch to web layout' : 'Switch to mobile layout'
+                );
+            }
+        }
+    };
+
     // ==================== APP (ORCHESTRATOR) ====================
 
     const App = {
@@ -3029,6 +3110,7 @@
             App.setupEventDelegation();
             App.setupForms();
             Currency.setupSelector();
+            LayoutToggle.init();
             TagSuggestions.setup();
             Income.setupOneTimeToggle();
             Upload.setupDashboard();

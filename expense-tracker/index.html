@@ -16,15 +16,22 @@
                 <span class="logo-icon" aria-hidden="true">💰</span>
                 <h1>FinanceTracker</h1>
             </div>
-            <div class="currency-selector-mobile">
-                <select id="currency-select-mobile" aria-label="Select currency">
-                    <option value="USD">$ USD</option>
-                    <option value="EUR">&#8364; EUR</option>
-                    <option value="GBP">&#163; GBP</option>
-                    <option value="JPY">&#165; JPY</option>
-                    <option value="INR">&#8377; INR</option>
-                    <option value="NPR">&#8360; NPR</option>
-                </select>
+            <div class="mobile-header-controls">
+                <div class="layout-toggle-mini">
+                    <button id="layout-toggle-mobile" class="layout-toggle-btn" aria-label="Switch layout" data-tooltip="Switch to mobile layout">
+                        <span class="toggle-icon">📱</span>
+                    </button>
+                </div>
+                <div class="currency-selector-mobile">
+                    <select id="currency-select-mobile" aria-label="Select currency">
+                        <option value="USD">$ USD</option>
+                        <option value="EUR">&#8364; EUR</option>
+                        <option value="GBP">&#163; GBP</option>
+                        <option value="JPY">&#165; JPY</option>
+                        <option value="INR">&#8377; INR</option>
+                        <option value="NPR">&#8360; NPR</option>
+                    </select>
+                </div>
             </div>
         </div>
 
@@ -90,6 +97,16 @@
                         <option value="NOK">kr NOK</option>
                         <option value="NPR">&#8360; NPR</option>
                     </select>
+                </div>
+                <!-- Layout Toggle -->
+                <div class="layout-toggle">
+                    <label class="layout-toggle-label">Layout</label>
+                    <div class="toggle-switch-container">
+                        <button id="layout-toggle-desktop" class="toggle-switch" aria-label="Toggle between web and mobile layout">
+                            <span class="toggle-option active" data-layout="web">🖥️ Web</span>
+                            <span class="toggle-option" data-layout="mobile">📱 Mobile</span>
+                        </button>
+                    </div>
                 </div>
             </nav>
         </header>

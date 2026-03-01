@@ -3457,9 +3457,9 @@
             if (debts.length === 0) return nudges;
 
             // High-interest debt: Debt creates fragility (Taleb - Antifragile)
-            const highInterestDebts = debts.filter(d => d.interestRate > 15);
+            const highInterestDebts = debts.filter(d => d.rate > 15);
             if (highInterestDebts.length > 0) {
-                const highestRate = Math.max(...highInterestDebts.map(d => d.interestRate));
+                const highestRate = Math.max(...highInterestDebts.map(d => d.rate));
                 nudges.push({
                     icon: '🔥',
                     category: 'debt',

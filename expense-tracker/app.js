@@ -3181,6 +3181,84 @@
             }
         },
 
+        // Behavioral Finance Wisdom Library
+        // Sources: Psychology of Money, Same as Ever (Housel), Just Keep Buying (Maggiulli),
+        // Gigerenzer (risk literacy), Taleb (antifragility)
+        wisdomLibrary: {
+            // Psychology of Money - Morgan Housel
+            psychology: [
+                { quote: 'Wealth is what you don\'t see. It\'s the cars not purchased, the diamonds not bought.', author: 'Morgan Housel', source: 'Psychology of Money', context: ['expense', 'savings'] },
+                { quote: 'Spending money to show people how much money you have is the fastest way to have less money.', author: 'Morgan Housel', source: 'Psychology of Money', context: ['expense'] },
+                { quote: 'The highest form of wealth is the ability to wake up every morning and say, "I can do whatever I want today."', author: 'Morgan Housel', source: 'Psychology of Money', context: ['score', 'investment'] },
+                { quote: 'Getting money requires risk-taking, optimism, and putting yourself out there. Keeping money requires humility and fear.', author: 'Morgan Housel', source: 'Psychology of Money', context: ['score'] },
+                { quote: 'Reasonable is more realistic and you have a better chance of sticking with it in the long run.', author: 'Morgan Housel', source: 'Psychology of Money', context: ['investment', 'expense'] },
+                { quote: 'Room for error lets you endure a range of outcomes, and endurance lets compounding work.', author: 'Morgan Housel', source: 'Psychology of Money', context: ['emergency', 'investment'] },
+                { quote: 'The most powerful force in finance is compound interest. The most important ingredient is time.', author: 'Morgan Housel', source: 'Psychology of Money', context: ['investment'] },
+                { quote: 'Your success as an investor will be determined by how you respond to punctuated moments of terror.', author: 'Morgan Housel', source: 'Psychology of Money', context: ['investment'] },
+                { quote: 'Independence, at any income level, is driven by your savings rate. And your savings rate is driven by your ability to keep your lifestyle expectations low.', author: 'Morgan Housel', source: 'Psychology of Money', context: ['expense', 'savings'] }
+            ],
+            // Same as Ever - Morgan Housel
+            uncertainty: [
+                { quote: 'Risk is what\'s left over when you think you\'ve thought of everything.', author: 'Morgan Housel', source: 'Same as Ever', context: ['emergency', 'debt'] },
+                { quote: 'The biggest risk is always what no one sees coming.', author: 'Morgan Housel', source: 'Same as Ever', context: ['emergency'] },
+                { quote: 'Calm plants the seeds of crazy. Stability breeds complacency.', author: 'Morgan Housel', source: 'Same as Ever', context: ['score'] },
+                { quote: 'Expectations grow faster than income. Happiness is reality minus expectations.', author: 'Morgan Housel', source: 'Same as Ever', context: ['expense'] },
+                { quote: 'The most important financial skill is getting the goalpost to stop moving.', author: 'Morgan Housel', source: 'Same as Ever', context: ['expense', 'score'] },
+                { quote: 'Good news comes from compounding, which always takes time. Bad news comes from losses that can happen in the blink of an eye.', author: 'Morgan Housel', source: 'Same as Ever', context: ['investment', 'emergency'] }
+            ],
+            // Just Keep Buying - Nick Maggiulli
+            investing: [
+                { quote: 'Save what you can, not what financial gurus tell you to save.', author: 'Nick Maggiulli', source: 'Just Keep Buying', context: ['savings', 'expense'] },
+                { quote: 'The best time to invest was yesterday. The second best time is today.', author: 'Nick Maggiulli', source: 'Just Keep Buying', context: ['investment'] },
+                { quote: 'Focus on increasing your income rather than cutting your spending when you\'re young.', author: 'Nick Maggiulli', source: 'Just Keep Buying', context: ['income', 'expense'] },
+                { quote: 'Time in the market beats timing the market.', author: 'Nick Maggiulli', source: 'Just Keep Buying', context: ['investment'] },
+                { quote: 'Automate your finances. Remove the human element from savings and investing.', author: 'Nick Maggiulli', source: 'Just Keep Buying', context: ['investment', 'savings'] },
+                { quote: 'Don\'t try to buy the dip. Just keep buying.', author: 'Nick Maggiulli', source: 'Just Keep Buying', context: ['investment'] },
+                { quote: 'Small amounts invested consistently beat large amounts invested sporadically.', author: 'Nick Maggiulli', source: 'Just Keep Buying', context: ['investment'] },
+                { quote: 'The purpose of saving is to give yourself options and flexibility.', author: 'Nick Maggiulli', source: 'Just Keep Buying', context: ['savings', 'emergency'] }
+            ],
+            // Gerd Gigerenzer - Risk Literacy & Heuristics
+            heuristics: [
+                { quote: 'Simple rules often outperform complex calculations in uncertain environments.', author: 'Gerd Gigerenzer', source: 'Risk Savvy', context: ['investment', 'decision'] },
+                { quote: 'The 1/N rule: Divide your resources equally. It\'s simple, transparent, and often optimal.', author: 'Gerd Gigerenzer', source: 'Risk Savvy', context: ['investment'] },
+                { quote: 'Don\'t confuse uncertainty with calculated risk. They require different strategies.', author: 'Gerd Gigerenzer', source: 'Risk Savvy', context: ['emergency', 'investment'] },
+                { quote: 'Less is more. Complex strategies can fail in complex environments.', author: 'Gerd Gigerenzer', source: 'Simple Heuristics', context: ['investment', 'expense'] },
+                { quote: 'Transparency matters more than precision. Understand your rules.', author: 'Gerd Gigerenzer', source: 'Risk Savvy', context: ['investment', 'decision'] },
+                { quote: 'Gut feelings based on experience are not irrational—they\'re evolved intelligence.', author: 'Gerd Gigerenzer', source: 'Gut Feelings', context: ['decision'] }
+            ],
+            // Nassim Taleb - Antifragility
+            antifragile: [
+                { quote: 'Debt makes you fragile. Each payment removes an option from your future self.', author: 'Nassim Taleb', source: 'Antifragile', context: ['debt'] },
+                { quote: 'The barbell strategy: extreme safety on one end, small calculated risks on the other.', author: 'Nassim Taleb', source: 'Antifragile', context: ['investment', 'emergency'] },
+                { quote: 'Via negativa: Subtract first. Removing the wrong things matters more than adding the right things.', author: 'Nassim Taleb', source: 'Antifragile', context: ['debt', 'expense'] },
+                { quote: 'Black swans are unpredictable. Prepare for the unknown, not the known risks.', author: 'Nassim Taleb', source: 'Black Swan', context: ['emergency'] },
+                { quote: 'Optionality: Having options is more valuable than knowing which option is best.', author: 'Nassim Taleb', source: 'Antifragile', context: ['savings', 'investment'] },
+                { quote: 'Never put yourself in a position where one mistake can end the game.', author: 'Nassim Taleb', source: 'Skin in the Game', context: ['debt', 'emergency'] },
+                { quote: 'Redundancy is not inefficiency—it\'s insurance against unpredictable events.', author: 'Nassim Taleb', source: 'Antifragile', context: ['emergency', 'savings'] },
+                { quote: 'The fragile breaks under stress. The antifragile gets stronger from it.', author: 'Nassim Taleb', source: 'Antifragile', context: ['debt', 'score'] }
+            ]
+        },
+
+        // Get contextually appropriate wisdom
+        getWisdomForContext(context, situation = 'general') {
+            const allWisdom = [
+                ...Nudges.wisdomLibrary.psychology,
+                ...Nudges.wisdomLibrary.uncertainty,
+                ...Nudges.wisdomLibrary.investing,
+                ...Nudges.wisdomLibrary.heuristics,
+                ...Nudges.wisdomLibrary.antifragile
+            ];
+
+            // Filter by context
+            const relevant = allWisdom.filter(w => w.context.includes(context));
+
+            if (relevant.length === 0) return null;
+
+            // Select based on situation hash for consistency
+            const hash = situation.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+            return relevant[hash % relevant.length];
+        },
+
         currentScore: 0,
 
         getProfile() {
@@ -3270,30 +3348,36 @@
             const gap = 100 - Nudges.currentScore;
 
             if (gap > 30) {
+                // Large gap: Focus on fundamentals (Psychology of Money - reasonable over rational)
                 nudges.push({
                     icon: '🎯',
                     category: 'score',
-                    title: 'Focus on fundamentals',
-                    description: `Your score is ${Nudges.currentScore}. Focus on reducing expenses and building savings to see significant improvement.`,
+                    title: 'Focus on fundamentals first',
+                    description: `Your score is ${Nudges.currentScore}. Building wealth requires consistent, reasonable decisions—not perfect ones. Focus on basics: spend less than you earn.`,
                     impact: `Could improve score by +15-20 points`,
+                    wisdom: Nudges.getWisdomForContext('score', 'fundamentals'),
                     priority: 90
                 });
             } else if (gap > 15) {
+                // Medium gap: Good progress (Same as Ever - expectations)
                 nudges.push({
                     icon: '📈',
                     category: 'score',
-                    title: 'Good progress - keep improving',
-                    description: `Your score is ${Nudges.currentScore}. Small adjustments can push you into excellent territory.`,
+                    title: 'Good progress - stay the course',
+                    description: `Score: ${Nudges.currentScore}. You're building momentum. The key now is consistency—small adjustments compound over time.`,
                     impact: `Target score: ${Math.min(100, Nudges.currentScore + 15)}`,
+                    wisdom: Nudges.getWisdomForContext('score', 'progress'),
                     priority: 70
                 });
             } else if (gap > 0) {
+                // Small gap: Almost perfect (Psychology of Money - getting vs staying wealthy)
                 nudges.push({
                     icon: '🌟',
                     category: 'score',
-                    title: 'Almost perfect!',
-                    description: `Your score is ${Nudges.currentScore}. Fine-tune debt levels or boost investments to reach 100.`,
-                    impact: `${gap} points away from perfect score`,
+                    title: 'Staying wealthy requires humility',
+                    description: `Score: ${Nudges.currentScore}. Getting here took optimism. Staying here requires caution. Don't let success breed complacency.`,
+                    impact: `${gap} points from perfect—maintain your margin of safety`,
+                    wisdom: Nudges.getWisdomForContext('score', 'staying'),
                     priority: 50
                 });
             }
@@ -3305,29 +3389,33 @@
             const nudges = [];
 
             if (data.expenseRatio > profile.expenseRatio.warning) {
+                // High spending: Wealth is invisible (Psychology of Money)
                 const targetRatio = profile.expenseRatio.good;
                 const reduction = data.expenses - (data.income * targetRatio);
                 nudges.push({
                     icon: '💸',
                     category: 'expense',
-                    title: 'High expense-to-income ratio',
-                    description: `You're spending ${(data.expenseRatio * 100).toFixed(0)}% of income. Target: under ${(targetRatio * 100).toFixed(0)}%.`,
-                    impact: `Reduce monthly spending by ${Currency.format(reduction)}`,
+                    title: 'Wealth is what you don\'t spend',
+                    description: `Spending ${(data.expenseRatio * 100).toFixed(0)}% of income. True wealth isn't visible—it's the freedom that comes from keeping more. Target: under ${(targetRatio * 100).toFixed(0)}%.`,
+                    impact: `Saving ${Currency.format(reduction)} monthly builds invisible wealth`,
+                    wisdom: Nudges.getWisdomForContext('expense', 'high-spending'),
                     priority: 95
                 });
             } else if (data.expenseRatio > profile.expenseRatio.good) {
+                // Moderate spending: Via negativa (Taleb) - subtract to improve
                 const savings = data.income * (data.expenseRatio - profile.expenseRatio.excellent);
                 nudges.push({
                     icon: '💡',
                     category: 'expense',
-                    title: 'Room for expense optimization',
-                    description: `Good expense ratio at ${(data.expenseRatio * 100).toFixed(0)}%. Reducing to ${(profile.expenseRatio.excellent * 100).toFixed(0)}% would boost savings.`,
-                    impact: `Potential monthly savings: ${Currency.format(savings)}`,
+                    title: 'Via negativa: Subtract to improve',
+                    description: `At ${(data.expenseRatio * 100).toFixed(0)}% you're doing well. But removing unnecessary spending often matters more than adding income.`,
+                    impact: `Potential freedom fund: ${Currency.format(savings)}/month`,
+                    wisdom: Nudges.getWisdomForContext('expense', 'moderate'),
                     priority: 60
                 });
             }
 
-            // Category-specific suggestions
+            // Category-specific: Expectations grow faster than income (Same as Ever)
             const categoryTotals = {};
             State.data.expenses.forEach(exp => {
                 categoryTotals[exp.category] = (categoryTotals[exp.category] || 0) + exp.amount;
@@ -3338,9 +3426,10 @@
                 nudges.push({
                     icon: '🔍',
                     category: 'expense',
-                    title: `High spending in ${CategoryEngine.labels[topCategory[0]] || topCategory[0]}`,
-                    description: `${CategoryEngine.labels[topCategory[0]] || topCategory[0]} accounts for ${((topCategory[1] / data.expenses) * 100).toFixed(0)}% of expenses.`,
-                    impact: 'Review this category for potential savings',
+                    title: `Check: Is ${CategoryEngine.labels[topCategory[0]] || topCategory[0]} essential?`,
+                    description: `${((topCategory[1] / data.expenses) * 100).toFixed(0)}% of spending. Expectations often grow faster than income—ensure this category still serves your goals.`,
+                    impact: 'Align spending with what actually brings satisfaction',
+                    wisdom: Nudges.getWisdomForContext('expense', 'category'),
                     priority: 55
                 });
             }
@@ -3354,40 +3443,43 @@
 
             if (debts.length === 0) return nudges;
 
-            // High-interest debt warning
+            // High-interest debt: Debt creates fragility (Taleb - Antifragile)
             const highInterestDebts = debts.filter(d => d.interestRate > 15);
             if (highInterestDebts.length > 0) {
                 const highestRate = Math.max(...highInterestDebts.map(d => d.interestRate));
                 nudges.push({
                     icon: '🔥',
                     category: 'debt',
-                    title: 'Tackle high-interest debt first',
-                    description: `You have debt at ${highestRate.toFixed(1)}% interest. ${profile.debtStrategy === 'avalanche' ? 'Pay highest rate first (avalanche method).' : 'Start with smallest balance for quick wins.'}`,
-                    impact: 'Saves the most money on interest',
+                    title: 'Debt creates fragility',
+                    description: `${highestRate.toFixed(1)}% interest is compounding against you. Each payment you owe removes an option from your future. ${profile.debtStrategy === 'avalanche' ? 'Attack highest rate first.' : 'Start small for momentum.'}`,
+                    impact: 'Regain optionality—freedom to make choices',
+                    wisdom: Nudges.getWisdomForContext('debt', 'high-interest'),
                     priority: 100
                 });
             }
 
-            // Debt-to-income ratio
+            // Debt-to-income: Never put yourself where one mistake ends the game (Taleb)
             if (data.debtToIncome > 0.36) {
                 nudges.push({
                     icon: '⚠️',
                     category: 'debt',
-                    title: 'Debt-to-income ratio is high',
-                    description: `Your debt is ${(data.debtToIncome * 100).toFixed(0)}% of annual income. Lenders prefer under 36%.`,
-                    impact: 'May affect loan approvals and credit',
+                    title: 'High leverage = high fragility',
+                    description: `Debt at ${(data.debtToIncome * 100).toFixed(0)}% of annual income. High leverage means any setback—job loss, illness—could be devastating. Build a buffer.`,
+                    impact: 'Reduce to under 36% for resilience',
+                    wisdom: Nudges.getWisdomForContext('debt', 'high-dti'),
                     priority: 85
                 });
             }
 
-            // Debt vs investments
+            // Debt vs investments: Via negativa - subtract before adding (Taleb)
             if (data.debtToInvestment > 1) {
                 nudges.push({
                     icon: '⚖️',
                     category: 'debt',
-                    title: 'Debt exceeds investments',
-                    description: 'Your total debt is higher than investments. Consider aggressive debt payoff.',
-                    impact: 'Net worth would improve with debt reduction',
+                    title: 'Via negativa: Reduce before you add',
+                    description: 'Debt exceeds investments. In uncertain times, removing liabilities is often wiser than adding assets. Subtract first.',
+                    impact: 'Net worth improves more from debt reduction',
+                    wisdom: Nudges.getWisdomForContext('debt', 'debt-vs-invest'),
                     priority: 75
                 });
             }
@@ -3398,34 +3490,39 @@
         getInvestmentNudges(data, profile) {
             const nudges = [];
 
+            // No investments yet: Just start (Just Keep Buying)
             if (data.investments === 0 && data.savings > 0) {
                 nudges.push({
                     icon: '🌱',
                     category: 'investment',
-                    title: 'Start investing your savings',
-                    description: `You have ${Currency.format(data.savings)} in monthly savings. Consider: ${profile.investmentSuggestions.slice(0, 2).join(', ')}.`,
-                    impact: 'Grow wealth through compound returns',
+                    title: 'The best time to start is now',
+                    description: `${Currency.format(data.savings)} monthly savings waiting. Don't wait for the "perfect" moment—time in the market beats timing the market. Consider: ${profile.investmentSuggestions.slice(0, 2).join(', ')}.`,
+                    impact: 'Small consistent amounts beat sporadic large ones',
+                    wisdom: Nudges.getWisdomForContext('investment', 'start'),
                     priority: 80
                 });
             } else if (data.investments > 0 && data.savings > data.investments * 0.05) {
+                // Has investments: Just keep buying (Maggiulli)
                 nudges.push({
                     icon: '📊',
                     category: 'investment',
-                    title: 'Increase investment contributions',
-                    description: `With ${Currency.format(data.savings)} surplus, consider boosting investments. Try: ${profile.investmentSuggestions[0]}.`,
-                    impact: 'Accelerate wealth building',
+                    title: 'Just keep buying',
+                    description: `${Currency.format(data.savings)} surplus available. Automate your contributions—remove the human element. Consider: ${profile.investmentSuggestions[0]}.`,
+                    impact: 'Consistency beats complexity',
+                    wisdom: Nudges.getWisdomForContext('investment', 'increase'),
                     priority: 65
                 });
             }
 
-            // Tax-advantaged suggestions
+            // Tax-advantaged: 1/N heuristic for simplicity (Gigerenzer)
             if (profile.taxAdvantaged.length > 0 && data.income > 0) {
                 nudges.push({
                     icon: '🏦',
                     category: 'investment',
-                    title: `Tax-advantaged options (${profile.name})`,
-                    description: profile.taxAdvantaged[0],
-                    impact: 'Reduce taxes while building wealth',
+                    title: `Simple rules work: ${profile.name} options`,
+                    description: `${profile.taxAdvantaged[0]}. Simple, transparent strategies often outperform complex ones.`,
+                    impact: 'Tax efficiency + compound growth',
+                    wisdom: Nudges.getWisdomForContext('investment', 'tax'),
                     priority: 70
                 });
             }
@@ -3442,14 +3539,27 @@
             const liquidAssets = data.investments * 0.3; // Assume 30% is liquid
             const emergencyGap = targetFund - liquidAssets;
 
+            // Black swan preparation (Taleb) + Room for error (Housel)
             if (emergencyGap > 0 && data.expenses > 0) {
                 nudges.push({
                     icon: '🛡️',
                     category: 'emergency',
-                    title: `Build ${profile.emergencyMonths}-month emergency fund`,
-                    description: `Target: ${Currency.format(targetFund)} (${profile.emergencyMonths} months of expenses). Build this in a high-yield savings account.`,
-                    impact: `Need approximately ${Currency.format(emergencyGap)} more`,
+                    title: 'Prepare for the unseen',
+                    description: `Target: ${Currency.format(targetFund)} (${profile.emergencyMonths} months). The biggest risks are the ones you haven't imagined yet. Room for error lets you survive long enough for compounding to work.`,
+                    impact: `Gap: ${Currency.format(emergencyGap)} — redundancy is insurance`,
+                    wisdom: Nudges.getWisdomForContext('emergency', 'blackswan'),
                     priority: 85
+                });
+            } else if (data.expenses > 0 && emergencyGap <= 0) {
+                // Has emergency fund: Barbell strategy suggestion (Taleb)
+                nudges.push({
+                    icon: '🏔️',
+                    category: 'emergency',
+                    title: 'Barbell strategy: Safety secured',
+                    description: `Emergency fund covered. Consider the barbell: keep ${profile.emergencyMonths} months extremely safe, then take small calculated risks with the rest.`,
+                    impact: 'Extreme safety + small asymmetric bets',
+                    wisdom: Nudges.getWisdomForContext('emergency', 'barbell'),
+                    priority: 40
                 });
             }
 
@@ -3481,6 +3591,12 @@
                                 <div class="nudge-title">${nudge.title}</div>
                                 <div class="nudge-description">${nudge.description}</div>
                                 <div class="nudge-impact">${nudge.impact}</div>
+                                ${nudge.wisdom ? `
+                                    <div class="nudge-wisdom">
+                                        <span class="wisdom-quote">"${nudge.wisdom.quote}"</span>
+                                        <span class="wisdom-source">— ${nudge.wisdom.author}, ${nudge.wisdom.source}</span>
+                                    </div>
+                                ` : ''}
                             </div>
                         </div>
                     `).join('')}

@@ -11,7 +11,7 @@ Two synchronized copies exist:
 
 ### Architecture
 - **Single-page app** with 5 tab-based sections: Dashboard, Expenses, Debt Analysis, Investments, Upload
-- **IIFE module pattern** - entire app.js wrapped in `(function () { 'use strict'; ... })();` with 19 named module objects: Utils, Currency, State, Notify, CategoryEngine, Anonymizer, Parser, Budget, Expenses, PlannedExpenses, Debts, PlannedDebts, Investments, PlannedInvestments, Income, Upload, Dashboard, TagSuggestions, LayoutToggle, App
+- **IIFE module pattern** - entire app.js wrapped in `(function () { 'use strict'; ... })();` with 20 named module objects: Utils, Currency, State, Notify, CategoryEngine, Anonymizer, Parser, Budget, Expenses, PlannedExpenses, Debts, PlannedDebts, Investments, PlannedInvestments, Income, Upload, Dashboard, TagSuggestions, LayoutToggle, Nudges, App
 - **State management** via centralized `State` module with `State.data`, `State.modify(key, fn)` (mutate + auto-persist), and `State.set(key, value)` (replace + auto-persist). All data persisted to `localStorage`
 - **Event delegation** - single `document.body` click listener routes `data-action`/`data-id` attributes through a switch/case in `App.setupEventDelegation()`. No `window.*` globals or inline `onclick` handlers
 - **Planned items system** - Three parallel modules (`PlannedExpenses`, `PlannedDebts`, `PlannedInvestments`) for future/potential items. Each supports add, activate (convert to real item), and delete. State stored in `State.data.plannedExpenses`, `plannedDebts`, `plannedInvestments`
@@ -153,6 +153,7 @@ File Upload → Upload.processFile() → FileReader → Parser.parseCSV()/parseE
 - **Responsive layout toggle** - Toggle between Web (left sidebar) and Mobile (bottom nav) layouts. Preference saved to localStorage. Desktop sidebar shows currency selector and layout toggle.
 - **Financial health ratios** - Dashboard shows three key ratios with visual progress bars: Expense-to-Income (<70% healthy), Debt-to-Investment (<100% healthy), Debt-to-Annual-Income (<36% healthy). Color-coded status and hover tooltips.
 - **Budget tracking** - Set monthly spending limits by category on Expenses page. Budget vs Actual comparison shows progress bars, remaining/over amounts, and total summary. Auto-updates when expenses change.
+- **Smart Nudges** - AI-powered financial suggestions based on health score and financial data. Country-specific profiles (USD, EUR, GBP, INR, NPR) with localized investment suggestions, tax-advantaged options, and debt strategies. Five nudge categories: score improvement, expense control, debt reduction, investment growth, emergency fund. Prioritized by impact and auto-updates with Dashboard.
 
 ### Common Bugs to Watch For
 1. **Allocation percentages must sum to 100%** - derive the last category as `100 - sum(others)`
@@ -188,6 +189,9 @@ File Upload → Upload.processFile() → FileReader → Parser.parseCSV()/parseE
 31. **Income start month required** - All income entries must have `startMonth` property. `Dashboard.getMonthlyIncome()` only counts recurring income if `targetMonth >= startMonth`.
 32. **Layout toggle persistence** - `LayoutToggle` module saves preference to `localStorage`. On init, applies saved layout and updates toggle UI state.
 33. **Budget module integration** - `Budget.renderComparison()` must be called after expense add/edit/delete/reset and after `Parser.import()`. Must also call `Dashboard.update()` after saving budgets.
+34. **Nudges country profile fallback** - `Nudges.getProfile()` must return `countryProfiles.default` when currency not in profiles. Never assume currency exists.
+35. **Nudges render requires container** - `Nudges.render()` must null-check `#nudges-list` before rendering. Called from `Dashboard.update()`.
+36. **Nudges priority sorting** - Higher priority nudges appear first. Score improvement nudges have lower priority than critical debt warnings.
 
 ### QA Test Results (Agent-Automated)
 
@@ -347,16 +351,35 @@ File Upload → Upload.processFile() → FileReader → Parser.parseCSV()/parseE
 | Navigation handles missing target section | PASS |
 | All 14 null pointer bugs fixed | PASS |
 
+**Smart Nudges Tests:**
+
+| Scenario | Result |
+|---|---|
+| Nudges card renders on dashboard | PASS |
+| Nudges show empty state when no data | PASS |
+| Country profile selected based on currency | PASS |
+| Nudges update on currency change | PASS |
+| Score improvement nudges prioritized correctly | PASS |
+| Expense control nudges show reduction amount | PASS |
+| Debt nudges identify high-interest debt | PASS |
+| Investment nudges suggest country-specific options | PASS |
+| Emergency fund nudges calculate target amount | PASS |
+| Top 5 nudges displayed (sorted by priority) | PASS |
+| USD profile shows 401(k), Roth IRA suggestions | PASS |
+| INR profile shows PPF, ELSS, NPS suggestions | PASS |
+| NPR profile shows CIT, FD suggestions | PASS |
+| Default profile used for unsupported currencies | PASS |
+
 ### File Structure
 ```
-app.js    (~3350 lines) - IIFE with 19 modules: Utils, Currency, State, Notify, CategoryEngine,
+app.js    (~3600 lines) - IIFE with 20 modules: Utils, Currency, State, Notify, CategoryEngine,
                           Anonymizer, Parser, Budget, Expenses, PlannedExpenses, Debts,
                           PlannedDebts, Investments, PlannedInvestments, Income, Upload,
-                          Dashboard, TagSuggestions, LayoutToggle, App
-index.html (~830 lines) - Semantic HTML with ARIA accessibility, Chart.js + SheetJS CDNs,
-                          mobile header, sidebar navigation, layout toggle
-styles.css (~3400 lines) - CSS design system with custom properties, 28+ organized sections,
-                           layout toggle, force-mobile overrides, financial ratios, budget styles
+                          Dashboard, TagSuggestions, LayoutToggle, Nudges, App
+index.html (~840 lines) - Semantic HTML with ARIA accessibility, Chart.js + SheetJS CDNs,
+                          mobile header, sidebar navigation, layout toggle, nudges card
+styles.css (~3550 lines) - CSS design system with custom properties, 29+ organized sections,
+                           layout toggle, force-mobile overrides, financial ratios, budget styles, nudges
 ```
 
 ### Development Notes
@@ -380,3 +403,4 @@ styles.css (~3400 lines) - CSS design system with custom properties, 28+ organiz
 - **Layout toggle**: `LayoutToggle.init()` loads saved preference, applies layout, sets up toggle handlers. Called from `App.init()`.
 - **Force-mobile CSS**: The `.force-mobile` class on `.app-container` overrides desktop styles to show mobile layout. Applied via `LayoutToggle.applyLayout()`.
 - **Financial ratios**: `Dashboard.updateFinancialRatios()` calculates and renders three ratios with thresholds: expense-income (<70%), debt-investment (<100%), debt-annual-income (<36%).
+- **Nudges module**: `Nudges.render()` called from `Dashboard.update()`. Country profiles in `Nudges.countryProfiles` with `default` fallback. Nudge categories: score, expense, debt, investment, emergency. Priority-sorted, limited to top 5.

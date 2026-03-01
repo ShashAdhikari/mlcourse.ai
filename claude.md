@@ -11,7 +11,7 @@ Two synchronized copies exist:
 
 ### Architecture
 - **Single-page app** with 5 tab-based sections: Dashboard, Expenses, Debt Analysis, Investments, Upload
-- **IIFE module pattern** - entire app.js wrapped in `(function () { 'use strict'; ... })();` with 17 named module objects: Utils, Currency, State, Notify, CategoryEngine, Anonymizer, Parser, Expenses, Debts, Investments, Income, Upload, Dashboard, TagSuggestions, PlannedDebts, PlannedInvestments, App
+- **IIFE module pattern** - entire app.js wrapped in `(function () { 'use strict'; ... })();` with 19 named module objects: Utils, Currency, State, Notify, CategoryEngine, Anonymizer, Parser, Budget, Expenses, PlannedExpenses, Debts, PlannedDebts, Investments, PlannedInvestments, Income, Upload, Dashboard, TagSuggestions, LayoutToggle, App
 - **State management** via centralized `State` module with `State.data`, `State.modify(key, fn)` (mutate + auto-persist), and `State.set(key, value)` (replace + auto-persist). All data persisted to `localStorage`
 - **Event delegation** - single `document.body` click listener routes `data-action`/`data-id` attributes through a switch/case in `App.setupEventDelegation()`. No `window.*` globals or inline `onclick` handlers
 - **Planned items system** - Three parallel modules (`PlannedExpenses`, `PlannedDebts`, `PlannedInvestments`) for future/potential items. Each supports add, activate (convert to real item), and delete. State stored in `State.data.plannedExpenses`, `plannedDebts`, `plannedInvestments`
@@ -148,6 +148,11 @@ File Upload → Upload.processFile() → FileReader → Parser.parseCSV()/parseE
 - **Hover tooltips** - Data cards and form labels show explanatory tooltips on hover for better UX
 - **Enhanced expense pie chart** - Doughnut chart with category-matched colors, hover effects, percentage tooltips, and smooth animations
 - **One-time income payments** - Income form supports one-time payments (bonuses, tax refunds) with month selection. One-time income shown with badge and excluded from recurring projections.
+- **Income start month** - All income entries (recurring and one-time) require a start month. Projections only count recurring income from its start month onwards for accurate forecasting.
+- **UI/UX redesign** - Traditional Reliability + Modern Usability hybrid design with Deep Navy Blue (#1a365d), Forest Green (#2f5233), muted Gold/Teal accents. Serif headers (Merriweather), sans-serif body (Inter). 8px rounded corners, subtle shadows, off-white "paper feel" background.
+- **Responsive layout toggle** - Toggle between Web (left sidebar) and Mobile (bottom nav) layouts. Preference saved to localStorage. Desktop sidebar shows currency selector and layout toggle.
+- **Financial health ratios** - Dashboard shows three key ratios with visual progress bars: Expense-to-Income (<70% healthy), Debt-to-Investment (<100% healthy), Debt-to-Annual-Income (<36% healthy). Color-coded status and hover tooltips.
+- **Budget tracking** - Set monthly spending limits by category on Expenses page. Budget vs Actual comparison shows progress bars, remaining/over amounts, and total summary. Auto-updates when expenses change.
 
 ### Common Bugs to Watch For
 1. **Allocation percentages must sum to 100%** - derive the last category as `100 - sum(others)`
@@ -174,7 +179,15 @@ File Upload → Upload.processFile() → FileReader → Parser.parseCSV()/parseE
 22. **Reset confirmation required** - All reset functions must call `confirm()` before clearing data to prevent accidental data loss.
 23. **Auto-reset on upload delete** - When last expense upload is deleted, prompt user to reset expenses. Clears `Parser.pending`, hides parsed transactions card.
 24. **Currency investment types** - Call `Currency.updateInvestmentTypeSelects()` on currency change and page load to populate correct investment types.
-25. **One-time income toggle** - `Income.setupOneTimeToggle()` shows/hides month picker when checkbox changes. Must be called in `App.init()`.
+25. **One-time income toggle** - `Income.setupOneTimeToggle()` sets default start month on page load. Must be called in `App.init()`.
+26. **Tooltip overflow clipping** - Parent elements with `overflow: hidden` clip absolutely-positioned tooltips. Use `overflow: visible` on containers that hold tooltip elements (e.g., `.summary-card`, `.ratio-item`).
+27. **Null checks in setupForms()** - ALL form element selectors must check for null before calling `addEventListener`. Missing elements should gracefully skip setup, not crash the app.
+28. **Dashboard.update() null safety** - Dashboard summary card elements (`total-income`, `total-expenses`, `total-debt`, `net-savings`) must be null-checked before setting textContent.
+29. **Parser card null checks** - `Parser.import()` and `Parser.discard()` must null-check `parsed-transactions-card` before setting display style.
+30. **Investment profile form safety** - Form submit handler must null-check all input elements before accessing `.value` property.
+31. **Income start month required** - All income entries must have `startMonth` property. `Dashboard.getMonthlyIncome()` only counts recurring income if `targetMonth >= startMonth`.
+32. **Layout toggle persistence** - `LayoutToggle` module saves preference to `localStorage`. On init, applies saved layout and updates toggle UI state.
+33. **Budget module integration** - `Budget.renderComparison()` must be called after expense add/edit/delete/reset and after `Parser.import()`. Must also call `Dashboard.update()` after saving budgets.
 
 ### QA Test Results (Agent-Automated)
 
@@ -270,13 +283,80 @@ File Upload → Upload.processFile() → FileReader → Parser.parseCSV()/parseE
 | Net savings shows negative when expenses > income | PASS (after fix) |
 | Net savings styled red when negative | PASS |
 
+**UI/UX Redesign & Layout Toggle Tests:**
+
+| Scenario | Result |
+|---|---|
+| Sidebar navigation displays on desktop | PASS |
+| Bottom navigation displays on mobile | PASS |
+| Layout toggle switches between web/mobile | PASS |
+| Layout preference persisted to localStorage | PASS |
+| Mobile header shows logo and currency selector | PASS |
+| Currency selectors synced between desktop/mobile | PASS |
+| Serif fonts (Merriweather) applied to headers | PASS |
+| Sans-serif fonts (Inter) applied to body text | PASS |
+| 8px border-radius applied to cards | PASS |
+| Off-white background (#faf9f6) applied | PASS |
+
+**Financial Ratios Tests:**
+
+| Scenario | Result |
+|---|---|
+| Expense-to-Income ratio calculates correctly | PASS |
+| Debt-to-Investment ratio calculates correctly | PASS |
+| Debt-to-Annual-Income ratio calculates correctly | PASS |
+| Ratios show "Add data to calculate" when empty | PASS |
+| Progress bars color-coded by status | PASS |
+| Tooltips explain healthy thresholds | PASS |
+
+**Budget Tracking Tests:**
+
+| Scenario | Result |
+|---|---|
+| Budget form saves values to localStorage | PASS |
+| Budget inputs load saved values on page load | PASS |
+| Budget vs Actual comparison renders correctly | PASS |
+| Over-budget categories show red styling | PASS |
+| Warning (80%+) categories show yellow styling | PASS |
+| Under-budget categories show green styling | PASS |
+| Total budget summary shows remaining/over | PASS |
+| Budget comparison updates on expense add | PASS |
+| Budget comparison updates on expense delete | PASS |
+
+**Income Start Month Tests:**
+
+| Scenario | Result |
+|---|---|
+| Start month field required for all income | PASS |
+| Start month defaults to current month | PASS |
+| Recurring income only counted from start month | PASS |
+| One-time income only counted in specific month | PASS |
+| Income list shows start month info | PASS |
+| Projections respect start month boundaries | PASS |
+
+**Null Safety Tests (Bug Fixes):**
+
+| Scenario | Result |
+|---|---|
+| setupForms() handles missing form elements | PASS |
+| Dashboard.update() handles missing summary elements | PASS |
+| Parser.import() handles missing card element | PASS |
+| Parser.discard() handles missing card element | PASS |
+| Investment profile restore handles missing elements | PASS |
+| Investments.reset() handles missing form | PASS |
+| Navigation handles missing target section | PASS |
+| All 14 null pointer bugs fixed | PASS |
+
 ### File Structure
 ```
-app.js    (~2980 lines) - IIFE with 17 modules: Utils, Currency, State, Notify, CategoryEngine,
-                          Anonymizer, Parser, Expenses, Debts, Investments, Income, Upload,
-                          Dashboard, TagSuggestions, PlannedDebts, PlannedInvestments, App
-index.html (~685 lines) - Semantic HTML with ARIA accessibility, Chart.js + SheetJS CDNs
-styles.css (~2525 lines) - CSS design system with custom properties, 22+ organized sections
+app.js    (~3350 lines) - IIFE with 19 modules: Utils, Currency, State, Notify, CategoryEngine,
+                          Anonymizer, Parser, Budget, Expenses, PlannedExpenses, Debts,
+                          PlannedDebts, Investments, PlannedInvestments, Income, Upload,
+                          Dashboard, TagSuggestions, LayoutToggle, App
+index.html (~830 lines) - Semantic HTML with ARIA accessibility, Chart.js + SheetJS CDNs,
+                          mobile header, sidebar navigation, layout toggle
+styles.css (~3400 lines) - CSS design system with custom properties, 28+ organized sections,
+                           layout toggle, force-mobile overrides, financial ratios, budget styles
 ```
 
 ### Development Notes
@@ -296,3 +376,7 @@ styles.css (~2525 lines) - CSS design system with custom properties, 22+ organiz
 - **SheetJS guard**: Any code calling `XLSX.*` must check `typeof XLSX !== 'undefined'` first.
 - **Chart.js canvases**: Wrap in `.chart-wrapper` div. Set `maintainAspectRatio: false` in options.
 - **Date parsing**: Insert new formats in the correct order in `Parser.parseDate`. DD/MM/YY must come after MM/DD/YYYY.
+- **Budget module**: `Budget.init()` loads saved budgets, sets up form, renders comparison. Called from `App.init()`.
+- **Layout toggle**: `LayoutToggle.init()` loads saved preference, applies layout, sets up toggle handlers. Called from `App.init()`.
+- **Force-mobile CSS**: The `.force-mobile` class on `.app-container` overrides desktop styles to show mobile layout. Applied via `LayoutToggle.applyLayout()`.
+- **Financial ratios**: `Dashboard.updateFinancialRatios()` calculates and renders three ratios with thresholds: expense-income (<70%), debt-investment (<100%), debt-annual-income (<36%).

@@ -1111,7 +1111,6 @@ h2 {
     padding: var(--space-2) var(--space-3);
     border-radius: var(--border-radius-sm);
     font-size: var(--font-size-xs);
-    white-space: nowrap;
     margin-bottom: var(--space-2);
     z-index: 100;
     opacity: 0;

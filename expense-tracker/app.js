@@ -1668,7 +1668,8 @@
                 Investments.chart = null;
             }
             // Reset form
-            document.getElementById('investment-profile-form').reset();
+            const profileForm = document.getElementById('investment-profile-form');
+            if (profileForm) profileForm.reset();
             Dashboard.update();
             Notify.show('All investments have been reset', 'info');
         },
@@ -3141,10 +3142,14 @@
             // Restore investment profile
             if (State.data.investmentProfile) {
                 const p = State.data.investmentProfile;
-                document.getElementById('investment-goal').value = p.goal;
-                document.getElementById('investment-timeline').value = p.timeline;
-                document.getElementById('risk-tolerance').value = p.riskTolerance;
-                document.getElementById('monthly-investment').value = p.monthlyAmount;
+                const goalEl = document.getElementById('investment-goal');
+                const timelineEl = document.getElementById('investment-timeline');
+                const riskEl = document.getElementById('risk-tolerance');
+                const monthlyEl = document.getElementById('monthly-investment');
+                if (goalEl) goalEl.value = p.goal;
+                if (timelineEl) timelineEl.value = p.timeline;
+                if (riskEl) riskEl.value = p.riskTolerance;
+                if (monthlyEl) monthlyEl.value = p.monthlyAmount;
                 Investments.generateRecommendations();
                 Investments.generateProjection();
             }
@@ -3170,7 +3175,8 @@
 
                     // Update panel visibility
                     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-                    document.getElementById(targetId).classList.add('active');
+                    const targetSection = document.getElementById(targetId);
+                    if (targetSection) targetSection.classList.add('active');
                 });
             });
         },

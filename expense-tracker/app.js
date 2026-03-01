@@ -3416,22 +3416,26 @@
             }
 
             // Category-specific: Expectations grow faster than income (Same as Ever)
-            const categoryTotals = {};
-            State.data.expenses.forEach(exp => {
-                categoryTotals[exp.category] = (categoryTotals[exp.category] || 0) + exp.amount;
-            });
-
-            const topCategory = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1])[0];
-            if (topCategory && topCategory[1] > data.expenses * 0.4) {
-                nudges.push({
-                    icon: '🔍',
-                    category: 'expense',
-                    title: `Check: Is ${CategoryEngine.labels[topCategory[0]] || topCategory[0]} essential?`,
-                    description: `${((topCategory[1] / data.expenses) * 100).toFixed(0)}% of spending. Expectations often grow faster than income—ensure this category still serves your goals.`,
-                    impact: 'Align spending with what actually brings satisfaction',
-                    wisdom: Nudges.getWisdomForContext('expense', 'category'),
-                    priority: 55
+            if (data.expenses > 0) {
+                const categoryTotals = {};
+                State.data.expenses.forEach(exp => {
+                    categoryTotals[exp.category] = (categoryTotals[exp.category] || 0) + exp.amount;
                 });
+
+                const topCategory = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1])[0];
+                if (topCategory && topCategory[1] > data.expenses * 0.4) {
+                    const categoryLabel = CategoryEngine.labels[topCategory[0]] || topCategory[0];
+                    const percentage = ((topCategory[1] / data.expenses) * 100).toFixed(0);
+                    nudges.push({
+                        icon: '🔍',
+                        category: 'expense',
+                        title: `Check: Is ${categoryLabel} essential?`,
+                        description: `${percentage}% of spending. Expectations often grow faster than income—ensure this category still serves your goals.`,
+                        impact: 'Align spending with what actually brings satisfaction',
+                        wisdom: Nudges.getWisdomForContext('expense', 'category'),
+                        priority: 55
+                    });
+                }
             }
 
             return nudges;
@@ -3573,7 +3577,7 @@
             const nudges = Nudges.generateNudges();
 
             if (nudges.length === 0) {
-                container.innerHTML = '<p class="empty-state">Add your financial data to receive personalized suggestions.</p>';
+                container.innerHTML = '<p class="empty-state">Add your financial data to receive personalized insights from behavioral finance research.</p>';
                 return;
             }
 
@@ -3581,20 +3585,20 @@
             container.innerHTML = `
                 <div class="nudges-header">
                     <span class="nudges-score">Score: ${Nudges.currentScore}/100</span>
-                    <span class="nudges-country">${profile.name}</span>
+                    <span class="nudges-country">${Utils.escapeHtml(profile.name)}</span>
                 </div>
                 <div class="nudges-items">
                     ${nudges.map(nudge => `
-                        <div class="nudge-item nudge-${nudge.category}">
+                        <div class="nudge-item nudge-${Utils.escapeHtml(nudge.category)}">
                             <span class="nudge-icon">${nudge.icon}</span>
                             <div class="nudge-content">
-                                <div class="nudge-title">${nudge.title}</div>
-                                <div class="nudge-description">${nudge.description}</div>
-                                <div class="nudge-impact">${nudge.impact}</div>
+                                <div class="nudge-title">${Utils.escapeHtml(nudge.title)}</div>
+                                <div class="nudge-description">${Utils.escapeHtml(nudge.description)}</div>
+                                <div class="nudge-impact">${Utils.escapeHtml(nudge.impact)}</div>
                                 ${nudge.wisdom ? `
                                     <div class="nudge-wisdom">
-                                        <span class="wisdom-quote">"${nudge.wisdom.quote}"</span>
-                                        <span class="wisdom-source">— ${nudge.wisdom.author}, ${nudge.wisdom.source}</span>
+                                        <span class="wisdom-quote">"${Utils.escapeHtml(nudge.wisdom.quote)}"</span>
+                                        <span class="wisdom-source">— ${Utils.escapeHtml(nudge.wisdom.author)}, ${Utils.escapeHtml(nudge.wisdom.source)}</span>
                                     </div>
                                 ` : ''}
                             </div>

@@ -842,7 +842,7 @@ h2 {
 }
 
 .nudge-item.nudge-debt {
-    border-left-color: #dc2626;
+    border-left-color: var(--danger-color); /* Consistent with expense */
 }
 
 .nudge-item.nudge-investment {
@@ -891,31 +891,52 @@ h2 {
     background: rgba(13, 148, 136, 0.1);
     border-radius: var(--border-radius-sm);
     display: inline-block;
+    word-wrap: break-word;
+    max-width: 100%;
 }
 
 /* Wisdom Quote Styling - Behavioral Finance Insights */
 .nudge-wisdom {
     margin-top: var(--space-3);
     padding: var(--space-2) var(--space-3);
-    background: linear-gradient(135deg, rgba(26, 54, 93, 0.05) 0%, rgba(212, 175, 55, 0.08) 100%);
+    background: linear-gradient(135deg, rgba(26, 54, 93, 0.04) 0%, rgba(201, 162, 39, 0.06) 100%);
     border-left: 3px solid var(--accent-gold);
     border-radius: 0 var(--border-radius-sm) var(--border-radius-sm) 0;
     display: flex;
     flex-direction: column;
     gap: var(--space-1);
+    transition: var(--transition);
+    position: relative;
+}
+
+.nudge-wisdom:hover {
+    background: linear-gradient(135deg, rgba(26, 54, 93, 0.06) 0%, rgba(201, 162, 39, 0.10) 100%);
+}
+
+.nudge-wisdom::before {
+    content: '📖';
+    position: absolute;
+    top: var(--space-2);
+    right: var(--space-2);
+    font-size: 0.75rem;
+    opacity: 0.5;
 }
 
 .wisdom-quote {
     font-style: italic;
     font-size: var(--font-size-xs);
     color: var(--text-secondary);
-    line-height: 1.5;
+    line-height: 1.6;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+    padding-right: var(--space-6); /* Space for book icon */
 }
 
 .wisdom-source {
     font-size: calc(var(--font-size-xs) * 0.9);
-    color: var(--accent-gold);
-    font-weight: 500;
+    color: #8b7314; /* Darkened gold for WCAG contrast (4.5:1+) */
+    font-weight: 600;
     text-align: right;
 }
 

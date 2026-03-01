@@ -498,7 +498,7 @@ h2 {
 
 .summary-card {
     position: relative;
-    overflow: hidden;
+    overflow: visible;
     padding: var(--space-5);
 }
 
@@ -677,6 +677,7 @@ h2 {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: var(--space-6);
+    overflow: visible;
 }
 
 @media (max-width: 1024px) {
@@ -696,6 +697,7 @@ h2 {
     background: var(--background-color);
     border-radius: var(--border-radius);
     border: 1px solid var(--border-color);
+    overflow: visible;
 }
 
 .ratio-label {

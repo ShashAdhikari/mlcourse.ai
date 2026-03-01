@@ -779,6 +779,7 @@
 
             State.set('budgets', budgets);
             Budget.renderComparison();
+            Dashboard.update();
             Notify.show('Budgets saved successfully', 'success');
         },
 
@@ -3207,16 +3208,17 @@
 
         setupForms() {
             // Expense form
-            document.getElementById('expense-form').addEventListener('submit', (e) => Expenses.add(e));
+            const expenseForm = document.getElementById('expense-form');
+            if (expenseForm) expenseForm.addEventListener('submit', (e) => Expenses.add(e));
 
             // Debt form
-            document.getElementById('debt-form').addEventListener('submit', (e) => Debts.add(e));
+            const debtForm = document.getElementById('debt-form');
+            if (debtForm) debtForm.addEventListener('submit', (e) => Debts.add(e));
 
             // Planned debt form
             const plannedDebtForm = document.getElementById('planned-debt-form');
             if (plannedDebtForm) {
                 plannedDebtForm.addEventListener('submit', (e) => PlannedDebts.add(e));
-                // Set default start date to next month
                 const startInput = document.getElementById('planned-debt-start');
                 if (startInput) {
                     const nextMonth = new Date();
@@ -3226,13 +3228,13 @@
             }
 
             // Investment form
-            document.getElementById('add-investment-form').addEventListener('submit', (e) => Investments.add(e));
+            const investmentForm = document.getElementById('add-investment-form');
+            if (investmentForm) investmentForm.addEventListener('submit', (e) => Investments.add(e));
 
             // Planned investment form
             const plannedInvestmentForm = document.getElementById('planned-investment-form');
             if (plannedInvestmentForm) {
                 plannedInvestmentForm.addEventListener('submit', (e) => PlannedInvestments.add(e));
-                // Set default target date to next month
                 const targetInput = document.getElementById('planned-investment-date');
                 if (targetInput) {
                     const nextMonth = new Date();
@@ -3242,14 +3244,14 @@
             }
 
             // Income form
-            document.getElementById('income-form').addEventListener('submit', (e) => Income.add(e));
+            const incomeForm = document.getElementById('income-form');
+            if (incomeForm) incomeForm.addEventListener('submit', (e) => Income.add(e));
 
             // Planned expense form
             const plannedForm = document.getElementById('planned-expense-form');
             if (plannedForm) {
                 plannedForm.addEventListener('submit', (e) => PlannedExpenses.add(e));
 
-                // Toggle recurring end date visibility
                 const recurringCheckbox = document.getElementById('planned-recurring');
                 const endDateGroup = document.getElementById('recurring-end-group');
                 if (recurringCheckbox && endDateGroup) {
@@ -3258,7 +3260,6 @@
                     });
                 }
 
-                // Set default planned date to tomorrow
                 const plannedDateInput = document.getElementById('planned-date');
                 if (plannedDateInput) {
                     const tomorrow = new Date();
@@ -3268,13 +3269,17 @@
             }
 
             // Expense filter
-            document.getElementById('filter-category').addEventListener('change', (e) => Expenses.render(e.target.value));
+            const filterCategory = document.getElementById('filter-category');
+            if (filterCategory) filterCategory.addEventListener('change', (e) => Expenses.render(e.target.value));
 
             // Calculate payoff
-            document.getElementById('calculate-payoff').addEventListener('click', () => {
-                const extra = parseFloat(document.getElementById('extra-payment-amount').value) || 0;
-                Debts.calculateTimeline(extra);
-            });
+            const calcPayoff = document.getElementById('calculate-payoff');
+            if (calcPayoff) {
+                calcPayoff.addEventListener('click', () => {
+                    const extra = parseFloat(document.getElementById('extra-payment-amount').value) || 0;
+                    Debts.calculateTimeline(extra);
+                });
+            }
 
             // Strategy tabs
             document.querySelectorAll('.strategy-tab').forEach(tab => {
@@ -3290,18 +3295,21 @@
             });
 
             // Investment profile
-            document.getElementById('investment-profile-form').addEventListener('submit', (e) => {
-                e.preventDefault();
-                State.set('investmentProfile', {
-                    goal: document.getElementById('investment-goal').value,
-                    timeline: document.getElementById('investment-timeline').value,
-                    riskTolerance: document.getElementById('risk-tolerance').value,
-                    monthlyAmount: parseFloat(document.getElementById('monthly-investment').value) || 0
+            const profileForm = document.getElementById('investment-profile-form');
+            if (profileForm) {
+                profileForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    State.set('investmentProfile', {
+                        goal: document.getElementById('investment-goal').value,
+                        timeline: document.getElementById('investment-timeline').value,
+                        riskTolerance: document.getElementById('risk-tolerance').value,
+                        monthlyAmount: parseFloat(document.getElementById('monthly-investment').value) || 0
+                    });
+                    Investments.generateRecommendations();
+                    Investments.generateProjection();
+                    Notify.show('Investment profile updated', 'success');
                 });
-                Investments.generateRecommendations();
-                Investments.generateProjection();
-                Notify.show('Investment profile updated', 'success');
-            });
+            }
         }
     };
 

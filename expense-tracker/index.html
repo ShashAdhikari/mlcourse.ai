@@ -806,16 +806,16 @@
                                     <option value="other">Other</option>
                                 </select>
                             </div>
-                            <div class="form-group checkbox-group">
-                                <label class="checkbox-label" data-tooltip="One-time payments like bonuses are not included in recurring monthly income projections.">
-                                    <input type="checkbox" id="income-one-time">
-                                    <span>One-time payment (not recurring)</span>
-                                </label>
+                            <div class="form-group">
+                                <label for="income-start-month" data-tooltip="The month this income starts. For recurring income, projections will only count this income from this month onwards.">Start Month</label>
+                                <input type="month" id="income-start-month" required>
                             </div>
                         </div>
-                        <div class="form-group" id="income-month-group" style="display: none;">
-                            <label for="income-month">Payment Month</label>
-                            <input type="month" id="income-month">
+                        <div class="form-group checkbox-group">
+                            <label class="checkbox-label" data-tooltip="One-time payments like bonuses are not included in recurring monthly income projections.">
+                                <input type="checkbox" id="income-one-time">
+                                <span>One-time payment (not recurring)</span>
+                            </label>
                         </div>
                         <button type="submit" class="btn btn-primary">Add Income</button>
                     </form>

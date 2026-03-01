@@ -2070,9 +2070,10 @@
 
             container.innerHTML = State.data.incomes.map(inc => {
                 const isOneTime = inc.isRecurring === false;
-                const badge = isOneTime ? '<span class="badge one-time-badge">One-time</span>' : '';
+                const badge = isOneTime ? '<span class="badge one-time-badge">One-time</span>' : '<span class="badge recurring-badge">Recurring</span>';
                 const amountLabel = isOneTime ? '' : '/mo';
-                const monthInfo = isOneTime && inc.monthKey ? ` (${inc.monthKey})` : '';
+                const startMonth = inc.startMonth || inc.monthKey;
+                const monthInfo = startMonth ? ` • ${isOneTime ? '' : 'From '}${startMonth}` : '';
 
                 return `
                 <div class="income-item ${isOneTime ? 'one-time' : ''}">
@@ -2092,26 +2093,28 @@
             const amount = parseFloat(document.getElementById('income-amount').value);
             const type = document.getElementById('income-type').value;
             const isOneTime = document.getElementById('income-one-time').checked;
-            const monthInput = document.getElementById('income-month');
+            const startMonthInput = document.getElementById('income-start-month');
 
             if (!source || !amount || !type) return;
 
-            let monthKey;
-            if (isOneTime && monthInput && monthInput.value) {
-                monthKey = monthInput.value;
-            } else {
-                monthKey = new Date().toISOString().substring(0, 7);
-            }
+            // Get start month (required for both recurring and one-time)
+            const startMonth = startMonthInput && startMonthInput.value
+                ? startMonthInput.value
+                : new Date().toISOString().substring(0, 7);
 
             State.modify('incomes', arr => arr.push({
                 id: Utils.generateId(),
                 source, amount, type,
-                monthKey,
+                startMonth,
+                monthKey: startMonth, // Keep for backward compatibility
                 isRecurring: !isOneTime
             }));
 
             e.target.reset();
-            document.getElementById('income-month-group').style.display = 'none';
+            // Reset start month to current month
+            if (startMonthInput) {
+                startMonthInput.value = new Date().toISOString().substring(0, 7);
+            }
             Income.render();
             Dashboard.update();
 
@@ -2120,19 +2123,11 @@
         },
 
         setupOneTimeToggle() {
-            const checkbox = document.getElementById('income-one-time');
-            const monthGroup = document.getElementById('income-month-group');
-            const monthInput = document.getElementById('income-month');
-
-            if (!checkbox || !monthGroup) return;
-
-            checkbox.addEventListener('change', () => {
-                monthGroup.style.display = checkbox.checked ? 'block' : 'none';
-                if (checkbox.checked && monthInput) {
-                    // Set default to current month
-                    monthInput.value = new Date().toISOString().substring(0, 7);
-                }
-            });
+            // Set default start month to current month on page load
+            const startMonthInput = document.getElementById('income-start-month');
+            if (startMonthInput && !startMonthInput.value) {
+                startMonthInput.value = new Date().toISOString().substring(0, 7);
+            }
         },
 
         delete(id) {
@@ -2625,13 +2620,16 @@
         },
 
         getMonthlyIncome(targetMonth) {
-            // Calculate income for a specific month considering recurring status
+            // Calculate income for a specific month considering recurring status and start month
             let total = 0;
             State.data.incomes.forEach(inc => {
+                const startMonth = inc.startMonth || inc.monthKey;
                 if (inc.isRecurring === true || inc.isRecurring === undefined) {
-                    // Recurring income applies to all months
-                    total += inc.amount;
-                } else if (inc.monthKey === targetMonth) {
+                    // Recurring income applies from start month onwards
+                    if (!startMonth || targetMonth >= startMonth) {
+                        total += inc.amount;
+                    }
+                } else if (startMonth === targetMonth) {
                     // One-time income only applies to its specific month
                     total += inc.amount;
                 }
@@ -2675,14 +2673,26 @@
             const projectedRemainingExpenses = (avgMonthlyExpense * monthsRemaining) + plannedExpensesTotal;
             const projectedAnnualExpenses = actualExpensesYTD + projectedRemainingExpenses;
 
-            // Calculate annual income (monthly recurring × 12)
-            const monthlyRecurringIncome = State.data.incomes
-                .filter(inc => inc.isRecurring !== false)
-                .reduce((s, i) => s + i.amount, 0);
-            const oneTimeIncome = State.data.incomes
-                .filter(inc => inc.isRecurring === false)
-                .reduce((s, i) => s + i.amount, 0);
-            const projectedAnnualIncome = (monthlyRecurringIncome * 12) + oneTimeIncome;
+            // Calculate annual income considering start months
+            // For each month of the year, sum up income that applies to that month
+            let projectedAnnualIncome = 0;
+            let monthlyRecurringIncome = 0; // Current month's recurring income for display
+            const currentMonthKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+
+            for (let m = 0; m < 12; m++) {
+                const monthKey = `${currentYear}-${String(m + 1).padStart(2, '0')}`;
+                projectedAnnualIncome += Dashboard.getMonthlyIncome(monthKey);
+            }
+
+            // Get current month's recurring income for monthly metrics
+            State.data.incomes.forEach(inc => {
+                if (inc.isRecurring !== false) {
+                    const startMonth = inc.startMonth || inc.monthKey;
+                    if (!startMonth || currentMonthKey >= startMonth) {
+                        monthlyRecurringIncome += inc.amount;
+                    }
+                }
+            });
 
             // Net savings
             const projectedNetSavings = projectedAnnualIncome - projectedAnnualExpenses;
@@ -2774,9 +2784,9 @@
             const container = document.getElementById('monthly-analytics');
             if (!container) return;
 
-            const monthlyRecurringIncome = State.data.incomes
-                .filter(inc => inc.isRecurring !== false)
-                .reduce((s, i) => s + i.amount, 0);
+            // Get current month's recurring income (respecting start months)
+            const currentMonthKey = new Date().toISOString().substring(0, 7);
+            const monthlyRecurringIncome = Dashboard.getMonthlyIncome(currentMonthKey);
             const totalExpenses = State.data.expenses.reduce((s, e) => s + e.amount, 0);
 
             if (State.data.expenses.length === 0 && State.data.incomes.length === 0) {

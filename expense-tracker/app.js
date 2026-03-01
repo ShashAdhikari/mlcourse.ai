@@ -911,6 +911,9 @@
                     <button class="delete-btn" data-action="delete-expense" data-id="${exp.id}" aria-label="Delete expense" title="Delete">&#128465;</button>
                 </div>
             `).join('');
+
+            // Render section-specific expense insights
+            Nudges.renderExpenseInsights();
         },
 
         add(e) {
@@ -1202,6 +1205,9 @@
 
             Debts.updatePayoffPlan();
             Debts.renderDebtProjection();
+
+            // Render section-specific debt insights
+            Nudges.renderDebtInsights();
         },
 
         add(e) {
@@ -1614,6 +1620,9 @@
                     <button class="delete-btn" data-action="delete-investment" data-id="${inv.id}" aria-label="Delete investment" title="Delete">&#128465;</button>
                 </div>
             `).join('');
+
+            // Render section-specific investment insights
+            Nudges.renderInvestmentInsights();
         },
 
         customRate: null, // User-adjustable rate override
@@ -3604,6 +3613,95 @@
                             </div>
                         </div>
                     `).join('')}
+                </div>
+            `;
+        },
+
+        // Helper function to render a single nudge item (reusable)
+        renderNudgeItem(nudge) {
+            return `
+                <div class="nudge-item nudge-${Utils.escapeHtml(nudge.category)}">
+                    <span class="nudge-icon">${nudge.icon}</span>
+                    <div class="nudge-content">
+                        <div class="nudge-title">${Utils.escapeHtml(nudge.title)}</div>
+                        <div class="nudge-description">${Utils.escapeHtml(nudge.description)}</div>
+                        <div class="nudge-impact">${Utils.escapeHtml(nudge.impact)}</div>
+                        ${nudge.wisdom ? `
+                            <div class="nudge-wisdom">
+                                <span class="wisdom-quote">"${Utils.escapeHtml(nudge.wisdom.quote)}"</span>
+                                <span class="wisdom-source">— ${Utils.escapeHtml(nudge.wisdom.author)}, ${Utils.escapeHtml(nudge.wisdom.source)}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        },
+
+        // Section-specific render for Expenses section
+        renderExpenseInsights() {
+            const container = document.getElementById('expense-insights');
+            if (!container) return;
+
+            const data = Nudges.analyze();
+            const profile = Nudges.getProfile();
+
+            // Get expense-specific nudges
+            const nudges = Nudges.getExpenseNudges(data, profile);
+
+            if (nudges.length === 0 || data.expenses === 0) {
+                container.innerHTML = '<p class="empty-state">Add expenses to see personalized spending insights.</p>';
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="insights-items">
+                    ${nudges.slice(0, 3).map(nudge => Nudges.renderNudgeItem(nudge)).join('')}
+                </div>
+            `;
+        },
+
+        // Section-specific render for Debt section
+        renderDebtInsights() {
+            const container = document.getElementById('debt-insights');
+            if (!container) return;
+
+            const data = Nudges.analyze();
+            const profile = Nudges.getProfile();
+
+            // Get debt-specific nudges
+            const nudges = Nudges.getDebtNudges(data, profile);
+
+            if (nudges.length === 0 || data.debt === 0) {
+                container.innerHTML = '<p class="empty-state">Add debts to see personalized reduction strategies.</p>';
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="insights-items">
+                    ${nudges.slice(0, 3).map(nudge => Nudges.renderNudgeItem(nudge)).join('')}
+                </div>
+            `;
+        },
+
+        // Section-specific render for Investments section
+        renderInvestmentInsights() {
+            const container = document.getElementById('investment-insights');
+            if (!container) return;
+
+            const data = Nudges.analyze();
+            const profile = Nudges.getProfile();
+
+            // Get investment-specific nudges
+            const nudges = Nudges.getInvestmentNudges(data, profile);
+
+            if (nudges.length === 0) {
+                container.innerHTML = '<p class="empty-state">Add investments to see personalized growth insights.</p>';
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="insights-items">
+                    ${nudges.slice(0, 3).map(nudge => Nudges.renderNudgeItem(nudge)).join('')}
                 </div>
             `;
         }

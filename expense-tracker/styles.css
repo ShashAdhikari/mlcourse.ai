@@ -968,6 +968,91 @@ h2 {
     }
 }
 
+/* ==================== SECTION-SPECIFIC INSIGHTS ==================== */
+.insights-card {
+    margin-top: var(--space-4);
+}
+
+.insights-card h3 {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+}
+
+.insights-list {
+    min-height: 60px;
+}
+
+.insights-items {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+/* Section-specific accent colors for insight cards */
+.expense-insights-card {
+    border-left: 4px solid var(--danger-color);
+}
+
+.debt-insights-card {
+    border-left: 4px solid var(--warning-color);
+}
+
+.investment-insights-card {
+    border-left: 4px solid var(--success-color);
+}
+
+/* Compact insight items for section panels */
+.insights-items .nudge-item {
+    padding: var(--space-3);
+    background: var(--background-secondary);
+    border-left-width: 3px;
+}
+
+.insights-items .nudge-icon {
+    font-size: 1.25rem;
+    width: 28px;
+    height: 28px;
+}
+
+.insights-items .nudge-description {
+    font-size: var(--font-size-xs);
+    margin-bottom: var(--space-1);
+}
+
+.insights-items .nudge-impact {
+    font-size: calc(var(--font-size-xs) * 0.9);
+    padding: var(--space-1);
+}
+
+/* Wisdom quotes in section insights - compact by default */
+.insights-items .nudge-wisdom {
+    margin-top: var(--space-2);
+    padding: var(--space-1) var(--space-2);
+    font-size: calc(var(--font-size-xs) * 0.9);
+}
+
+.insights-items .wisdom-source {
+    font-size: calc(var(--font-size-xs) * 0.8);
+}
+
+/* Mobile adjustments for insights */
+@media (max-width: 600px) {
+    .insights-card {
+        margin-top: var(--space-3);
+    }
+
+    .insights-items .nudge-item {
+        padding: var(--space-2);
+        gap: var(--space-2);
+    }
+
+    .insights-items .nudge-wisdom {
+        display: none; /* Hide on mobile for compactness */
+    }
+}
+
 /* ==================== BUDGET MANAGEMENT ==================== */
 .budget-card {
     grid-column: 1 / -1; /* Full width */

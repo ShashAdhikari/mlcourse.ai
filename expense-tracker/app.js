@@ -719,7 +719,8 @@
 
             Parser.pending = [];
             Parser.columnInfo = null;
-            document.getElementById('parsed-transactions-card').style.display = 'none';
+            const parsedCard = document.getElementById('parsed-transactions-card');
+            if (parsedCard) parsedCard.style.display = 'none';
 
             Expenses.render();
             Budget.renderComparison();
@@ -730,7 +731,8 @@
         discard() {
             Parser.pending = [];
             Parser.columnInfo = null;
-            document.getElementById('parsed-transactions-card').style.display = 'none';
+            const parsedCard = document.getElementById('parsed-transactions-card');
+            if (parsedCard) parsedCard.style.display = 'none';
             Notify.show('Parsed transactions discarded', 'info');
         }
     };
@@ -2391,14 +2393,17 @@
             const totalInvestments = State.data.investments.reduce((s, i) => s + i.value, 0);
             const netSavings = totalIncome - totalExpenses;
 
-            document.getElementById('total-income').textContent = Currency.format(totalIncome);
-            document.getElementById('total-expenses').textContent = Currency.format(totalExpenses);
-            document.getElementById('total-debt').textContent = Currency.format(totalDebt);
-            document.getElementById('net-savings').textContent = Currency.format(netSavings, true);
-
-            // Update net savings styling based on value
+            // Update dashboard summary cards
+            const incomeEl = document.getElementById('total-income');
+            const expensesEl = document.getElementById('total-expenses');
+            const debtEl = document.getElementById('total-debt');
             const netSavingsEl = document.getElementById('net-savings');
+
+            if (incomeEl) incomeEl.textContent = Currency.format(totalIncome);
+            if (expensesEl) expensesEl.textContent = Currency.format(totalExpenses);
+            if (debtEl) debtEl.textContent = Currency.format(totalDebt);
             if (netSavingsEl) {
+                netSavingsEl.textContent = Currency.format(netSavings, true);
                 netSavingsEl.classList.remove('positive', 'negative');
                 netSavingsEl.classList.add(netSavings >= 0 ? 'positive' : 'negative');
             }
@@ -3315,11 +3320,16 @@
             if (profileForm) {
                 profileForm.addEventListener('submit', (e) => {
                     e.preventDefault();
+                    const goalEl = document.getElementById('investment-goal');
+                    const timelineEl = document.getElementById('investment-timeline');
+                    const riskEl = document.getElementById('risk-tolerance');
+                    const monthlyEl = document.getElementById('monthly-investment');
+
                     State.set('investmentProfile', {
-                        goal: document.getElementById('investment-goal').value,
-                        timeline: document.getElementById('investment-timeline').value,
-                        riskTolerance: document.getElementById('risk-tolerance').value,
-                        monthlyAmount: parseFloat(document.getElementById('monthly-investment').value) || 0
+                        goal: goalEl ? goalEl.value : '',
+                        timeline: timelineEl ? timelineEl.value : '',
+                        riskTolerance: riskEl ? riskEl.value : '',
+                        monthlyAmount: monthlyEl ? (parseFloat(monthlyEl.value) || 0) : 0
                     });
                     Investments.generateRecommendations();
                     Investments.generateProjection();

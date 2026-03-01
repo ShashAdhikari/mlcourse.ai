@@ -2415,6 +2415,7 @@
             Dashboard.renderMonthlyAnalytics();
             Dashboard.renderYearlyProjection();
             Dashboard.renderPlannedSummary();
+            Nudges.render();
         },
 
         updateHealthScore(income, expenses, debt, savings) {
@@ -3116,6 +3117,375 @@
                     layout === 'mobile' ? 'Switch to web layout' : 'Switch to mobile layout'
                 );
             }
+        }
+    };
+
+    // ==================== NUDGES (SMART SUGGESTIONS) ====================
+
+    const Nudges = {
+        // Country-specific financial profiles
+        countryProfiles: {
+            USD: {
+                name: 'United States',
+                emergencyMonths: 6,
+                investmentSuggestions: ['401(k) employer match', 'Roth IRA', 'Index funds', 'I-Bonds'],
+                debtStrategy: 'avalanche',
+                taxAdvantaged: ['Maximize 401(k) employer match', 'Consider HSA contributions', 'Roth IRA for tax-free growth'],
+                savingsRate: { excellent: 0.20, good: 0.15, minimum: 0.10 },
+                expenseRatio: { excellent: 0.50, good: 0.70, warning: 0.90 }
+            },
+            EUR: {
+                name: 'European Union',
+                emergencyMonths: 6,
+                investmentSuggestions: ['ETFs', 'Government bonds', 'Index funds', 'Real estate funds'],
+                debtStrategy: 'avalanche',
+                taxAdvantaged: ['Pension contributions', 'Tax-advantaged savings accounts'],
+                savingsRate: { excellent: 0.20, good: 0.15, minimum: 0.10 },
+                expenseRatio: { excellent: 0.50, good: 0.70, warning: 0.90 }
+            },
+            GBP: {
+                name: 'United Kingdom',
+                emergencyMonths: 6,
+                investmentSuggestions: ['ISA (Individual Savings Account)', 'SIPP pension', 'Index funds', 'Premium Bonds'],
+                debtStrategy: 'avalanche',
+                taxAdvantaged: ['Maximize ISA allowance', 'Pension contributions for tax relief', 'Lifetime ISA for first home'],
+                savingsRate: { excellent: 0.20, good: 0.15, minimum: 0.10 },
+                expenseRatio: { excellent: 0.50, good: 0.70, warning: 0.90 }
+            },
+            INR: {
+                name: 'India',
+                emergencyMonths: 6,
+                investmentSuggestions: ['PPF (Public Provident Fund)', 'ELSS mutual funds', 'NPS (National Pension)', 'SIP in index funds'],
+                debtStrategy: 'snowball',
+                taxAdvantaged: ['Section 80C investments (PPF, ELSS)', 'NPS additional deduction under 80CCD', 'Home loan interest under 24(b)'],
+                savingsRate: { excellent: 0.25, good: 0.20, minimum: 0.15 },
+                expenseRatio: { excellent: 0.50, good: 0.65, warning: 0.80 }
+            },
+            NPR: {
+                name: 'Nepal',
+                emergencyMonths: 4,
+                investmentSuggestions: ['Fixed Deposits', 'Citizen Investment Trust', 'NEPSE stocks', 'Mutual funds'],
+                debtStrategy: 'snowball',
+                taxAdvantaged: ['Citizen Investment Trust', 'Life insurance premiums', 'Provident Fund contributions'],
+                savingsRate: { excellent: 0.20, good: 0.15, minimum: 0.10 },
+                expenseRatio: { excellent: 0.55, good: 0.70, warning: 0.85 }
+            },
+            default: {
+                name: 'General',
+                emergencyMonths: 6,
+                investmentSuggestions: ['Index funds', 'Bonds', 'High-yield savings', 'Diversified ETFs'],
+                debtStrategy: 'avalanche',
+                taxAdvantaged: ['Check local tax-advantaged accounts', 'Retirement savings options'],
+                savingsRate: { excellent: 0.20, good: 0.15, minimum: 0.10 },
+                expenseRatio: { excellent: 0.50, good: 0.70, warning: 0.90 }
+            }
+        },
+
+        currentScore: 0,
+
+        getProfile() {
+            return Nudges.countryProfiles[Currency.selected] || Nudges.countryProfiles.default;
+        },
+
+        analyze() {
+            const totalIncome = State.data.incomes.reduce((s, i) => s + i.amount, 0);
+            const totalExpenses = State.data.expenses.reduce((s, e) => s + e.amount, 0);
+            const totalDebt = State.data.debts.reduce((s, d) => s + d.balance, 0);
+            const totalInvestments = State.data.investments.reduce((s, i) => s + i.value, 0);
+            const netSavings = totalIncome - totalExpenses;
+            const profile = Nudges.getProfile();
+
+            return {
+                income: totalIncome,
+                expenses: totalExpenses,
+                debt: totalDebt,
+                investments: totalInvestments,
+                savings: netSavings,
+                expenseRatio: totalIncome > 0 ? totalExpenses / totalIncome : 0,
+                savingsRate: totalIncome > 0 ? netSavings / totalIncome : 0,
+                debtToIncome: totalIncome > 0 ? totalDebt / (totalIncome * 12) : 0,
+                debtToInvestment: totalInvestments > 0 ? totalDebt / totalInvestments : (totalDebt > 0 ? Infinity : 0),
+                profile: profile
+            };
+        },
+
+        calculateScore(data) {
+            let score = 50;
+
+            // Expense ratio impact (up to +20 or -10)
+            if (data.income > 0) {
+                if (data.expenseRatio < data.profile.expenseRatio.excellent) score += 20;
+                else if (data.expenseRatio < data.profile.expenseRatio.good) score += 10;
+                else if (data.expenseRatio > data.profile.expenseRatio.warning) score -= 10;
+            }
+
+            // Savings impact (+15 or -15)
+            if (data.savings > 0) score += 15;
+            else if (data.savings < 0) score -= 15;
+
+            // Debt impact (+15 to -15)
+            if (data.debt === 0) score += 15;
+            else if (data.debtToIncome > 0.5) score -= 15;
+            else if (data.debtToIncome > 0.36) score -= 5;
+
+            return Math.max(0, Math.min(100, score));
+        },
+
+        generateNudges() {
+            const data = Nudges.analyze();
+            const nudges = [];
+            const profile = data.profile;
+            Nudges.currentScore = Nudges.calculateScore(data);
+
+            // Skip if no financial data
+            if (data.income === 0 && data.expenses === 0 && data.debt === 0 && data.investments === 0) {
+                return [];
+            }
+
+            // 1. Score improvement nudges
+            if (Nudges.currentScore < 100) {
+                nudges.push(...Nudges.getScoreNudges(data, profile));
+            }
+
+            // 2. Expense control nudges
+            nudges.push(...Nudges.getExpenseNudges(data, profile));
+
+            // 3. Debt reduction nudges
+            if (data.debt > 0) {
+                nudges.push(...Nudges.getDebtNudges(data, profile));
+            }
+
+            // 4. Investment growth nudges
+            nudges.push(...Nudges.getInvestmentNudges(data, profile));
+
+            // 5. Emergency fund nudges
+            nudges.push(...Nudges.getEmergencyFundNudges(data, profile));
+
+            // Sort by priority and return top 5
+            return nudges.sort((a, b) => b.priority - a.priority).slice(0, 5);
+        },
+
+        getScoreNudges(data, profile) {
+            const nudges = [];
+            const gap = 100 - Nudges.currentScore;
+
+            if (gap > 30) {
+                nudges.push({
+                    icon: '🎯',
+                    category: 'score',
+                    title: 'Focus on fundamentals',
+                    description: `Your score is ${Nudges.currentScore}. Focus on reducing expenses and building savings to see significant improvement.`,
+                    impact: `Could improve score by +15-20 points`,
+                    priority: 90
+                });
+            } else if (gap > 15) {
+                nudges.push({
+                    icon: '📈',
+                    category: 'score',
+                    title: 'Good progress - keep improving',
+                    description: `Your score is ${Nudges.currentScore}. Small adjustments can push you into excellent territory.`,
+                    impact: `Target score: ${Math.min(100, Nudges.currentScore + 15)}`,
+                    priority: 70
+                });
+            } else if (gap > 0) {
+                nudges.push({
+                    icon: '🌟',
+                    category: 'score',
+                    title: 'Almost perfect!',
+                    description: `Your score is ${Nudges.currentScore}. Fine-tune debt levels or boost investments to reach 100.`,
+                    impact: `${gap} points away from perfect score`,
+                    priority: 50
+                });
+            }
+
+            return nudges;
+        },
+
+        getExpenseNudges(data, profile) {
+            const nudges = [];
+
+            if (data.expenseRatio > profile.expenseRatio.warning) {
+                const targetRatio = profile.expenseRatio.good;
+                const reduction = data.expenses - (data.income * targetRatio);
+                nudges.push({
+                    icon: '💸',
+                    category: 'expense',
+                    title: 'High expense-to-income ratio',
+                    description: `You're spending ${(data.expenseRatio * 100).toFixed(0)}% of income. Target: under ${(targetRatio * 100).toFixed(0)}%.`,
+                    impact: `Reduce monthly spending by ${Currency.format(reduction)}`,
+                    priority: 95
+                });
+            } else if (data.expenseRatio > profile.expenseRatio.good) {
+                const savings = data.income * (data.expenseRatio - profile.expenseRatio.excellent);
+                nudges.push({
+                    icon: '💡',
+                    category: 'expense',
+                    title: 'Room for expense optimization',
+                    description: `Good expense ratio at ${(data.expenseRatio * 100).toFixed(0)}%. Reducing to ${(profile.expenseRatio.excellent * 100).toFixed(0)}% would boost savings.`,
+                    impact: `Potential monthly savings: ${Currency.format(savings)}`,
+                    priority: 60
+                });
+            }
+
+            // Category-specific suggestions
+            const categoryTotals = {};
+            State.data.expenses.forEach(exp => {
+                categoryTotals[exp.category] = (categoryTotals[exp.category] || 0) + exp.amount;
+            });
+
+            const topCategory = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1])[0];
+            if (topCategory && topCategory[1] > data.expenses * 0.4) {
+                nudges.push({
+                    icon: '🔍',
+                    category: 'expense',
+                    title: `High spending in ${CategoryEngine.labels[topCategory[0]] || topCategory[0]}`,
+                    description: `${CategoryEngine.labels[topCategory[0]] || topCategory[0]} accounts for ${((topCategory[1] / data.expenses) * 100).toFixed(0)}% of expenses.`,
+                    impact: 'Review this category for potential savings',
+                    priority: 55
+                });
+            }
+
+            return nudges;
+        },
+
+        getDebtNudges(data, profile) {
+            const nudges = [];
+            const debts = State.data.debts;
+
+            if (debts.length === 0) return nudges;
+
+            // High-interest debt warning
+            const highInterestDebts = debts.filter(d => d.interestRate > 15);
+            if (highInterestDebts.length > 0) {
+                const highestRate = Math.max(...highInterestDebts.map(d => d.interestRate));
+                nudges.push({
+                    icon: '🔥',
+                    category: 'debt',
+                    title: 'Tackle high-interest debt first',
+                    description: `You have debt at ${highestRate.toFixed(1)}% interest. ${profile.debtStrategy === 'avalanche' ? 'Pay highest rate first (avalanche method).' : 'Start with smallest balance for quick wins.'}`,
+                    impact: 'Saves the most money on interest',
+                    priority: 100
+                });
+            }
+
+            // Debt-to-income ratio
+            if (data.debtToIncome > 0.36) {
+                nudges.push({
+                    icon: '⚠️',
+                    category: 'debt',
+                    title: 'Debt-to-income ratio is high',
+                    description: `Your debt is ${(data.debtToIncome * 100).toFixed(0)}% of annual income. Lenders prefer under 36%.`,
+                    impact: 'May affect loan approvals and credit',
+                    priority: 85
+                });
+            }
+
+            // Debt vs investments
+            if (data.debtToInvestment > 1) {
+                nudges.push({
+                    icon: '⚖️',
+                    category: 'debt',
+                    title: 'Debt exceeds investments',
+                    description: 'Your total debt is higher than investments. Consider aggressive debt payoff.',
+                    impact: 'Net worth would improve with debt reduction',
+                    priority: 75
+                });
+            }
+
+            return nudges;
+        },
+
+        getInvestmentNudges(data, profile) {
+            const nudges = [];
+
+            if (data.investments === 0 && data.savings > 0) {
+                nudges.push({
+                    icon: '🌱',
+                    category: 'investment',
+                    title: 'Start investing your savings',
+                    description: `You have ${Currency.format(data.savings)} in monthly savings. Consider: ${profile.investmentSuggestions.slice(0, 2).join(', ')}.`,
+                    impact: 'Grow wealth through compound returns',
+                    priority: 80
+                });
+            } else if (data.investments > 0 && data.savings > data.investments * 0.05) {
+                nudges.push({
+                    icon: '📊',
+                    category: 'investment',
+                    title: 'Increase investment contributions',
+                    description: `With ${Currency.format(data.savings)} surplus, consider boosting investments. Try: ${profile.investmentSuggestions[0]}.`,
+                    impact: 'Accelerate wealth building',
+                    priority: 65
+                });
+            }
+
+            // Tax-advantaged suggestions
+            if (profile.taxAdvantaged.length > 0 && data.income > 0) {
+                nudges.push({
+                    icon: '🏦',
+                    category: 'investment',
+                    title: `Tax-advantaged options (${profile.name})`,
+                    description: profile.taxAdvantaged[0],
+                    impact: 'Reduce taxes while building wealth',
+                    priority: 70
+                });
+            }
+
+            return nudges;
+        },
+
+        getEmergencyFundNudges(data, profile) {
+            const nudges = [];
+            const monthlyExpenses = data.expenses;
+            const targetFund = monthlyExpenses * profile.emergencyMonths;
+
+            // Check if user has enough savings/investments for emergency
+            const liquidAssets = data.investments * 0.3; // Assume 30% is liquid
+            const emergencyGap = targetFund - liquidAssets;
+
+            if (emergencyGap > 0 && data.expenses > 0) {
+                nudges.push({
+                    icon: '🛡️',
+                    category: 'emergency',
+                    title: `Build ${profile.emergencyMonths}-month emergency fund`,
+                    description: `Target: ${Currency.format(targetFund)} (${profile.emergencyMonths} months of expenses). Build this in a high-yield savings account.`,
+                    impact: `Need approximately ${Currency.format(emergencyGap)} more`,
+                    priority: 85
+                });
+            }
+
+            return nudges;
+        },
+
+        render() {
+            const container = document.getElementById('nudges-list');
+            if (!container) return;
+
+            const nudges = Nudges.generateNudges();
+
+            if (nudges.length === 0) {
+                container.innerHTML = '<p class="empty-state">Add your financial data to receive personalized suggestions.</p>';
+                return;
+            }
+
+            const profile = Nudges.getProfile();
+            container.innerHTML = `
+                <div class="nudges-header">
+                    <span class="nudges-score">Score: ${Nudges.currentScore}/100</span>
+                    <span class="nudges-country">${profile.name}</span>
+                </div>
+                <div class="nudges-items">
+                    ${nudges.map(nudge => `
+                        <div class="nudge-item nudge-${nudge.category}">
+                            <span class="nudge-icon">${nudge.icon}</span>
+                            <div class="nudge-content">
+                                <div class="nudge-title">${nudge.title}</div>
+                                <div class="nudge-description">${nudge.description}</div>
+                                <div class="nudge-impact">${nudge.impact}</div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
         }
     };
 

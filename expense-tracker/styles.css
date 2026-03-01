@@ -770,6 +770,149 @@ h2 {
     color: var(--danger-color);
 }
 
+/* ==================== SMART NUDGES ==================== */
+.nudges-card {
+    margin-top: var(--space-6);
+    overflow: visible;
+}
+
+.nudges-subtitle {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--space-4);
+}
+
+.nudges-list {
+    min-height: 100px;
+}
+
+.nudges-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-3) var(--space-4);
+    background: linear-gradient(135deg, var(--primary-light), var(--secondary-light));
+    border-radius: var(--border-radius);
+    margin-bottom: var(--space-4);
+}
+
+.nudges-score {
+    font-size: var(--font-size-md);
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.nudges-country {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    background: var(--card-background);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--border-radius-pill);
+    border: 1px solid var(--border-color);
+}
+
+.nudges-items {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.nudge-item {
+    display: flex;
+    gap: var(--space-4);
+    padding: var(--space-4);
+    background: var(--background-color);
+    border-radius: var(--border-radius);
+    border-left: 4px solid var(--primary-color);
+    transition: var(--transition);
+}
+
+.nudge-item:hover {
+    transform: translateX(4px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Category-specific border colors */
+.nudge-item.nudge-score {
+    border-left-color: var(--accent-gold);
+}
+
+.nudge-item.nudge-expense {
+    border-left-color: var(--danger-color);
+}
+
+.nudge-item.nudge-debt {
+    border-left-color: #dc2626;
+}
+
+.nudge-item.nudge-investment {
+    border-left-color: var(--success-color);
+}
+
+.nudge-item.nudge-emergency {
+    border-left-color: var(--info-color);
+}
+
+.nudge-icon {
+    font-size: 1.5rem;
+    line-height: 1;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nudge-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.nudge-title {
+    font-weight: 600;
+    font-size: var(--font-size-base);
+    color: var(--text-primary);
+    margin-bottom: var(--space-1);
+}
+
+.nudge-description {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-bottom: var(--space-2);
+}
+
+.nudge-impact {
+    font-size: var(--font-size-xs);
+    color: var(--info-color);
+    font-weight: 600;
+    padding: var(--space-1) var(--space-2);
+    background: rgba(13, 148, 136, 0.1);
+    border-radius: var(--border-radius-sm);
+    display: inline-block;
+}
+
+/* Mobile adjustments */
+@media (max-width: 600px) {
+    .nudge-item {
+        padding: var(--space-3);
+        gap: var(--space-3);
+    }
+
+    .nudge-icon {
+        font-size: 1.25rem;
+        width: 28px;
+        height: 28px;
+    }
+
+    .nudges-header {
+        flex-direction: column;
+        gap: var(--space-2);
+        text-align: center;
+    }
+}
+
 /* ==================== BUDGET MANAGEMENT ==================== */
 .budget-card {
     grid-column: 1 / -1; /* Full width */

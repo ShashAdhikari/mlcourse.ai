@@ -896,6 +896,7 @@
 
             if (expenses.length === 0) {
                 container.innerHTML = '<p class="empty-state">No expenses recorded yet. Add your first expense above.</p>';
+                Nudges.renderExpenseInsights(); // Still render insights (shows empty state)
                 return;
             }
 
@@ -1185,6 +1186,7 @@
             if (State.data.debts.length === 0) {
                 container.innerHTML = '<p class="empty-state">No debts recorded. Add your debts to get a personalized payoff plan.</p>';
                 Debts.updatePayoffPlan();
+                Nudges.renderDebtInsights(); // Still render insights (shows empty state)
                 return;
             }
 
@@ -1604,6 +1606,7 @@
             if (State.data.investments.length === 0) {
                 container.innerHTML = '<p class="empty-state">No investments recorded yet.</p>';
                 if (totalEl) totalEl.textContent = Currency.format(0);
+                Nudges.renderInvestmentInsights(); // Still render insights (may show if income exists)
                 return;
             }
 

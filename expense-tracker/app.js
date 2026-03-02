@@ -3505,25 +3505,28 @@
 
         getInvestmentNudges(data, profile) {
             const nudges = [];
+            const suggestions = profile.investmentSuggestions || [];
 
             // No investments yet: Just start (Just Keep Buying)
             if (data.investments === 0 && data.savings > 0) {
+                const suggestionText = suggestions.length > 0 ? ` Consider: ${suggestions.slice(0, 2).join(', ')}.` : '';
                 nudges.push({
                     icon: '🌱',
                     category: 'investment',
                     title: 'The best time to start is now',
-                    description: `${Currency.format(data.savings)} monthly savings waiting. Don't wait for the "perfect" moment—time in the market beats timing the market. Consider: ${profile.investmentSuggestions.slice(0, 2).join(', ')}.`,
+                    description: `${Currency.format(data.savings)} monthly savings waiting. Don't wait for the "perfect" moment—time in the market beats timing the market.${suggestionText}`,
                     impact: 'Small consistent amounts beat sporadic large ones',
                     wisdom: Nudges.getWisdomForContext('investment', 'start'),
                     priority: 80
                 });
             } else if (data.investments > 0 && data.savings > data.investments * 0.05) {
                 // Has investments: Just keep buying (Maggiulli)
+                const suggestionText = suggestions.length > 0 ? ` Consider: ${suggestions[0]}.` : '';
                 nudges.push({
                     icon: '📊',
                     category: 'investment',
                     title: 'Just keep buying',
-                    description: `${Currency.format(data.savings)} surplus available. Automate your contributions—remove the human element. Consider: ${profile.investmentSuggestions[0]}.`,
+                    description: `${Currency.format(data.savings)} surplus available. Automate your contributions—remove the human element.${suggestionText}`,
                     impact: 'Consistency beats complexity',
                     wisdom: Nudges.getWisdomForContext('investment', 'increase'),
                     priority: 65
@@ -3531,12 +3534,13 @@
             }
 
             // Tax-advantaged: 1/N heuristic for simplicity (Gigerenzer)
-            if (profile.taxAdvantaged.length > 0 && data.income > 0) {
+            const taxAdvantaged = profile.taxAdvantaged || [];
+            if (taxAdvantaged.length > 0 && data.income > 0) {
                 nudges.push({
                     icon: '🏦',
                     category: 'investment',
                     title: `Simple rules work: ${profile.name} options`,
-                    description: `${profile.taxAdvantaged[0]}. Simple, transparent strategies often outperform complex ones.`,
+                    description: `${taxAdvantaged[0]}. Simple, transparent strategies often outperform complex ones.`,
                     impact: 'Tax efficiency + compound growth',
                     wisdom: Nudges.getWisdomForContext('investment', 'tax'),
                     priority: 70
@@ -3602,7 +3606,7 @@
                 <div class="nudges-items">
                     ${nudges.map(nudge => `
                         <div class="nudge-item nudge-${Utils.escapeHtml(nudge.category)}">
-                            <span class="nudge-icon">${nudge.icon}</span>
+                            <span class="nudge-icon">${Utils.escapeHtml(nudge.icon)}</span>
                             <div class="nudge-content">
                                 <div class="nudge-title">${Utils.escapeHtml(nudge.title)}</div>
                                 <div class="nudge-description">${Utils.escapeHtml(nudge.description)}</div>
@@ -3624,7 +3628,7 @@
         renderNudgeItem(nudge) {
             return `
                 <div class="nudge-item nudge-${Utils.escapeHtml(nudge.category)}">
-                    <span class="nudge-icon">${nudge.icon}</span>
+                    <span class="nudge-icon">${Utils.escapeHtml(nudge.icon)}</span>
                     <div class="nudge-content">
                         <div class="nudge-title">${Utils.escapeHtml(nudge.title)}</div>
                         <div class="nudge-description">${Utils.escapeHtml(nudge.description)}</div>

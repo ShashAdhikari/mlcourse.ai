@@ -1390,6 +1390,10 @@ h2 {
     box-shadow: var(--shadow-md);
 }
 
+.dark-theme .btn-success:hover {
+    background: #22c55e;
+}
+
 .btn-danger {
     background: var(--danger-color);
     color: white;
@@ -1398,6 +1402,10 @@ h2 {
 .btn-danger:hover {
     background: #991b1b;
     transform: translateY(-1px);
+}
+
+.dark-theme .btn-danger:hover {
+    background: #ef4444;
 }
 
 .btn-sm {

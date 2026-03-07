@@ -15,6 +15,23 @@
             return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
         },
 
+        // Get CSS variable value from document
+        getCssVar(name) {
+            return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+        },
+
+        // Get theme-aware chart colors
+        getChartColors() {
+            const isDark = document.documentElement.classList.contains('dark-theme');
+            return {
+                background: isDark ? '#1e293b' : '#ffffff',
+                text: isDark ? '#f1f5f9' : '#1e293b',
+                textMuted: isDark ? '#94a3b8' : '#64748b',
+                grid: isDark ? '#334155' : '#e2e8f0',
+                border: isDark ? '#334155' : '#e2e8f0'
+            };
+        },
+
         escapeHtml(str) {
             const div = document.createElement('div');
             div.textContent = str;
@@ -1878,6 +1895,7 @@
             const ctx = document.getElementById('investment-chart');
             if (ctx) {
                 if (Investments.chart) Investments.chart.destroy();
+                const themeColors = Utils.getChartColors();
                 Investments.chart = new Chart(ctx, {
                     type: 'line',
                     data: {
@@ -1918,12 +1936,17 @@
                             legend: {
                                 display: true,
                                 position: 'top',
-                                labels: { usePointStyle: true }
+                                labels: { usePointStyle: true, color: themeColors.text }
                             }
                         },
                         scales: {
                             y: {
-                                ticks: { callback: v => Currency.format(v) }
+                                ticks: { callback: v => Currency.format(v), color: themeColors.textMuted },
+                                grid: { color: themeColors.grid }
+                            },
+                            x: {
+                                ticks: { color: themeColors.textMuted },
+                                grid: { color: themeColors.grid }
                             }
                         }
                     }
@@ -2564,6 +2587,7 @@
 
             const colors = categories.map(c => colorMap[c] || '#64748b');
             const hoverColors = colors.map(c => c + 'dd'); // Slightly transparent on hover
+            const themeColors = Utils.getChartColors();
 
             if (Dashboard.expenseChart) Dashboard.expenseChart.destroy();
 
@@ -2581,8 +2605,8 @@
                         backgroundColor: colors,
                         hoverBackgroundColor: hoverColors,
                         borderWidth: 3,
-                        borderColor: '#ffffff',
-                        hoverBorderColor: '#ffffff',
+                        borderColor: themeColors.background,
+                        hoverBorderColor: themeColors.background,
                         hoverBorderWidth: 4,
                         hoverOffset: 8
                     }]
@@ -2598,7 +2622,8 @@
                                 padding: 16,
                                 usePointStyle: true,
                                 pointStyle: 'circle',
-                                font: { size: 12, weight: '500' }
+                                font: { size: 12, weight: '500' },
+                                color: themeColors.text
                             }
                         },
                         tooltip: {
@@ -3144,6 +3169,7 @@
             if (saved === 'dark') {
                 ThemeToggle.currentTheme = 'dark';
                 ThemeToggle.applyTheme('dark');
+                ThemeToggle.updateToggleUI('dark');
             }
 
             ThemeToggle.setupToggle();
@@ -3186,6 +3212,9 @@
             } else {
                 root.classList.remove('dark-theme');
             }
+            // Refresh charts with new theme colors
+            Dashboard.updateExpenseChart();
+            Investments.generateProjection();
         },
 
         updateToggleUI(theme) {

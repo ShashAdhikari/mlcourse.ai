@@ -3625,6 +3625,10 @@ footer {
     display: none;
 }
 
+.app-container.force-mobile .theme-toggle {
+    display: none;
+}
+
 .app-container.force-mobile main {
     margin-left: 0;
     max-width: 100%;

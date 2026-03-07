@@ -3062,6 +3062,7 @@
             if (saved === 'mobile') {
                 LayoutToggle.currentLayout = 'mobile';
                 LayoutToggle.applyLayout('mobile');
+                LayoutToggle.updateToggleUI('mobile');
             }
 
             LayoutToggle.setupToggle();

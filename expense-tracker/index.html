@@ -17,6 +17,11 @@
                 <h1>FinanceTracker</h1>
             </div>
             <div class="mobile-header-controls">
+                <div class="theme-toggle-mini">
+                    <button id="theme-toggle-mobile" class="theme-toggle-btn" aria-label="Switch theme" data-tooltip="Switch to dark theme">
+                        <span class="toggle-icon">🌙</span>
+                    </button>
+                </div>
                 <div class="layout-toggle-mini">
                     <button id="layout-toggle-mobile" class="layout-toggle-btn" aria-label="Switch layout" data-tooltip="Switch to mobile layout">
                         <span class="toggle-icon">📱</span>
@@ -105,6 +110,16 @@
                         <button id="layout-toggle-desktop" class="toggle-switch" aria-label="Toggle between web and mobile layout">
                             <span class="toggle-option active" data-layout="web">🖥️ Web</span>
                             <span class="toggle-option" data-layout="mobile">📱 Mobile</span>
+                        </button>
+                    </div>
+                </div>
+                <!-- Theme Toggle -->
+                <div class="theme-toggle">
+                    <label class="theme-toggle-label">Theme</label>
+                    <div class="toggle-switch-container">
+                        <button id="theme-toggle-desktop" class="toggle-switch" aria-label="Toggle between light and dark theme">
+                            <span class="toggle-option active" data-theme="light">☀️ Light</span>
+                            <span class="toggle-option" data-theme="dark">🌙 Dark</span>
                         </button>
                     </div>
                 </div>

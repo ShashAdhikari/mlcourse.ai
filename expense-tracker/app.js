@@ -3132,6 +3132,85 @@
         }
     };
 
+    // ==================== THEME TOGGLE ====================
+
+    const ThemeToggle = {
+        currentTheme: 'light', // 'light' or 'dark'
+
+        init() {
+            // Load saved preference
+            const saved = localStorage.getItem('themePreference');
+            if (saved === 'dark') {
+                ThemeToggle.currentTheme = 'dark';
+                ThemeToggle.applyTheme('dark');
+            }
+
+            ThemeToggle.setupToggle();
+        },
+
+        setupToggle() {
+            // Desktop toggle (in sidebar)
+            const desktopToggle = document.getElementById('theme-toggle-desktop');
+            if (desktopToggle) {
+                desktopToggle.addEventListener('click', (e) => {
+                    const option = e.target.closest('.toggle-option');
+                    if (option) {
+                        const theme = option.dataset.theme;
+                        ThemeToggle.setTheme(theme);
+                    }
+                });
+            }
+
+            // Mobile toggle button
+            const mobileToggle = document.getElementById('theme-toggle-mobile');
+            if (mobileToggle) {
+                mobileToggle.addEventListener('click', () => {
+                    const newTheme = ThemeToggle.currentTheme === 'light' ? 'dark' : 'light';
+                    ThemeToggle.setTheme(newTheme);
+                });
+            }
+        },
+
+        setTheme(theme) {
+            ThemeToggle.currentTheme = theme;
+            localStorage.setItem('themePreference', theme);
+            ThemeToggle.applyTheme(theme);
+            ThemeToggle.updateToggleUI(theme);
+        },
+
+        applyTheme(theme) {
+            const root = document.documentElement;
+            if (theme === 'dark') {
+                root.classList.add('dark-theme');
+            } else {
+                root.classList.remove('dark-theme');
+            }
+        },
+
+        updateToggleUI(theme) {
+            // Update desktop toggle
+            const desktopToggle = document.getElementById('theme-toggle-desktop');
+            if (desktopToggle) {
+                desktopToggle.querySelectorAll('.toggle-option').forEach(opt => {
+                    opt.classList.toggle('active', opt.dataset.theme === theme);
+                });
+            }
+
+            // Update mobile toggle button
+            const mobileToggle = document.getElementById('theme-toggle-mobile');
+            if (mobileToggle) {
+                mobileToggle.classList.toggle('dark-active', theme === 'dark');
+                const icon = mobileToggle.querySelector('.toggle-icon');
+                if (icon) {
+                    icon.textContent = theme === 'dark' ? '☀️' : '🌙';
+                }
+                mobileToggle.setAttribute('data-tooltip',
+                    theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'
+                );
+            }
+        }
+    };
+
     // ==================== NUDGES (SMART SUGGESTIONS) ====================
 
     const Nudges = {
@@ -3723,6 +3802,7 @@
             App.setupForms();
             Currency.setupSelector();
             LayoutToggle.init();
+            ThemeToggle.init();
             TagSuggestions.setup();
             Income.setupOneTimeToggle();
             Upload.setupDashboard();

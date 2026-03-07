@@ -91,6 +91,50 @@
     --sidebar-collapsed: 64px;
 }
 
+/* ==================== DARK THEME ==================== */
+.dark-theme {
+    /* Color palette - Dark mode */
+    --primary-color: #60a5fa;        /* Light blue for dark mode */
+    --primary-dark: #3b82f6;         /* Slightly darker blue */
+    --primary-light: rgba(96, 165, 250, 0.15);
+    --secondary-color: #4ade80;      /* Light green for dark mode */
+    --secondary-light: rgba(74, 222, 128, 0.15);
+    --accent-gold: #fbbf24;          /* Brighter gold */
+    --accent-teal: #2dd4bf;          /* Brighter teal */
+    --success-color: #4ade80;        /* Light green */
+    --warning-color: #fbbf24;        /* Bright gold */
+    --danger-color: #f87171;         /* Light red */
+    --info-color: #2dd4bf;           /* Light teal */
+
+    /* Background - Dark */
+    --background-color: #0f172a;     /* Dark navy */
+    --background-secondary: #1e293b; /* Slightly lighter */
+    --card-background: #1e293b;      /* Card background */
+    --text-primary: #f1f5f9;         /* Light text */
+    --text-secondary: #94a3b8;       /* Muted light text */
+    --text-muted: #64748b;           /* More muted */
+    --border-color: #334155;         /* Dark border */
+    --border-focus: #60a5fa;         /* Blue for focus */
+
+    /* Category colors - Dark mode palette */
+    --cat-housing-bg: rgba(96, 165, 250, 0.2);    --cat-housing-fg: #93c5fd;
+    --cat-transport-bg: rgba(251, 191, 36, 0.2);  --cat-transport-fg: #fcd34d;
+    --cat-food-bg: rgba(74, 222, 128, 0.2);       --cat-food-fg: #86efac;
+    --cat-utilities-bg: rgba(96, 165, 250, 0.15); --cat-utilities-fg: #7dd3fc;
+    --cat-health-bg: rgba(248, 113, 113, 0.2);    --cat-health-fg: #fca5a5;
+    --cat-entertain-bg: rgba(192, 132, 252, 0.2); --cat-entertain-fg: #d8b4fe;
+    --cat-shopping-bg: rgba(251, 146, 60, 0.2);   --cat-shopping-fg: #fdba74;
+    --cat-education-bg: rgba(45, 212, 191, 0.2);  --cat-education-fg: #5eead4;
+    --cat-personal-bg: rgba(232, 121, 249, 0.2);  --cat-personal-fg: #f0abfc;
+    --cat-other-bg: rgba(148, 163, 184, 0.2);     --cat-other-fg: #cbd5e1;
+
+    /* Elevation - Dark mode shadows */
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow: 0 2px 4px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.5), 0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
 /* ==================== RESET & BASE ==================== */
 * {
     margin: 0;
@@ -3452,6 +3496,55 @@ footer {
 /* Hide layout toggle in sidebar on mobile (since we're already in mobile) */
 @media (max-width: 768px) {
     .layout-toggle {
+        display: none;
+    }
+}
+
+/* ==================== THEME TOGGLE ==================== */
+.theme-toggle {
+    padding: var(--space-4);
+    border-top: 1px solid var(--border-color);
+    margin-top: var(--space-2);
+}
+
+.theme-toggle-label {
+    display: block;
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+    margin-bottom: var(--space-2);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Theme toggle mini button (mobile header) */
+.theme-toggle-mini {
+    display: flex;
+}
+
+.theme-toggle-btn {
+    background: var(--background-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    padding: var(--space-2);
+    cursor: pointer;
+    font-size: 1.25rem;
+    line-height: 1;
+    transition: var(--transition);
+}
+
+.theme-toggle-btn:hover {
+    background: var(--primary-light);
+    border-color: var(--primary-color);
+}
+
+.theme-toggle-btn.dark-active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+/* Hide theme toggle in sidebar on mobile */
+@media (max-width: 768px) {
+    .theme-toggle {
         display: none;
     }
 }

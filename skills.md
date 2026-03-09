@@ -31,15 +31,15 @@ This document records skills that have been demonstrated at 80%+ efficacy across
 | **Key Applications** | Projection card, tooltip clipping, expense list scroll |
 | **Full Documentation** | [docs/skills/css-overflow-debugging.md](docs/skills/css-overflow-debugging.md) |
 
-### 3. Five-Pass Column Detection
+### 3. Six-Pass Column Detection
 | Attribute | Value |
 |-----------|-------|
 | **Agent** | Coder |
 | **First Demonstrated** | 2026-02-05 |
-| **Success Rate** | 5/5 tasks |
+| **Success Rate** | 6/6 tasks |
 | **Description** | Prioritized regex passes with index tracking for bank statement parsing |
 | **Key Applications** | Parser module, multiple bank statement formats |
-| **Full Documentation** | [docs/skills/five-pass-column-detection.md](docs/skills/five-pass-column-detection.md) |
+| **Full Documentation** | [docs/skills/six-pass-column-detection.md](docs/skills/six-pass-column-detection.md) |
 
 ### 4. State Mutation with Auto-Persistence
 | Attribute | Value |

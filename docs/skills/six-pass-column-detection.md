@@ -1,4 +1,4 @@
-# Skill: Five-Pass Column Detection
+# Skill: Six-Pass Column Detection
 
 **Agent:** Coder
 **First Demonstrated:** 2026-02-05
@@ -22,8 +22,9 @@ A systematic approach to detecting column types in bank statement files (CSV/Exc
 4. **Pass 3 - Credit/Deposit** - Match `/\b(credit|deposit|income|received|refund)\b/`
 5. **Pass 4 - Balance** - Match `/\b(balance|closing|running|total)\b/`
 6. **Pass 5 - Description** - Match `/\b(desc|narr|particular|detail|memo|note|reference|remark|transaction)\b/`
-7. **Fallback - Amount** - If no debit/credit found, match generic amount column to debit
-8. **Positional fallback** - If zero columns detected and 3+ cells, assume [date=0, description=1, debit=2]
+7. **Pass 6 - Month/Period** - Match `/\b(month|period|statement\s*month|billing\s*period)\b/`
+8. **Fallback - Amount** - If no debit/credit found, match generic amount column to debit
+9. **Positional fallback** - If zero columns detected and 3+ cells, assume [date=0, description=1, debit=2]
 
 ## Why Prioritized Passes?
 
@@ -32,7 +33,7 @@ Single-pass detection fails when:
 - "Credit Balance" matches both credit and balance patterns
 - Order of regex evaluation causes wrong column assignment
 
-Five-pass with `assigned` Set ensures:
+Six-pass with `assigned` Set ensures:
 - Higher-priority columns (date, debit) claimed first
 - Lower-priority columns can't steal already-assigned indices
 - Deterministic behavior regardless of column order in file
@@ -74,12 +75,13 @@ const assigned = new Set();
 // Pass 3: credit (weighted 2x in scoring)
 // Pass 4: balance
 // Pass 5: description
+// Pass 6: month/period
 ```
 
 ## Related Bugs
 
 - Bug #8: "Column detection collisions - Parser.detectColumns uses separate passes with assigned Set"
-- Bug #14: "Five-pass column detection - Debit pass runs before credit to ensure 'Withdrawal Amt.' isn't claimed by generic amount regex"
+- Bug #14: "Six-pass column detection - Debit pass runs before credit to ensure 'Withdrawal Amt.' isn't claimed by generic amount regex"
 
 ---
 

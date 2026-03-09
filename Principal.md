@@ -131,6 +131,7 @@ Principal.md serves as the supreme governance document for the multi-agent syste
 | 2026-03-09 | claude.md | Module count stated as 20, actual is 21 | Update to "21 named module objects" | grep found 21 const Module = patterns |
 | 2026-03-09 | claude.md | Line counts outdated (~3600, ~840, ~3550) | Update to app.js (~3940), index.html (~874), styles.css (~3675) | wc -l on actual files |
 | 2026-03-09 | claude.md | Architecture says "20 modules" but lists 21 | Reconcile count with actual list | Line 14 contradiction |
+| 2026-03-09 | claude.md | Column detection claimed 5 passes, actual is 6 | Update to "Six-pass" throughout | Code has Pass 6 for month/period |
 
 ---
 
@@ -254,7 +255,7 @@ Skills.md will be created when:
 |-------|-------|-------|--------|
 | Pattern Replication | Coder | 3/3 | QUALIFIED |
 | CSS Overflow Debugging | Debugger | 3/3 | QUALIFIED |
-| Five-Pass Column Detection | Coder | 5/5 | QUALIFIED |
+| Six-Pass Column Detection | Coder | 6/6 | QUALIFIED |
 | State Mutation Auto-Persistence | Coder | 20+ | QUALIFIED |
 | Event Delegation Routing | Coder | 30+ | QUALIFIED |
 
@@ -263,7 +264,7 @@ Skills.md will be created when:
 - `/docs/skills/README.md` - Detailed documentation index
 - `/docs/skills/pattern-replication.md`
 - `/docs/skills/css-overflow-debugging.md`
-- `/docs/skills/five-pass-column-detection.md`
+- `/docs/skills/six-pass-column-detection.md`
 - `/docs/skills/state-mutation-auto-persistence.md`
 - `/docs/skills/event-delegation-routing.md`
 

@@ -15,7 +15,7 @@ Per Principal.md Article IV, skills are documented when:
 |-------|-------|--------|----------|
 | [Pattern Replication](./pattern-replication.md) | Coder | Qualified | PlannedExpenses → PlannedDebts/PlannedInvestments |
 | [CSS Overflow Debugging](./css-overflow-debugging.md) | Debugger | Qualified | Investment projection, tooltip clipping |
-| [Five-Pass Column Detection](./five-pass-column-detection.md) | Coder | Qualified | Parser module implementation |
+| [Six-Pass Column Detection](./six-pass-column-detection.md) | Coder | Qualified | Parser module implementation |
 | [State Mutation with Auto-Persistence](./state-mutation-auto-persistence.md) | Coder | Qualified | State.modify/State.set pattern |
 | [Event Delegation Routing](./event-delegation-routing.md) | Coder | Qualified | App.setupEventDelegation() |
 

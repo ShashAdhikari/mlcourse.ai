@@ -66,12 +66,13 @@ File Upload → Upload.processFile() → FileReader → Parser.parseCSV()/parseE
 
 **Shared `Parser.parseRows(rows)`**: Unified row processing eliminates CSV/Excel code duplication. Handles header scanning, column detection, row classification, and transaction building.
 
-**Column Detection** (`Parser.detectColumns`): Five-pass priority system with `assigned` Set:
+**Column Detection** (`Parser.detectColumns`): Six-pass priority system with `assigned` Set:
 1. **Pass 1 - Date**: `/\bdate\b/` (excludes "value date")
 2. **Pass 2 - Debit/Withdrawal**: `/\b(debit|withdrawal|withdraw|expense|spent|paid|payment)\b/`
 3. **Pass 3 - Credit/Deposit**: `/\b(credit|deposit|income|received|refund)\b/`
 4. **Pass 4 - Balance**: `/\b(balance|closing|running|total)\b/`
 5. **Pass 5 - Description**: `/\b(desc|narr|particular|detail|memo|note|reference|remark|transaction)\b/`
+6. **Pass 6 - Month/Period**: `/\b(month|period|statement\s*month|billing\s*period)\b/`
 
 **Amount fallback**: If no debit or credit column found, a generic "amount" column (`/amount|sum|value|cost|price|total/`) maps to `debit`.
 
@@ -107,7 +108,7 @@ File Upload → Upload.processFile() → FileReader → Parser.parseCSV()/parseE
 11. **Column detection must be multi-pass**: `Parser.detectColumns` uses separate passes for date→debit→credit→balance→description with a `Set` of assigned indices.
 12. **SheetJS CDN guard**: Always check `typeof XLSX !== 'undefined'` before calling `XLSX.read()`. CDN failures should gracefully return an empty array.
 13. **Chart.js infinite resize fix**: Wrap each `<canvas>` in a `.chart-wrapper` div with `position: relative` and set the canvas to `position: absolute`. Takes canvas out of flex flow.
-14. **Five-pass column detection**: `Parser.detectColumns` uses separate passes for date → debit → credit → balance → description with `assigned` Set. Debit pass runs before credit to ensure "Withdrawal Amt." isn't claimed by a generic amount regex.
+14. **Six-pass column detection**: `Parser.detectColumns` uses separate passes for date → debit → credit → balance → description → month with `assigned` Set. Debit pass runs before credit to ensure "Withdrawal Amt." isn't claimed by a generic amount regex.
 15. **Debit/credit row classification**: Rows with a debit value are expenses (`selected: true`); credit rows are income (`selected: false`, shown dimmed).
 16. **DD/MM/YY 2-digit year pivot**: `Parser.parseDate` uses 50-year pivot: years 00-50 → 2000-2050, years 51-99 → 1951-1999.
 17. **Multi-header row scanning**: `Parser.parseRows` scans first 10 rows with weighted scoring (debit/credit weighted 2x) to find the best header row. Handles bank statements with metadata rows above headers.
@@ -129,7 +130,7 @@ File Upload → Upload.processFile() → FileReader → Parser.parseCSV()/parseE
 - Smart category suggestions based on keyword scoring (100+ keywords mapped to 9 categories + "other")
 - Debt analysis with avalanche and snowball payoff strategy comparison
 - Investment profiling with risk assessment and compound growth projections (Chart.js line chart)
-- **File parsing engine** - CSV and Excel file parsing with shared `Parser.parseRows()`, smart 5-pass column detection, auto-categorization, and transaction review UI with selective import
+- **File parsing engine** - CSV and Excel file parsing with shared `Parser.parseRows()`, smart 6-pass column detection, auto-categorization, and transaction review UI with selective import
 - **Upload history management** - view upload history with delete capability; file uploads tracked with transaction counts
 - File upload (CSV, Excel) with drag-and-drop support on Dashboard and Upload tabs
 - PII anonymization engine (names, SSN, credit cards, emails, accounts, phones)
@@ -228,7 +229,7 @@ File Upload → Upload.processFile() → FileReader → Parser.parseCSV()/parseE
 |---|---|
 | Shared `Parser.parseRows()` from CSV path | PASS |
 | Shared `Parser.parseRows()` from Excel path | PASS |
-| 5-pass column detection with `assigned` Set | PASS |
+| 6-pass column detection with `assigned` Set | PASS |
 | Header row scanning (first 10 rows, weighted scoring) | PASS |
 | DD/MM/YY date parsing (50-year pivot) | PASS |
 | Excel serial date parsing | PASS |
@@ -395,7 +396,7 @@ styles.css (~3675 lines) - CSS design system with custom properties, 29+ organiz
 - **Currency**: Always use `Currency.format(amount)` instead of hardcoded `$` signs.
 - **CSS tokens**: Use `var(--space-N)` for spacing, `var(--font-size-*)` for typography, `var(--primary-color)` etc. for colors. Never hardcode these values.
 - **Adding forms**: Wire form `submit` events in `App.setupForms()`. Call `e.preventDefault()`, read inputs, use `State.modify()`, reset form, render, notify.
-- **Column detection**: Use the five-pass priority system in `Parser.detectColumns` with the `assigned` Set.
+- **Column detection**: Use the six-pass priority system in `Parser.detectColumns` with the `assigned` Set.
 - **SheetJS guard**: Any code calling `XLSX.*` must check `typeof XLSX !== 'undefined'` first.
 - **Chart.js canvases**: Wrap in `.chart-wrapper` div. Set `maintainAspectRatio: false` in options.
 - **Date parsing**: Insert new formats in the correct order in `Parser.parseDate`. DD/MM/YY must come after MM/DD/YYYY.

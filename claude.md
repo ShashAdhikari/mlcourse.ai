@@ -11,7 +11,7 @@ Two synchronized copies exist:
 
 ### Architecture
 - **Single-page app** with 5 tab-based sections: Dashboard, Expenses, Debt Analysis, Investments, Upload
-- **IIFE module pattern** - entire app.js wrapped in `(function () { 'use strict'; ... })();` with 20 named module objects: Utils, Currency, State, Notify, CategoryEngine, Anonymizer, Parser, Budget, Expenses, PlannedExpenses, Debts, PlannedDebts, Investments, PlannedInvestments, Income, Upload, Dashboard, TagSuggestions, LayoutToggle, Nudges, App
+- **IIFE module pattern** - entire app.js wrapped in `(function () { 'use strict'; ... })();` with 21 named module objects: Utils, Currency, State, Notify, CategoryEngine, Anonymizer, Parser, Budget, Expenses, PlannedExpenses, Debts, PlannedDebts, Investments, PlannedInvestments, Income, Upload, Dashboard, TagSuggestions, LayoutToggle, Nudges, App
 - **State management** via centralized `State` module with `State.data`, `State.modify(key, fn)` (mutate + auto-persist), and `State.set(key, value)` (replace + auto-persist). All data persisted to `localStorage`
 - **Event delegation** - single `document.body` click listener routes `data-action`/`data-id` attributes through a switch/case in `App.setupEventDelegation()`. No `window.*` globals or inline `onclick` handlers
 - **Planned items system** - Three parallel modules (`PlannedExpenses`, `PlannedDebts`, `PlannedInvestments`) for future/potential items. Each supports add, activate (convert to real item), and delete. State stored in `State.data.plannedExpenses`, `plannedDebts`, `plannedInvestments`
@@ -372,13 +372,13 @@ File Upload → Upload.processFile() → FileReader → Parser.parseCSV()/parseE
 
 ### File Structure
 ```
-app.js    (~3600 lines) - IIFE with 20 modules: Utils, Currency, State, Notify, CategoryEngine,
+app.js    (~3940 lines) - IIFE with 21 modules: Utils, Currency, State, Notify, CategoryEngine,
                           Anonymizer, Parser, Budget, Expenses, PlannedExpenses, Debts,
                           PlannedDebts, Investments, PlannedInvestments, Income, Upload,
                           Dashboard, TagSuggestions, LayoutToggle, Nudges, App
-index.html (~840 lines) - Semantic HTML with ARIA accessibility, Chart.js + SheetJS CDNs,
+index.html (~874 lines) - Semantic HTML with ARIA accessibility, Chart.js + SheetJS CDNs,
                           mobile header, sidebar navigation, layout toggle, nudges card
-styles.css (~3550 lines) - CSS design system with custom properties, 29+ organized sections,
+styles.css (~3675 lines) - CSS design system with custom properties, 29+ organized sections,
                            layout toggle, force-mobile overrides, financial ratios, budget styles, nudges
 ```
 

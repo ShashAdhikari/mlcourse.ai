@@ -2427,7 +2427,48 @@
             Dashboard.renderMonthlyAnalytics();
             Dashboard.renderYearlyProjection();
             Dashboard.renderPlannedSummary();
-            Nudges.render();
+            Dashboard.renderStatsTicker();
+            Nudges.renderTicker();
+        },
+
+        safeRate(value, divisor) {
+            if (!divisor || divisor === 0 || !isFinite(value / divisor)) {
+                return 0;
+            }
+            return value / divisor;
+        },
+
+        renderStatsTicker() {
+            const expensePerDayEl = document.getElementById('expense-per-day');
+            const expensePerHourEl = document.getElementById('expense-per-hour');
+            const incomePerDayEl = document.getElementById('income-per-day');
+            const incomePerHourEl = document.getElementById('income-per-hour');
+
+            if (!expensePerDayEl) return;
+
+            const now = new Date();
+            const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+            const daysSoFar = now.getDate();
+
+            const currentMonthExpenses = State.data.expenses
+                .filter(exp => {
+                    const expMonthKey = exp.monthKey || (exp.date ? exp.date.substring(0, 7) : null);
+                    return expMonthKey === currentMonthKey;
+                })
+                .reduce((sum, exp) => sum + exp.amount, 0);
+
+            const currentMonthIncome = Dashboard.getMonthlyIncome(currentMonthKey);
+
+            const expensePerDay = Dashboard.safeRate(currentMonthExpenses, daysSoFar);
+            const expensePerHour = Dashboard.safeRate(expensePerDay, 24);
+            const incomePerDay = Dashboard.safeRate(currentMonthIncome, daysInMonth);
+            const incomePerHour = Dashboard.safeRate(incomePerDay, 24);
+
+            expensePerDayEl.textContent = Currency.format(expensePerDay);
+            expensePerHourEl.textContent = Currency.format(expensePerHour);
+            incomePerDayEl.textContent = Currency.format(incomePerDay);
+            incomePerHourEl.textContent = Currency.format(incomePerHour);
         },
 
         updateHealthScore(income, expenses, debt, savings) {
@@ -2980,6 +3021,104 @@
         }
     };
 
+    // ==================== DASHBOARD ACTIONS ====================
+
+    const DashboardActions = {
+        currentTab: 'expense',
+
+        init() {
+            DashboardActions.setupDefaults();
+            DashboardActions.setupForms();
+        },
+
+        setupDefaults() {
+            const expenseDate = document.getElementById('dash-expense-date');
+            const incomeMonth = document.getElementById('dash-income-month');
+
+            if (expenseDate) expenseDate.valueAsDate = new Date();
+            if (incomeMonth) incomeMonth.value = new Date().toISOString().substring(0, 7);
+        },
+
+        switchTab(tabName) {
+            DashboardActions.currentTab = tabName;
+
+            document.querySelectorAll('.quick-add-tab').forEach(tab => {
+                const isActive = tab.dataset.dashboardAction === tabName;
+                tab.classList.toggle('active', isActive);
+                tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            });
+
+            document.querySelectorAll('.quick-add-panel').forEach(panel => {
+                panel.classList.add('hidden');
+            });
+            const activePanel = document.getElementById(`quick-add-${tabName}`);
+            if (activePanel) activePanel.classList.remove('hidden');
+        },
+
+        setupForms() {
+            const expenseForm = document.getElementById('dashboard-expense-form');
+            if (expenseForm) {
+                expenseForm.addEventListener('submit', (e) => DashboardActions.addExpense(e));
+            }
+
+            const incomeForm = document.getElementById('dashboard-income-form');
+            if (incomeForm) {
+                incomeForm.addEventListener('submit', (e) => DashboardActions.addIncome(e));
+            }
+        },
+
+        addExpense(e) {
+            e.preventDefault();
+            const desc = document.getElementById('dash-expense-desc').value.trim();
+            const amount = parseFloat(document.getElementById('dash-expense-amount').value);
+            const category = document.getElementById('dash-expense-category').value;
+            const date = document.getElementById('dash-expense-date').value;
+
+            if (!desc || !amount || !category || !date) return;
+
+            State.modify('expenses', arr => arr.push({
+                id: Utils.generateId(),
+                description: desc,
+                amount,
+                category,
+                date
+            }));
+
+            e.target.reset();
+            DashboardActions.setupDefaults();
+            Expenses.render();
+            Budget.renderComparison();
+            Dashboard.update();
+            Notify.show('Expense added', 'success');
+        },
+
+        addIncome(e) {
+            e.preventDefault();
+            const source = document.getElementById('dash-income-source').value.trim();
+            const amount = parseFloat(document.getElementById('dash-income-amount').value);
+            const type = document.getElementById('dash-income-type').value;
+            const startMonth = document.getElementById('dash-income-month').value;
+
+            if (!source || !amount || !type || !startMonth) return;
+
+            State.modify('incomes', arr => arr.push({
+                id: Utils.generateId(),
+                source,
+                amount,
+                type,
+                startMonth,
+                monthKey: startMonth,
+                isRecurring: true
+            }));
+
+            e.target.reset();
+            DashboardActions.setupDefaults();
+            Income.render();
+            Dashboard.update();
+            Notify.show('Income added', 'success');
+        }
+    };
+
     // ==================== TAG SUGGESTIONS ====================
 
     const TagSuggestions = {
@@ -3048,87 +3187,6 @@
                     container.classList.remove('visible');
                 }
             });
-        }
-    };
-
-    // ==================== LAYOUT TOGGLE ====================
-
-    const LayoutToggle = {
-        currentLayout: 'web', // 'web' or 'mobile'
-
-        init() {
-            // Load saved preference
-            const saved = localStorage.getItem('layoutPreference');
-            if (saved === 'mobile') {
-                LayoutToggle.currentLayout = 'mobile';
-                LayoutToggle.applyLayout('mobile');
-            }
-
-            LayoutToggle.setupToggle();
-        },
-
-        setupToggle() {
-            // Desktop toggle (in sidebar)
-            const desktopToggle = document.getElementById('layout-toggle-desktop');
-            if (desktopToggle) {
-                desktopToggle.addEventListener('click', (e) => {
-                    const option = e.target.closest('.toggle-option');
-                    if (option) {
-                        const layout = option.dataset.layout;
-                        LayoutToggle.setLayout(layout);
-                    }
-                });
-            }
-
-            // Mobile toggle button
-            const mobileToggle = document.getElementById('layout-toggle-mobile');
-            if (mobileToggle) {
-                mobileToggle.addEventListener('click', () => {
-                    const newLayout = LayoutToggle.currentLayout === 'web' ? 'mobile' : 'web';
-                    LayoutToggle.setLayout(newLayout);
-                });
-            }
-        },
-
-        setLayout(layout) {
-            LayoutToggle.currentLayout = layout;
-            localStorage.setItem('layoutPreference', layout);
-            LayoutToggle.applyLayout(layout);
-            LayoutToggle.updateToggleUI(layout);
-        },
-
-        applyLayout(layout) {
-            const container = document.querySelector('.app-container');
-            if (!container) return;
-
-            if (layout === 'mobile') {
-                container.classList.add('force-mobile');
-            } else {
-                container.classList.remove('force-mobile');
-            }
-        },
-
-        updateToggleUI(layout) {
-            // Update desktop toggle
-            const desktopToggle = document.getElementById('layout-toggle-desktop');
-            if (desktopToggle) {
-                desktopToggle.querySelectorAll('.toggle-option').forEach(opt => {
-                    opt.classList.toggle('active', opt.dataset.layout === layout);
-                });
-            }
-
-            // Update mobile toggle button
-            const mobileToggle = document.getElementById('layout-toggle-mobile');
-            if (mobileToggle) {
-                mobileToggle.classList.toggle('mobile-active', layout === 'mobile');
-                const icon = mobileToggle.querySelector('.toggle-icon');
-                if (icon) {
-                    icon.textContent = layout === 'mobile' ? '🖥️' : '📱';
-                }
-                mobileToggle.setAttribute('data-tooltip',
-                    layout === 'mobile' ? 'Switch to web layout' : 'Switch to mobile layout'
-                );
-            }
         }
     };
 
@@ -3644,6 +3702,44 @@
             `;
         },
 
+        // Global ticker renderer for Smart Nudges
+        renderTicker() {
+            const container = document.getElementById('nudges-ticker');
+            if (!container) return;
+
+            let nudges = Nudges.generateNudges();
+
+            // Onboarding fallback when no financial data
+            if (nudges.length === 0) {
+                nudges = [
+                    { category: 'score', icon: '📊', title: 'Track Your Finances', impact: 'Add expenses and income to get started' },
+                    { category: 'expense', icon: '💸', title: 'Log Expenses', impact: 'Understanding spending is the first step' },
+                    { category: 'investment', icon: '📈', title: 'Plan Investments', impact: 'Time in the market beats timing the market' },
+                    { category: 'debt', icon: '📉', title: 'Manage Debt', impact: 'High-interest debt costs you money daily' },
+                    { category: 'emergency', icon: '🛡️', title: 'Build Emergency Fund', impact: 'Financial cushion reduces stress' }
+                ];
+            }
+
+            // Limit to top nudges and build compact ticker items
+            const tickerNudges = nudges.slice(0, 8);
+
+            const tickerItems = tickerNudges.map(nudge => `
+                <div class="ticker-item ticker-${Utils.escapeHtml(nudge.category)}">
+                    <span class="ticker-icon">${Utils.escapeHtml(nudge.icon)}</span>
+                    <span class="ticker-title">${Utils.escapeHtml(nudge.title)}</span>
+                    <span class="ticker-impact">${Utils.escapeHtml(nudge.impact)}</span>
+                </div>
+            `).join('');
+
+            // Duplicate for seamless loop
+            container.innerHTML = `
+                <div class="nudges-ticker-track">
+                    ${tickerItems}
+                    ${tickerItems}
+                </div>
+            `;
+        },
+
         // Section-specific render for Expenses section
         renderExpenseInsights() {
             const container = document.getElementById('expense-insights');
@@ -3718,11 +3814,14 @@
 
     const App = {
         init() {
+            // Clean up deprecated layout preference
+            localStorage.removeItem('layoutPreference');
+
             App.setupNavigation();
             App.setupEventDelegation();
             App.setupForms();
             Currency.setupSelector();
-            LayoutToggle.init();
+            DashboardActions.init();
             TagSuggestions.setup();
             Income.setupOneTimeToggle();
             Upload.setupDashboard();
@@ -3767,6 +3866,10 @@
             // Set default date
             const dateInput = document.getElementById('expense-date');
             if (dateInput) dateInput.valueAsDate = new Date();
+
+            // Set disclaimer year
+            const yearSpan = document.getElementById('disclaimer-year');
+            if (yearSpan) yearSpan.textContent = new Date().getFullYear();
         },
 
         setupNavigation() {
@@ -3818,6 +3921,7 @@
                     case 'reset-expenses': Expenses.reset(); break;
                     case 'reset-debts': Debts.reset(); break;
                     case 'reset-investments': Investments.reset(); break;
+                    case 'switch-dashboard-action': DashboardActions.switchTab(target.dataset.dashboardAction); break;
                 }
             });
         },

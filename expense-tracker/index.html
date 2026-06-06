@@ -17,11 +17,6 @@
                 <h1>FinanceTracker</h1>
             </div>
             <div class="mobile-header-controls">
-                <div class="layout-toggle-mini">
-                    <button id="layout-toggle-mobile" class="layout-toggle-btn" aria-label="Switch layout" data-tooltip="Switch to mobile layout">
-                        <span class="toggle-icon">📱</span>
-                    </button>
-                </div>
                 <div class="currency-selector-mobile">
                     <select id="currency-select-mobile" aria-label="Select currency">
                         <option value="USD">$ USD</option>
@@ -98,23 +93,108 @@
                         <option value="NPR">&#8360; NPR</option>
                     </select>
                 </div>
-                <!-- Layout Toggle -->
-                <div class="layout-toggle">
-                    <label class="layout-toggle-label">Layout</label>
-                    <div class="toggle-switch-container">
-                        <button id="layout-toggle-desktop" class="toggle-switch" aria-label="Toggle between web and mobile layout">
-                            <span class="toggle-option active" data-layout="web">🖥️ Web</span>
-                            <span class="toggle-option" data-layout="mobile">📱 Mobile</span>
-                        </button>
-                    </div>
-                </div>
             </nav>
         </header>
 
         <main id="main-content">
+        <!-- Global Smart Nudges Ticker -->
+        <div class="nudges-ticker" id="nudges-ticker" aria-label="Smart financial nudges"></div>
+
         <!-- Dashboard Section -->
         <section id="dashboard" class="section active" role="tabpanel" aria-labelledby="tab-dashboard">
             <h2>Financial Dashboard</h2>
+
+            <!-- Quick Add Panel -->
+            <div class="card quick-add-card">
+                <div class="quick-add-tabs" role="tablist">
+                    <button class="quick-add-tab active" data-action="switch-dashboard-action" data-dashboard-action="expense" role="tab" aria-selected="true">
+                        <span class="tab-icon" aria-hidden="true">💸</span> Expense
+                    </button>
+                    <button class="quick-add-tab" data-action="switch-dashboard-action" data-dashboard-action="income" role="tab" aria-selected="false">
+                        <span class="tab-icon" aria-hidden="true">💵</span> Income
+                    </button>
+                    <button class="quick-add-tab" data-action="switch-dashboard-action" data-dashboard-action="upload" role="tab" aria-selected="false">
+                        <span class="tab-icon" aria-hidden="true">📤</span> Upload
+                    </button>
+                </div>
+
+                <!-- Expense Tab Panel -->
+                <div class="quick-add-panel" id="quick-add-expense" role="tabpanel">
+                    <form id="dashboard-expense-form" class="quick-add-form">
+                        <div class="quick-add-row">
+                            <input type="text" id="dash-expense-desc" placeholder="Description" required>
+                            <input type="number" id="dash-expense-amount" step="0.01" min="0" placeholder="Amount" required>
+                            <select id="dash-expense-category" required>
+                                <option value="">Category</option>
+                                <option value="housing">Housing</option>
+                                <option value="transportation">Transportation</option>
+                                <option value="food">Food & Groceries</option>
+                                <option value="utilities">Utilities</option>
+                                <option value="healthcare">Healthcare</option>
+                                <option value="entertainment">Entertainment</option>
+                                <option value="shopping">Shopping</option>
+                                <option value="education">Education</option>
+                                <option value="personal">Personal Care</option>
+                                <option value="other">Other</option>
+                            </select>
+                            <input type="date" id="dash-expense-date" required>
+                            <button type="submit" class="btn btn-primary btn-compact">Add</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Income Tab Panel -->
+                <div class="quick-add-panel hidden" id="quick-add-income" role="tabpanel">
+                    <form id="dashboard-income-form" class="quick-add-form">
+                        <div class="quick-add-row">
+                            <input type="text" id="dash-income-source" placeholder="Income Source" required>
+                            <input type="number" id="dash-income-amount" step="0.01" min="0" placeholder="Amount" required>
+                            <select id="dash-income-type" required>
+                                <option value="">Type</option>
+                                <option value="salary">Salary</option>
+                                <option value="hourly">Hourly Wages</option>
+                                <option value="freelance">Freelance/Contract</option>
+                                <option value="business">Business Income</option>
+                                <option value="investment">Investment Income</option>
+                                <option value="rental">Rental Income</option>
+                                <option value="bonus">Bonus</option>
+                                <option value="gift">Gift/Windfall</option>
+                                <option value="tax-refund">Tax Refund</option>
+                                <option value="other">Other</option>
+                            </select>
+                            <input type="month" id="dash-income-month" required>
+                            <button type="submit" class="btn btn-primary btn-compact">Add</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Upload Tab Panel -->
+                <div class="quick-add-panel hidden" id="quick-add-upload" role="tabpanel">
+                    <p class="upload-description">Drop your expense report or payslip to auto-import. Personal details are automatically redacted.</p>
+                    <div class="quick-upload-row">
+                        <div class="upload-zone upload-zone-compact" id="dashboard-upload-zone">
+                            <div class="upload-icon" aria-hidden="true">📄</div>
+                            <p>Drop file here</p>
+                            <p class="upload-or">or</p>
+                            <label class="btn btn-secondary upload-btn">
+                                Browse Files
+                                <input type="file" id="dashboard-file-input" accept=".csv,.xlsx,.xls,.pdf,.png,.jpg,.jpeg" hidden>
+                            </label>
+                        </div>
+                        <div class="quick-upload-results" id="dashboard-upload-results">
+                            <div class="anonymize-notice">
+                                <span class="lock-icon" aria-hidden="true">🔒</span>
+                                <div>
+                                    <strong>Privacy Protected</strong>
+                                    <p>Names, accounts, SSNs, and card numbers are automatically anonymized.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="upload-preview" id="dashboard-upload-preview"></div>
+                </div>
+            </div>
+
             <div class="dashboard-grid">
                 <div class="card summary-card income" data-tooltip="Your total recurring monthly income from all sources like salary, freelance, etc.">
                     <h3>Monthly Income</h3>
@@ -135,6 +215,28 @@
                     <h3>Net Savings</h3>
                     <p class="amount" id="net-savings">$0.00</p>
                     <span class="trend">Available to invest</span>
+                </div>
+            </div>
+
+            <!-- Stats Ticker -->
+            <div class="card stats-ticker-card">
+                <div class="stats-ticker" id="stats-ticker">
+                    <div class="ticker-stat">
+                        <span class="ticker-label">Expense/day</span>
+                        <span class="ticker-value" id="expense-per-day">$0.00</span>
+                    </div>
+                    <div class="ticker-stat">
+                        <span class="ticker-label">Expense/hour</span>
+                        <span class="ticker-value" id="expense-per-hour">$0.00</span>
+                    </div>
+                    <div class="ticker-stat">
+                        <span class="ticker-label">Income/day</span>
+                        <span class="ticker-value" id="income-per-day">$0.00</span>
+                    </div>
+                    <div class="ticker-stat">
+                        <span class="ticker-label">Income/hour</span>
+                        <span class="ticker-value" id="income-per-hour">$0.00</span>
+                    </div>
                 </div>
             </div>
 
@@ -190,15 +292,6 @@
                 </div>
             </div>
 
-            <!-- Smart Nudges Section -->
-            <div class="card nudges-card">
-                <h3 data-tooltip="Behavioral finance insights from Psychology of Money, Just Keep Buying, and research by Gigerenzer & Taleb. Personalized to your financial situation.">💡 Smart Nudges</h3>
-                <p class="nudges-subtitle">Behavioral finance insights to build wealth and reduce fragility</p>
-                <div id="nudges-list" class="nudges-list">
-                    <p class="empty-state">Add your financial data to receive personalized insights from behavioral finance research.</p>
-                </div>
-            </div>
-
             <div class="card forecast-card">
                 <h3>Annual Financial Forecast</h3>
                 <div id="financial-forecast">
@@ -228,30 +321,9 @@
                 </div>
             </div>
 
-            <div class="card quick-upload-card">
-                <h3>Quick Import</h3>
-                <p class="upload-description">Upload your expense report or payslip to auto-import transactions. Personal details (names, account numbers) are automatically redacted.</p>
-                <div class="quick-upload-row">
-                    <div class="upload-zone upload-zone-compact" id="dashboard-upload-zone">
-                        <div class="upload-icon" aria-hidden="true">📄</div>
-                        <p>Drop expense report or payslip here</p>
-                        <p class="upload-or">or</p>
-                        <label class="btn btn-secondary upload-btn">
-                            Browse Files
-                            <input type="file" id="dashboard-file-input" accept=".csv,.xlsx,.xls,.pdf,.png,.jpg,.jpeg" hidden>
-                        </label>
-                    </div>
-                    <div class="quick-upload-results" id="dashboard-upload-results">
-                        <div class="anonymize-notice">
-                            <span class="lock-icon" aria-hidden="true">🔒</span>
-                            <div>
-                                <strong>Privacy Protected</strong>
-                                <p>Names, bank accounts, SSNs, and card numbers are automatically anonymized before processing.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="upload-preview" id="dashboard-upload-preview"></div>
+            <!-- Compact Disclaimer -->
+            <div class="dashboard-disclaimer">
+                <small>&copy; <span id="disclaimer-year"></span> FinanceTracker &bull; Not professional financial advice</small>
             </div>
         </section>
 
@@ -859,10 +931,6 @@
             </div>
         </section>
         </main>
-
-        <footer>
-            <p>&copy; <script>document.write(new Date().getFullYear())</script> FinanceTracker. All rights reserved. This tool provides general financial guidance and should not be considered professional financial advice.</p>
-        </footer>
     </div><!-- /.app-container -->
 
     <div id="toast-container" aria-live="polite" aria-atomic="true"></div>

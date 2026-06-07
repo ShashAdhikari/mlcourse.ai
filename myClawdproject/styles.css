@@ -279,10 +279,13 @@ header {
     }
 
     .nav-links a.active {
-        background: var(--secondary-light);
-        color: var(--secondary-color);
+        background: var(--secondary-color);
+        color: var(--text-inverse);
         font-weight: 600;
-        color: white;
+    }
+
+    .nav-links a.active .nav-icon {
+        filter: none;
     }
 
     .nav-links a .nav-icon {
@@ -734,6 +737,13 @@ h2 {
     overflow: hidden;
     padding: var(--space-2) 0;
     position: relative;
+    border-radius: var(--border-radius);
+    margin-bottom: var(--space-8);
+}
+
+/* Hide the ticker entirely when it has no content so it never leaves an empty gap */
+.nudges-ticker:empty {
+    display: none;
 }
 
 .nudges-ticker-track {

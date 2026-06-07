@@ -737,6 +737,331 @@
         }
     };
 
+    // ==================== INVESTMENT PARSER ====================
+
+    const InvestmentParser = {
+        pending: [],
+
+        investmentTypes: {
+            '401k': '401(k)',
+            'ira': 'IRA',
+            'roth': 'Roth IRA',
+            'roth-ira': 'Roth IRA',
+            'brokerage': 'Brokerage',
+            'etf': 'ETF',
+            'stock': 'Stocks',
+            'stocks': 'Stocks',
+            'bond': 'Bonds',
+            'bonds': 'Bonds',
+            'mutual': 'Mutual Fund',
+            'fund': 'Mutual Fund',
+            'crypto': 'Crypto',
+            'savings': 'Savings',
+            'other': 'Other'
+        },
+
+        detectColumns(headers) {
+            const lower = headers.map(h => String(h).toLowerCase().trim());
+            const result = { name: -1, symbol: -1, shares: -1, price: -1, value: -1, type: -1, gain: -1 };
+            const assigned = new Set();
+
+            // Pass 1: Symbol/Ticker
+            for (let i = 0; i < lower.length; i++) {
+                if (/\b(ticker|symbol)\b/.test(lower[i])) {
+                    result.symbol = i; assigned.add(i); break;
+                }
+            }
+
+            // Pass 2: Name/Description
+            for (let i = 0; i < lower.length; i++) {
+                if (assigned.has(i)) continue;
+                if (/\b(name|description|security|holding|investment)\b/.test(lower[i])) {
+                    result.name = i; assigned.add(i); break;
+                }
+            }
+
+            // Pass 3: Shares/Quantity
+            for (let i = 0; i < lower.length; i++) {
+                if (assigned.has(i)) continue;
+                if (/\b(shares|units|quantity|qty)\b/.test(lower[i])) {
+                    result.shares = i; assigned.add(i); break;
+                }
+            }
+
+            // Pass 4: Price
+            for (let i = 0; i < lower.length; i++) {
+                if (assigned.has(i)) continue;
+                if (/\b(price|cost|basis)\b/.test(lower[i]) && !/\b(total|value|gain)\b/.test(lower[i])) {
+                    result.price = i; assigned.add(i); break;
+                }
+            }
+
+            // Pass 5: Value/Amount
+            for (let i = 0; i < lower.length; i++) {
+                if (assigned.has(i)) continue;
+                if (/\b(value|amount|total|market)\b/.test(lower[i])) {
+                    result.value = i; assigned.add(i); break;
+                }
+            }
+
+            // Pass 6: Type/Category
+            for (let i = 0; i < lower.length; i++) {
+                if (assigned.has(i)) continue;
+                if (/\b(type|category|asset|class)\b/.test(lower[i])) {
+                    result.type = i; assigned.add(i); break;
+                }
+            }
+
+            // Pass 7: Gain/Return
+            for (let i = 0; i < lower.length; i++) {
+                if (assigned.has(i)) continue;
+                if (/\b(gain|loss|return|change|profit)\b/.test(lower[i])) {
+                    result.gain = i; assigned.add(i); break;
+                }
+            }
+
+            return result;
+        },
+
+        autoDetectType(text) {
+            if (!text) return 'other';
+            const lower = String(text).toLowerCase();
+
+            for (const [keyword, type] of Object.entries(InvestmentParser.investmentTypes)) {
+                if (lower.includes(keyword)) {
+                    return keyword === '401k' ? '401k' :
+                           keyword.includes('roth') ? 'roth-ira' :
+                           keyword === 'stocks' || keyword === 'stock' ? 'stocks' :
+                           keyword === 'bonds' || keyword === 'bond' ? 'bonds' :
+                           keyword === 'mutual' || keyword === 'fund' ? 'mutual-fund' :
+                           keyword;
+                }
+            }
+
+            // Check for common ETF tickers
+            if (/^(SPY|VOO|VTI|QQQ|IWM|VT|BND|VNQ)\b/i.test(text)) return 'etf';
+            // Check for crypto
+            if (/^(BTC|ETH|DOGE|ADA|SOL|XRP)\b/i.test(text)) return 'crypto';
+
+            return 'stocks'; // Default to stocks for unrecognized
+        },
+
+        parseRows(rows) {
+            if (rows.length < 2) return [];
+
+            // Find best header row (first 5 rows)
+            let bestHeaderIdx = 0;
+            let bestScore = 0;
+            for (let i = 0; i < Math.min(5, rows.length); i++) {
+                const headers = rows[i];
+                const cols = InvestmentParser.detectColumns(headers);
+                let score = 0;
+                if (cols.name !== -1 || cols.symbol !== -1) score += 2;
+                if (cols.value !== -1) score += 2;
+                if (cols.shares !== -1) score += 1;
+                if (cols.type !== -1) score += 1;
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestHeaderIdx = i;
+                }
+            }
+
+            const headers = rows[bestHeaderIdx];
+            const cols = InvestmentParser.detectColumns(headers);
+            const investments = [];
+
+            // Parse data rows
+            for (let i = bestHeaderIdx + 1; i < rows.length; i++) {
+                const row = rows[i];
+                if (!row || row.length === 0) continue;
+
+                // Get name from symbol or name column
+                let name = '';
+                if (cols.symbol !== -1 && row[cols.symbol]) {
+                    name = String(row[cols.symbol]).trim();
+                }
+                if (cols.name !== -1 && row[cols.name]) {
+                    const nameVal = String(row[cols.name]).trim();
+                    name = name ? `${name} - ${nameVal}` : nameVal;
+                }
+                if (!name && row[0]) {
+                    name = String(row[0]).trim(); // Fallback to first column
+                }
+
+                // Get value
+                let value = 0;
+                if (cols.value !== -1) {
+                    value = Parser.parseAmount(row[cols.value]) || 0;
+                } else if (cols.shares !== -1 && cols.price !== -1) {
+                    const shares = Parser.parseAmount(row[cols.shares]) || 0;
+                    const price = Parser.parseAmount(row[cols.price]) || 0;
+                    value = shares * price;
+                }
+
+                // Skip rows without meaningful data
+                if (!name || value <= 0) continue;
+
+                // Get type
+                let type = 'stocks';
+                if (cols.type !== -1 && row[cols.type]) {
+                    type = InvestmentParser.autoDetectType(row[cols.type]);
+                } else {
+                    type = InvestmentParser.autoDetectType(name);
+                }
+
+                investments.push({
+                    id: Utils.generateId(),
+                    name: name,
+                    value: value,
+                    type: type,
+                    shares: cols.shares !== -1 ? Parser.parseAmount(row[cols.shares]) : null,
+                    price: cols.price !== -1 ? Parser.parseAmount(row[cols.price]) : null,
+                    gain: cols.gain !== -1 ? Parser.parseAmount(row[cols.gain]) : null,
+                    selected: true
+                });
+            }
+
+            return investments;
+        },
+
+        typeOptionsHtml(selectedType) {
+            const types = [
+                { value: '401k', label: '401(k)' },
+                { value: 'ira', label: 'IRA' },
+                { value: 'roth-ira', label: 'Roth IRA' },
+                { value: 'brokerage', label: 'Brokerage' },
+                { value: 'etf', label: 'ETF' },
+                { value: 'stocks', label: 'Stocks' },
+                { value: 'bonds', label: 'Bonds' },
+                { value: 'mutual-fund', label: 'Mutual Fund' },
+                { value: 'crypto', label: 'Crypto' },
+                { value: 'savings', label: 'Savings' },
+                { value: 'other', label: 'Other' }
+            ];
+            return types.map(t =>
+                `<option value="${t.value}"${t.value === selectedType ? ' selected' : ''}>${t.label}</option>`
+            ).join('');
+        },
+
+        render(investments) {
+            InvestmentParser.pending = investments;
+            const card = document.getElementById('parsed-investments-card');
+            const tableContainer = document.getElementById('parsed-investments-table');
+            const countEl = document.getElementById('parsed-investments-count');
+            if (!card || !tableContainer) return;
+
+            if (investments.length === 0) {
+                card.style.display = 'none';
+                return;
+            }
+            card.style.display = '';
+
+            // Build header
+            const headerHtml = '<th><input type="checkbox" id="select-all-investments" checked></th>' +
+                '<th>Name/Symbol</th><th>Value</th><th>Shares</th><th>Type</th>';
+
+            // Build rows
+            let rowsHtml = '';
+            investments.forEach((inv, idx) => {
+                rowsHtml += '<tr>';
+                rowsHtml += `<td><input type="checkbox" data-inv-idx="${idx}" ${inv.selected ? 'checked' : ''}></td>`;
+                rowsHtml += `<td>${Utils.escapeHtml(inv.name)}</td>`;
+                rowsHtml += `<td class="value-col">${Currency.format(inv.value)}</td>`;
+                rowsHtml += `<td>${inv.shares ? inv.shares.toFixed(2) : '-'}</td>`;
+                rowsHtml += `<td><select class="parsed-inv-type" data-inv-type-idx="${idx}">${InvestmentParser.typeOptionsHtml(inv.type)}</select></td>`;
+                rowsHtml += '</tr>';
+            });
+
+            tableContainer.innerHTML = `
+                <div class="parsed-table-wrapper">
+                    <table class="analytics-table parsed-table">
+                        <thead><tr>${headerHtml}</tr></thead>
+                        <tbody>${rowsHtml}</tbody>
+                    </table>
+                </div>`;
+
+            // Select-all checkbox
+            const selectAll = document.getElementById('select-all-investments');
+            if (selectAll) {
+                selectAll.addEventListener('change', () => {
+                    investments.forEach(inv => { inv.selected = selectAll.checked; });
+                    tableContainer.querySelectorAll('input[data-inv-idx]').forEach(cb => {
+                        cb.checked = selectAll.checked;
+                    });
+                    InvestmentParser.updateCount();
+                });
+            }
+
+            // Row checkboxes
+            tableContainer.querySelectorAll('input[data-inv-idx]').forEach(cb => {
+                cb.addEventListener('change', () => {
+                    const idx = parseInt(cb.dataset.invIdx);
+                    investments[idx].selected = cb.checked;
+                    const checked = investments.filter(inv => inv.selected).length;
+                    if (selectAll) {
+                        selectAll.checked = checked === investments.length;
+                        selectAll.indeterminate = checked > 0 && checked < investments.length;
+                    }
+                    InvestmentParser.updateCount();
+                });
+            });
+
+            // Type selects
+            tableContainer.querySelectorAll('select[data-inv-type-idx]').forEach(sel => {
+                sel.addEventListener('change', () => {
+                    const idx = parseInt(sel.dataset.invTypeIdx);
+                    investments[idx].type = sel.value;
+                });
+            });
+
+            InvestmentParser.updateCount();
+        },
+
+        updateCount() {
+            const countEl = document.getElementById('parsed-investments-count');
+            if (!countEl) return;
+            const selected = InvestmentParser.pending.filter(inv => inv.selected).length;
+            countEl.textContent = `${selected} of ${InvestmentParser.pending.length} selected for import`;
+        },
+
+        import() {
+            const toImport = InvestmentParser.pending.filter(inv => inv.selected);
+            if (toImport.length === 0) {
+                Notify.show('No investments selected for import', 'warning');
+                return;
+            }
+
+            const today = new Date().toISOString().split('T')[0];
+            toImport.forEach(inv => {
+                State.data.investments.push({
+                    id: Utils.generateId(),
+                    name: inv.name,
+                    value: inv.value,
+                    type: inv.type,
+                    expectedReturn: null,
+                    startDate: today,
+                    status: 'active'
+                });
+            });
+            State.save('investments');
+
+            InvestmentParser.pending = [];
+            const parsedCard = document.getElementById('parsed-investments-card');
+            if (parsedCard) parsedCard.style.display = 'none';
+
+            Investments.render();
+            Dashboard.update();
+            Notify.show(toImport.length + ' investments imported', 'success');
+        },
+
+        discard() {
+            InvestmentParser.pending = [];
+            const parsedCard = document.getElementById('parsed-investments-card');
+            if (parsedCard) parsedCard.style.display = 'none';
+            Notify.show('Parsed investments discarded', 'info');
+        }
+    };
+
     // ==================== BUDGET ====================
 
     const Budget = {
@@ -2157,6 +2482,7 @@
     const Upload = {
         sampleExpensesAdded: localStorage.getItem('sampleExpensesAdded') === 'true',
         sampleIncomeAdded: localStorage.getItem('sampleIncomeAdded') === 'true',
+        sampleInvestmentsAdded: localStorage.getItem('sampleInvestmentsAdded') === 'true',
 
         setupZone(zoneId, inputId, previewId, type) {
             const zone = document.getElementById(zoneId);
@@ -2215,6 +2541,54 @@
             }
 
             const ext = file.name.split('.').pop().toLowerCase();
+
+            // Route investment files to InvestmentParser
+            if (type === 'investment') {
+                if (ext === 'csv') {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const rows = Parser.parseCSV(e.target.result);
+                        const investments = InvestmentParser.parseRows(rows.map(t => [t.date, t.description, t.amount, t.category]));
+                        // Re-parse directly from CSV
+                        const lines = e.target.result.split(/\r?\n/).filter(l => l.trim());
+                        const delimiter = [',', '\t', ';', '|'].find(d => lines[0].includes(d)) || ',';
+                        const csvRows = lines.map(line => line.split(delimiter).map(cell => cell.trim().replace(/^["']|["']$/g, '')));
+                        const parsedInvestments = InvestmentParser.parseRows(csvRows);
+                        Upload.finishInvestmentProcessing(upload, file, parsedInvestments, previewContainer);
+                    };
+                    reader.readAsText(file);
+                } else if (ext === 'xlsx' || ext === 'xls') {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        if (typeof XLSX === 'undefined') {
+                            Notify.show('Excel support not available', 'error');
+                            return;
+                        }
+                        const workbook = XLSX.read(e.target.result, { type: 'array' });
+                        const sheetName = workbook.SheetNames[0];
+                        const sheet = workbook.Sheets[sheetName];
+                        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+                        const investments = InvestmentParser.parseRows(rows);
+                        Upload.finishInvestmentProcessing(upload, file, investments, previewContainer);
+                    };
+                    reader.readAsArrayBuffer(file);
+                } else {
+                    // Add sample investments for unsupported formats
+                    Upload.addSampleInvestments();
+                    upload.status = 'success';
+                    State.save('uploads');
+                    Upload.renderHistory();
+                    if (previewContainer) {
+                        const statusEl = previewContainer.querySelector('.file-status');
+                        if (statusEl) {
+                            statusEl.className = 'file-status success';
+                            statusEl.textContent = 'Sample data added';
+                        }
+                    }
+                    Notify.show('Sample investment data added', 'success');
+                }
+                return;
+            }
 
             if (ext === 'csv') {
                 const reader = new FileReader();
@@ -2390,6 +2764,62 @@
             Income.render();
             Dashboard.update();
             Notify.show('Projections updated with new income data', 'success');
+        },
+
+        finishInvestmentProcessing(upload, file, investments, previewContainer) {
+            upload.status = 'success';
+            upload.transactionCount = investments.length;
+            State.save('uploads');
+            Upload.renderHistory();
+
+            if (previewContainer) {
+                const statusEl = previewContainer.querySelector('.file-status');
+                if (statusEl) {
+                    statusEl.className = 'file-status success';
+                    statusEl.textContent = investments.length + ' holdings found';
+                }
+            }
+
+            if (investments.length > 0) {
+                InvestmentParser.render(investments);
+                const uploadTab = document.querySelector('[href="#upload"]');
+                if (uploadTab && !document.getElementById('upload').classList.contains('active')) {
+                    uploadTab.click();
+                }
+                Notify.show(investments.length + ' investment holdings parsed from ' + file.name, 'success');
+            } else {
+                Notify.show('No investment holdings found in ' + file.name, 'warning');
+            }
+        },
+
+        addSampleInvestments() {
+            if (Upload.sampleInvestmentsAdded) return;
+
+            const samples = [
+                { name: 'S&P 500 Index Fund (VOO)', value: 15000, type: 'etf' },
+                { name: 'Total Bond Market (BND)', value: 5000, type: 'bonds' },
+                { name: 'International Stocks (VXUS)', value: 3000, type: 'etf' },
+                { name: 'Tech Growth ETF (QQQ)', value: 4500, type: 'etf' },
+                { name: 'Real Estate Investment (VNQ)', value: 2500, type: 'real-estate' }
+            ];
+
+            const today = new Date().toISOString().split('T')[0];
+            samples.forEach(s => {
+                State.data.investments.push({
+                    id: Utils.generateId(),
+                    name: s.name,
+                    value: s.value,
+                    type: s.type,
+                    expectedReturn: null,
+                    startDate: today,
+                    status: 'active'
+                });
+            });
+            State.save('investments');
+            Upload.sampleInvestmentsAdded = true;
+            localStorage.setItem('sampleInvestmentsAdded', 'true');
+            Investments.render();
+            Dashboard.update();
         }
     };
 
@@ -2423,6 +2853,8 @@
             Dashboard.updateHealthScore(totalIncome, totalExpenses, totalDebt, netSavings);
             Dashboard.updateFinancialRatios(totalIncome, totalExpenses, totalDebt, totalInvestments);
             Dashboard.updateExpenseChart();
+            Dashboard.updateInvestmentChart();
+            Dashboard.updateCashflowChart();
             Dashboard.renderFinancialForecast();
             Dashboard.renderMonthlyAnalytics();
             Dashboard.renderYearlyProjection();
@@ -2661,6 +3093,243 @@
                     animation: {
                         animateRotate: true,
                         animateScale: true
+                    }
+                }
+            });
+        },
+
+        investmentChart: null,
+
+        updateInvestmentChart() {
+            const ctx = document.getElementById('investment-chart');
+            const emptyState = document.getElementById('investment-chart-empty');
+            if (!ctx) return;
+
+            const investments = State.data.investments;
+            if (investments.length === 0) {
+                if (Dashboard.investmentChart) {
+                    Dashboard.investmentChart.destroy();
+                    Dashboard.investmentChart = null;
+                }
+                if (emptyState) emptyState.style.display = 'block';
+                ctx.style.display = 'none';
+                return;
+            }
+
+            if (emptyState) emptyState.style.display = 'none';
+            ctx.style.display = 'block';
+
+            // Group by type
+            const byType = {};
+            investments.forEach(inv => {
+                const type = inv.type || 'other';
+                byType[type] = (byType[type] || 0) + inv.value;
+            });
+
+            const typeLabels = {
+                '401k': '401(k)', 'ira': 'IRA', 'roth-ira': 'Roth IRA',
+                'stocks': 'Stocks', 'etf': 'ETFs', 'etfs': 'ETFs',
+                'bonds': 'Bonds', 'mutual-fund': 'Mutual Funds', 'mutual-funds': 'Mutual Funds',
+                'real-estate': 'Real Estate', 'crypto': 'Crypto',
+                'savings': 'Savings', 'fd': 'Fixed Deposit', 'ppf': 'PPF',
+                'nps': 'NPS', 'gold': 'Gold', 'other': 'Other'
+            };
+
+            const colorMap = {
+                '401k': '#3b82f6', 'ira': '#6366f1', 'roth-ira': '#8b5cf6',
+                'stocks': '#10b981', 'etf': '#14b8a6', 'etfs': '#14b8a6',
+                'bonds': '#f59e0b', 'mutual-fund': '#f97316', 'mutual-funds': '#f97316',
+                'real-estate': '#ec4899', 'crypto': '#a855f7',
+                'savings': '#64748b', 'fd': '#0ea5e9', 'ppf': '#22d3ee',
+                'nps': '#84cc16', 'gold': '#eab308', 'other': '#94a3b8'
+            };
+
+            const types = Object.keys(byType);
+            const labels = types.map(t => typeLabels[t] || t);
+            const data = Object.values(byType);
+            const colors = types.map(t => colorMap[t] || '#64748b');
+
+            if (Dashboard.investmentChart) Dashboard.investmentChart.destroy();
+
+            Dashboard.investmentChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels,
+                    datasets: [{
+                        data,
+                        backgroundColor: colors,
+                        borderWidth: 3,
+                        borderColor: '#ffffff',
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '55%',
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                padding: 12,
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                                font: { size: 11, weight: '500' }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                            padding: 12,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const pct = ((context.raw / total) * 100).toFixed(1);
+                                    return ` ${Currency.format(context.raw)} (${pct}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        },
+
+        cashflowChart: null,
+
+        updateCashflowChart() {
+            const ctx = document.getElementById('cashflow-chart');
+            const emptyState = document.getElementById('cashflow-chart-empty');
+            if (!ctx) return;
+
+            const expenses = State.data.expenses;
+            const incomes = State.data.incomes;
+
+            if (expenses.length === 0 && incomes.length === 0) {
+                if (Dashboard.cashflowChart) {
+                    Dashboard.cashflowChart.destroy();
+                    Dashboard.cashflowChart = null;
+                }
+                if (emptyState) emptyState.style.display = 'block';
+                ctx.style.display = 'none';
+                return;
+            }
+
+            if (emptyState) emptyState.style.display = 'none';
+            ctx.style.display = 'block';
+
+            // Get last 6 months
+            const now = new Date();
+            const months = [];
+            for (let i = 5; i >= 0; i--) {
+                const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+            }
+
+            // Calculate expenses per month
+            const expenseByMonth = {};
+            expenses.forEach(exp => {
+                const key = exp.monthKey || (exp.date ? exp.date.substring(0, 7) : null);
+                if (key) expenseByMonth[key] = (expenseByMonth[key] || 0) + exp.amount;
+            });
+
+            // Calculate income per month
+            const incomeByMonth = {};
+            months.forEach(monthKey => {
+                incomeByMonth[monthKey] = Dashboard.getMonthlyIncome(monthKey);
+            });
+
+            const expenseData = months.map(m => expenseByMonth[m] || 0);
+            const incomeData = months.map(m => incomeByMonth[m] || 0);
+            const savingsData = months.map((m, i) => incomeData[i] - expenseData[i]);
+
+            const monthLabels = months.map(m => {
+                const [year, month] = m.split('-');
+                const date = new Date(year, parseInt(month) - 1, 1);
+                return date.toLocaleDateString('en-US', { month: 'short' });
+            });
+
+            if (Dashboard.cashflowChart) Dashboard.cashflowChart.destroy();
+
+            Dashboard.cashflowChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: monthLabels,
+                    datasets: [
+                        {
+                            label: 'Income',
+                            data: incomeData,
+                            backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                            borderColor: '#10b981',
+                            borderWidth: 1,
+                            borderRadius: 4,
+                            order: 2
+                        },
+                        {
+                            label: 'Expenses',
+                            data: expenseData,
+                            backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                            borderColor: '#ef4444',
+                            borderWidth: 1,
+                            borderRadius: 4,
+                            order: 2
+                        },
+                        {
+                            label: 'Net Savings',
+                            data: savingsData,
+                            type: 'line',
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderWidth: 3,
+                            pointBackgroundColor: '#3b82f6',
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 2,
+                            pointRadius: 5,
+                            fill: true,
+                            tension: 0.3,
+                            order: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                padding: 16,
+                                usePointStyle: true,
+                                font: { size: 12, weight: '500' }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                            padding: 12,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    return ` ${context.dataset.label}: ${Currency.format(context.raw, true)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(148, 163, 184, 0.1)' },
+                            ticks: {
+                                callback: function(value) {
+                                    return Currency.format(value);
+                                }
+                            }
+                        }
                     }
                 }
             });
@@ -3409,8 +4078,20 @@
             // 5. Emergency fund nudges
             nudges.push(...Nudges.getEmergencyFundNudges(data, profile));
 
-            // Sort by priority and return top 5
-            return nudges.sort((a, b) => b.priority - a.priority).slice(0, 5);
+            // 6. Portfolio diversification nudges
+            nudges.push(...Nudges.getPortfolioDiversificationNudges(data, profile));
+
+            // 7. Expense trend nudges
+            nudges.push(...Nudges.getExpenseTrendNudges(data, profile));
+
+            // 8. Cash flow analysis nudges
+            nudges.push(...Nudges.getCashFlowNudges(data, profile));
+
+            // 9. Milestone celebration nudges
+            nudges.push(...Nudges.getMilestoneNudges(data, profile));
+
+            // Sort by priority and return top 8 (increased for richer insights)
+            return nudges.sort((a, b) => b.priority - a.priority).slice(0, 8);
         },
 
         getScoreNudges(data, profile) {
@@ -3644,6 +4325,233 @@
             return nudges;
         },
 
+        getPortfolioDiversificationNudges(data, profile) {
+            const nudges = [];
+            const investments = State.data.investments;
+            if (investments.length === 0) return nudges;
+
+            // Analyze portfolio composition by type
+            const byType = {};
+            let totalValue = 0;
+            investments.forEach(inv => {
+                const type = inv.type || 'other';
+                byType[type] = (byType[type] || 0) + inv.value;
+                totalValue += inv.value;
+            });
+
+            if (totalValue === 0) return nudges;
+
+            // Check for concentration risk (>50% in one type)
+            const entries = Object.entries(byType).sort((a, b) => b[1] - a[1]);
+            const topType = entries[0];
+            const topPct = (topType[1] / totalValue) * 100;
+
+            if (topPct > 60) {
+                nudges.push({
+                    icon: '⚠️',
+                    category: 'investment',
+                    title: `High concentration in ${topType[0]}`,
+                    description: `${topPct.toFixed(0)}% of your portfolio is in ${topType[0]}. Diversification reduces risk without necessarily reducing returns.`,
+                    impact: 'Consider the 1/N rule: divide resources equally across asset classes',
+                    wisdom: Nudges.getWisdomForContext('investment', 'diversification'),
+                    priority: 78
+                });
+            } else if (entries.length >= 3) {
+                nudges.push({
+                    icon: '✅',
+                    category: 'investment',
+                    title: 'Good diversification',
+                    description: `Portfolio spread across ${entries.length} asset types. The largest (${topType[0]}) is ${topPct.toFixed(0)}% — reasonable concentration.`,
+                    impact: 'Maintain this balance as you add investments',
+                    priority: 35
+                });
+            }
+
+            // Check for missing asset classes
+            const hasStocks = byType['stocks'] || byType['etf'] || byType['mutual-fund'];
+            const hasBonds = byType['bonds'];
+            const hasRealEstate = byType['real-estate'];
+
+            if (totalValue > 5000 && !hasBonds && hasStocks) {
+                nudges.push({
+                    icon: '📊',
+                    category: 'investment',
+                    title: 'Consider bonds for stability',
+                    description: `All-equity portfolio. Adding bonds reduces volatility and provides income. Even 10-20% can smooth out rough patches.`,
+                    impact: 'Barbell: stocks for growth, bonds for stability',
+                    wisdom: Nudges.getWisdomForContext('investment', 'bonds'),
+                    priority: 55
+                });
+            }
+
+            return nudges;
+        },
+
+        getExpenseTrendNudges(data, profile) {
+            const nudges = [];
+            const expenses = State.data.expenses;
+            if (expenses.length < 5) return nudges;
+
+            // Group expenses by month
+            const byMonth = {};
+            expenses.forEach(exp => {
+                const monthKey = exp.date ? exp.date.substring(0, 7) : null;
+                if (!monthKey) return;
+                byMonth[monthKey] = (byMonth[monthKey] || 0) + exp.amount;
+            });
+
+            const months = Object.keys(byMonth).sort().reverse();
+            if (months.length < 2) return nudges;
+
+            const currentMonth = months[0];
+            const lastMonth = months[1];
+            const currentSpend = byMonth[currentMonth];
+            const lastSpend = byMonth[lastMonth];
+
+            if (lastSpend > 0) {
+                const changeRate = ((currentSpend - lastSpend) / lastSpend) * 100;
+
+                if (changeRate > 25) {
+                    nudges.push({
+                        icon: '📈',
+                        category: 'expense',
+                        title: 'Spending up significantly',
+                        description: `${changeRate.toFixed(0)}% increase from last month. Was this intentional? Expectations often grow faster than income.`,
+                        impact: `${Currency.format(currentSpend)} this month vs ${Currency.format(lastSpend)} last month`,
+                        wisdom: Nudges.getWisdomForContext('expense', 'increase'),
+                        priority: 72
+                    });
+                } else if (changeRate < -15) {
+                    nudges.push({
+                        icon: '🎉',
+                        category: 'expense',
+                        title: 'Spending decreased',
+                        description: `${Math.abs(changeRate).toFixed(0)}% reduction from last month. The highest form of wealth is the ability to control your spending.`,
+                        impact: `Saved ${Currency.format(lastSpend - currentSpend)} compared to last month`,
+                        priority: 45
+                    });
+                }
+            }
+
+            // Detect potential recurring subscriptions
+            const categoryTotals = {};
+            expenses.forEach(exp => {
+                categoryTotals[exp.category] = (categoryTotals[exp.category] || 0) + exp.amount;
+            });
+
+            const entertainment = categoryTotals['entertainment'] || 0;
+            if (entertainment > data.income * 0.1 && data.income > 0) {
+                nudges.push({
+                    icon: '🎬',
+                    category: 'expense',
+                    title: 'Entertainment spending review',
+                    description: `${((entertainment / data.income) * 100).toFixed(0)}% of income on entertainment. Check for forgotten subscriptions or auto-renewals.`,
+                    impact: 'Small recurring charges add up over time',
+                    priority: 50
+                });
+            }
+
+            return nudges;
+        },
+
+        getCashFlowNudges(data, profile) {
+            const nudges = [];
+
+            // Negative cash flow warning
+            if (data.savings < 0 && data.income > 0) {
+                const deficit = Math.abs(data.savings);
+                const monthsToZero = data.investments > 0 ? Math.floor(data.investments / deficit) : 0;
+
+                nudges.push({
+                    icon: '🚨',
+                    category: 'expense',
+                    title: 'Cash flow is negative',
+                    description: `Spending ${Currency.format(deficit)} more than earning each month. This isn't sustainable—every month drains your reserves.`,
+                    impact: monthsToZero > 0 ? `At this rate, savings depleted in ~${monthsToZero} months` : 'Cut expenses or increase income urgently',
+                    wisdom: Nudges.getWisdomForContext('expense', 'deficit'),
+                    priority: 98
+                });
+            }
+
+            // Strong positive cash flow
+            if (data.savingsRate > 0.30 && data.income > 0) {
+                nudges.push({
+                    icon: '💪',
+                    category: 'savings',
+                    title: 'Excellent savings rate',
+                    description: `Saving ${(data.savingsRate * 100).toFixed(0)}% of income. This level of discipline accelerates financial independence dramatically.`,
+                    impact: 'You are building options and flexibility',
+                    wisdom: Nudges.getWisdomForContext('savings', 'excellent'),
+                    priority: 30
+                });
+            }
+
+            // Suggest automation if not investing much
+            if (data.savings > 0 && data.investments < data.savings * 2 && data.income > 0) {
+                nudges.push({
+                    icon: '🔄',
+                    category: 'investment',
+                    title: 'Automate your surplus',
+                    description: `${Currency.format(data.savings)}/month available. Set up automatic transfers to investments—remove the human element from the decision.`,
+                    impact: 'Automation beats willpower',
+                    wisdom: Nudges.getWisdomForContext('investment', 'automate'),
+                    priority: 62
+                });
+            }
+
+            return nudges;
+        },
+
+        getMilestoneNudges(data, profile) {
+            const nudges = [];
+
+            // Debt-free milestone
+            if (data.debt === 0 && State.data.debts.length === 0 && data.investments > 0) {
+                nudges.push({
+                    icon: '🏆',
+                    category: 'debt',
+                    title: 'Debt-free achievement',
+                    description: 'You have no debt! This puts you in an excellent position—every dollar you earn is truly yours to keep or invest.',
+                    impact: 'Maximum financial flexibility achieved',
+                    priority: 25
+                });
+            }
+
+            // Investment milestones
+            const investmentMilestones = [1000, 5000, 10000, 25000, 50000, 100000];
+            for (const milestone of investmentMilestones) {
+                if (data.investments >= milestone && data.investments < milestone * 1.2) {
+                    nudges.push({
+                        icon: '🎯',
+                        category: 'investment',
+                        title: `Milestone: ${Currency.format(milestone)} invested`,
+                        description: `You've crossed ${Currency.format(milestone)} in investments. The most powerful force in finance is compound interest—and you've given it fuel.`,
+                        impact: 'Keep buying. Time is your ally now.',
+                        priority: 28
+                    });
+                    break;
+                }
+            }
+
+            // Emergency fund complete
+            const monthlyExpenses = data.expenses;
+            const targetFund = monthlyExpenses * profile.emergencyMonths;
+            const liquidAssets = data.investments * 0.3;
+
+            if (liquidAssets >= targetFund && targetFund > 0) {
+                nudges.push({
+                    icon: '✨',
+                    category: 'emergency',
+                    title: 'Emergency fund secured',
+                    description: `You have ${profile.emergencyMonths}+ months of expenses covered. You can now take more calculated risks with the rest.`,
+                    impact: 'Safety achieved—consider growth investments',
+                    priority: 32
+                });
+            }
+
+            return nudges;
+        },
+
         render() {
             const container = document.getElementById('nudges-list');
             if (!container) return;
@@ -3827,12 +4735,20 @@
             Upload.setupDashboard();
             Upload.setupZone('expense-upload-zone', 'expense-file-input', 'expense-upload-preview', 'expense');
             Upload.setupZone('payslip-upload-zone', 'payslip-file-input', 'payslip-upload-preview', 'payslip');
+            Upload.setupZone('investment-upload-zone', 'investment-file-input', 'investment-upload-preview', 'investment');
+            Upload.setupZone('dashboard-investment-zone', 'dashboard-investment-input', 'dashboard-investment-preview', 'investment');
 
-            // Import/discard buttons
+            // Import/discard buttons for transactions
             const importBtn = document.getElementById('import-all-btn');
             const discardBtn = document.getElementById('discard-parsed-btn');
             if (importBtn) importBtn.addEventListener('click', () => Parser.import());
             if (discardBtn) discardBtn.addEventListener('click', () => Parser.discard());
+
+            // Import/discard buttons for investments
+            const importInvBtn = document.getElementById('import-investments-btn');
+            const discardInvBtn = document.getElementById('discard-investments-btn');
+            if (importInvBtn) importInvBtn.addEventListener('click', () => InvestmentParser.import());
+            if (discardInvBtn) discardInvBtn.addEventListener('click', () => InvestmentParser.discard());
 
             // Initialize budget module
             Budget.init();

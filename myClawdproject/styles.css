@@ -2456,7 +2456,7 @@ h2 {
 .planned-summary-count {
     font-size: var(--font-size-lg);
     font-weight: 600;
-    color: var(--text-color);
+    color: var(--text-primary);
 }
 
 .planned-summary-amount {
@@ -2842,34 +2842,7 @@ h2 {
     color: var(--text-secondary);
 }
 
-/* ==================== CURRENCY SELECTOR ==================== */
-.currency-selector {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-}
-
-.currency-selector label {
-    color: rgba(255, 255, 255, 0.85);
-    font-weight: 500;
-    font-size: 0.9rem;
-    white-space: nowrap;
-}
-
-.currency-selector select {
-    padding: 0.4rem var(--space-3);
-    border-radius: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    background: rgba(255, 255, 255, 0.15);
-    color: white;
-    font-size: 0.9rem;
-    cursor: pointer;
-}
-
-.currency-selector select option {
-    background: var(--text-primary);
-    color: white;
-}
+/* Currency selector styles are defined in the desktop media query (min-width: 769px) */
 
 /* ==================== QUICK UPLOAD (DASHBOARD) ==================== */
 .quick-upload-card {

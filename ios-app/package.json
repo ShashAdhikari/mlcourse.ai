@@ -4,9 +4,10 @@
   "description": "FinanceTracker iOS App - Expense, Debt & Investment Analyzer",
   "main": "QA/index.html",
   "scripts": {
-    "build:qa": "echo 'Static app - no build needed' && cp -r QA/* www/",
-    "build:uat": "echo 'Static app - no build needed' && cp -r UAT/* www/",
-    "cap:init": "npx cap init FinanceTracker com.financetracker.app --web-dir www",
+    "setup": "npm install && npx cap init FinanceTracker com.financetracker.ios --web-dir www || true && npx cap add ios && npm run build:qa && echo '✅ Setup complete! Run: npm run deploy:qa && npm run cap:open'",
+    "build:qa": "cp -r QA/* www/",
+    "build:uat": "cp -r UAT/* www/",
+    "cap:init": "npx cap init FinanceTracker com.financetracker.ios --web-dir www",
     "cap:add:ios": "npx cap add ios",
     "cap:sync": "npx cap sync ios",
     "cap:open": "npx cap open ios",

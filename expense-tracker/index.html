@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>WLTH — Wealth Intelligence Dashboard</title>
+
+    <!-- Security & SEO -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self';">
+    <meta name="description" content="WLTH — A modern wealth intelligence platform. Track income, expenses, debt and investments, calculate net worth, and visualize your financial trajectory.">
+    <meta name="theme-color" content="#0a0a0f">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Icons & PWA -->
+    <link rel="icon" type="image/png" href="icon-192.png">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <link rel="manifest" href="manifest.json">
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <canvas id="bg-canvas"></canvas>
+    <div class="gradient-orb orb-1"></div>
+    <div class="gradient-orb orb-2"></div>
+    <div class="gradient-orb orb-3"></div>
+    <div class="cursor-glow" id="cursor-glow"></div>
+
+    <!-- Loading Screen -->
+    <div id="loader" class="loader">
+        <div class="loader-content">
+            <div class="loader-logo">WLTH</div>
+            <div class="loader-bar"><div class="loader-progress"></div></div>
+            <div class="loader-text">Initializing wealth engine...</div>
+        </div>
+    </div>
+
+    <div id="app" class="app">
+        <!-- Navigation -->
+        <nav class="nav">
+            <div class="nav-brand">
+                <span class="brand-icon">◆</span>
+                <span class="brand-text">WLTH</span>
+            </div>
+            <div class="nav-links" id="nav-links">
+                <a href="#dashboard" class="nav-link active"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span><span>Dashboard</span></a>
+                <a href="#portfolio" class="nav-link"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20"/><path d="M12 12L12 2"/><path d="M12 12L20 16"/></svg></span><span>Portfolio</span></a>
+                <a href="#debt" class="nav-link"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></span><span>Debt</span></a>
+                <a href="#analytics" class="nav-link"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 9l-5 5-4-4-6 6"/></svg></span><span>Analytics</span></a>
+                <a href="#transactions" class="nav-link"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span><span>Activity</span></a>
+            </div>
+            <div class="nav-actions">
+                <button class="btn-icon" id="theme-toggle" aria-label="Toggle theme">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path></svg>
+                </button>
+                <div class="currency-select-wrapper">
+                    <select id="currency-select" class="currency-select" aria-label="Currency">
+                        <option value="USD">$ USD</option>
+                        <option value="EUR">€ EUR</option>
+                        <option value="GBP">£ GBP</option>
+                        <option value="JPY">¥ JPY</option>
+                        <option value="INR">₹ INR</option>
+                    </select>
+                </div>
+                <button class="btn-primary btn-add-nav" data-action="add" aria-label="Add entry">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                    <span class="btn-add-label">Add</span>
+                    <span class="btn-shimmer"></span>
+                </button>
+            </div>
+            <button class="nav-mobile-toggle" id="mobile-menu" aria-label="Menu"><span></span><span></span><span></span></button>
+        </nav>
+
+        <!-- Quote / Metric Ticker -->
+        <div class="ticker" id="ticker" aria-label="Financial ticker" role="marquee">
+            <div class="ticker-track" id="ticker-track"></div>
+        </div>
+
+        <!-- Hero -->
+        <section class="hero" id="hero">
+            <div class="hero-content">
+                <div class="hero-badge"><span class="pulse"></span><span>Live Net Worth</span></div>
+                <h1 class="hero-title">
+                    <span class="title-line">Your Wealth,</span>
+                    <span class="title-line gradient-text">Visualized.</span>
+                </h1>
+                <p class="hero-subtitle">Track income, expenses, debt and investments. Calculate your net worth in real time. All data stays on your device.</p>
+
+                <div class="net-worth-display">
+                    <div class="net-worth-label">Total Net Worth</div>
+                    <div class="net-worth-value">
+                        <span class="currency" id="currency-symbol">$</span>
+                        <span class="amount" id="net-worth">0</span>
+                    </div>
+                    <div class="net-worth-change positive" id="net-worth-change">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg>
+                        <span id="change-percent">+0.0%</span>
+                        <span class="change-period">this month</span>
+                    </div>
+                    <div class="net-worth-breakdown" id="net-worth-breakdown"></div>
+                </div>
+
+                <div class="hero-cta">
+                    <button class="btn-primary btn-glow" data-action="add"><span>Add Entry</span><span class="btn-shimmer"></span></button>
+                    <button class="btn-secondary" data-action="goto-import">Import / Demo Data</button>
+                </div>
+            </div>
+            <div class="hero-visual" id="hero-3d"></div>
+            <div class="scroll-indicator"><div class="mouse"><div class="wheel"></div></div><span>Scroll to explore</span></div>
+        </section>
+
+        <!-- Financial Overview -->
+        <section class="stats-section" id="dashboard">
+            <div class="section-header">
+                <h2 class="section-title">Financial Overview</h2>
+                <div class="time-filter" id="time-filter">
+                    <button class="filter-btn" data-period="month">Month</button>
+                    <button class="filter-btn" data-period="ytd">YTD</button>
+                    <button class="filter-btn active" data-period="all">All Time</button>
+                </div>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card glass" data-type="income">
+                    <div class="stat-glow"></div>
+                    <div class="stat-icon income"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
+                    <div class="stat-content">
+                        <span class="stat-label" id="label-income">Income (This Month)</span>
+                        <span class="stat-value" id="stat-income">$0</span>
+                        <div class="stat-trend" id="trend-income"></div>
+                    </div>
+                    <div class="stat-chart"><canvas class="spark" id="spark-income" width="120" height="40"></canvas></div>
+                </div>
+                <div class="stat-card glass" data-type="expenses">
+                    <div class="stat-glow"></div>
+                    <div class="stat-icon expenses"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15V6M21 15l-6.5-6.5M21 15l-6.5 6.5M3 9v10M3 9l6.5 6.5M3 9l6.5-6.5"/></svg></div>
+                    <div class="stat-content">
+                        <span class="stat-label" id="label-expenses">Expenses (This Month)</span>
+                        <span class="stat-value" id="stat-expenses">$0</span>
+                        <div class="stat-trend" id="trend-expenses"></div>
+                    </div>
+                    <div class="stat-chart"><canvas class="spark" id="spark-expenses" width="120" height="40"></canvas></div>
+                </div>
+                <div class="stat-card glass" data-type="investments">
+                    <div class="stat-glow"></div>
+                    <div class="stat-icon investments"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+                    <div class="stat-content">
+                        <span class="stat-label">Investments</span>
+                        <span class="stat-value" id="stat-investments">$0</span>
+                        <div class="stat-trend" id="trend-investments"></div>
+                    </div>
+                    <div class="stat-chart"><canvas class="spark" id="spark-investments" width="120" height="40"></canvas></div>
+                </div>
+                <div class="stat-card glass" data-type="debt">
+                    <div class="stat-glow"></div>
+                    <div class="stat-icon debt"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></div>
+                    <div class="stat-content">
+                        <span class="stat-label">Total Debt</span>
+                        <span class="stat-value" id="stat-debt">$0</span>
+                        <div class="stat-trend" id="trend-debt"></div>
+                    </div>
+                    <div class="stat-chart"><canvas class="spark" id="spark-debt" width="120" height="40"></canvas></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Velocity (per day / per hour) -->
+        <section class="velocity-section" id="velocity">
+            <div class="section-header">
+                <h2 class="section-title">Spending Velocity</h2>
+                <span class="section-sub">Real-time rates based on this month</span>
+            </div>
+            <div class="velocity-grid" id="velocity-grid">
+                <div class="velocity-item glass"><span class="velocity-label">Spend / Day</span><span class="velocity-value" id="vel-spend-day">$0</span></div>
+                <div class="velocity-item glass"><span class="velocity-label">Spend / Hour</span><span class="velocity-value" id="vel-spend-hour">$0</span></div>
+                <div class="velocity-item glass"><span class="velocity-label">Income / Day</span><span class="velocity-value" id="vel-income-day">$0</span></div>
+                <div class="velocity-item glass"><span class="velocity-label">Net / Day</span><span class="velocity-value" id="vel-net-day">$0</span></div>
+                <div class="velocity-item glass"><span class="velocity-label">Savings Rate</span><span class="velocity-value" id="vel-savings">0%</span></div>
+                <div class="velocity-item glass"><span class="velocity-label">Cash Runway</span><span class="velocity-value" id="vel-runway">—</span></div>
+            </div>
+        </section>
+
+        <!-- Portfolio -->
+        <section class="portfolio-section" id="portfolio">
+            <div class="section-header">
+                <h2 class="section-title">Portfolio Allocation</h2>
+                <button class="btn-secondary" data-action="investment"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Add Asset</button>
+            </div>
+            <div class="portfolio-grid">
+                <div class="portfolio-chart glass">
+                    <canvas id="portfolio-donut"></canvas>
+                    <div class="chart-center">
+                        <span class="chart-center-label">Total Value</span>
+                        <span class="chart-center-value" id="portfolio-total">$0</span>
+                    </div>
+                </div>
+                <div class="asset-list glass" id="asset-list"></div>
+            </div>
+        </section>
+
+        <!-- Debt -->
+        <section class="debt-section" id="debt">
+            <div class="section-header">
+                <h2 class="section-title">Debt Tracker</h2>
+                <button class="btn-secondary" data-action="debt"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Add Debt</button>
+            </div>
+            <div class="debt-summary glass" id="debt-summary"></div>
+            <div class="debt-list" id="debt-list"></div>
+        </section>
+
+        <!-- Analytics -->
+        <section class="analytics-section" id="analytics">
+            <div class="section-header"><h2 class="section-title">Wealth Analytics</h2></div>
+            <div class="analytics-grid">
+                <div class="main-chart glass">
+                    <div class="chart-header">
+                        <h3>Net Worth Over Time</h3>
+                        <div class="chart-legend">
+                            <span class="legend-item"><span class="legend-dot" style="--color: var(--accent-green)"></span>Assets</span>
+                            <span class="legend-item"><span class="legend-dot" style="--color: var(--accent-red)"></span>Liabilities</span>
+                        </div>
+                    </div>
+                    <canvas id="wealth-chart"></canvas>
+                </div>
+                <div class="insights-column" id="insights-column"></div>
+            </div>
+        </section>
+
+        <!-- Transactions -->
+        <section class="transactions-section" id="transactions">
+            <div class="section-header">
+                <h2 class="section-title">Recent Activity</h2>
+                <div class="activity-controls">
+                    <div class="seg" id="tx-filter">
+                        <button class="seg-btn active" data-filter="all">All</button>
+                        <button class="seg-btn" data-filter="income">Income</button>
+                        <button class="seg-btn" data-filter="expense">Expense</button>
+                    </div>
+                    <div class="search-wrapper">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                        <input type="text" id="tx-search" placeholder="Search...">
+                    </div>
+                </div>
+            </div>
+            <div class="transactions-list glass" id="transactions-list"></div>
+        </section>
+
+        <!-- Import / Data -->
+        <section class="import-section" id="import">
+            <div class="section-header"><h2 class="section-title">Import & Data</h2></div>
+            <div class="import-grid">
+                <div class="import-card glass">
+                    <h3>Upload Statement</h3>
+                    <p class="import-desc">Import a CSV or Excel file of income, expenses, investments or debt. Columns are auto-detected.</p>
+                    <div class="import-kind">
+                        <label for="import-target">Import as</label>
+                        <select id="import-target">
+                            <option value="expense">Expenses</option>
+                            <option value="income">Income</option>
+                            <option value="investment">Investments</option>
+                            <option value="debt">Debts</option>
+                        </select>
+                    </div>
+                    <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Upload file">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
+                        <span class="dropzone-title">Drop file here or click to browse</span>
+                        <span class="dropzone-sub">CSV, XLSX, XLS supported</span>
+                        <input type="file" id="file-input" accept=".csv,.xlsx,.xls" hidden>
+                    </div>
+                    <div class="import-result" id="import-result"></div>
+                </div>
+                <div class="import-card glass">
+                    <h3>Manage Data</h3>
+                    <p class="import-desc">Your data lives only in this browser. Back it up, restore it, explore with sample data, or start fresh.</p>
+                    <div class="data-actions">
+                        <button class="btn-secondary" id="btn-demo">✨ Load Demo Data</button>
+                        <button class="btn-secondary" id="btn-export">⬇ Export Backup (JSON)</button>
+                        <button class="btn-secondary" id="btn-import-json">⬆ Restore Backup</button>
+                        <button class="btn-secondary btn-danger" id="btn-reset">🗑 Reset All Data</button>
+                        <input type="file" id="json-input" accept="application/json,.json" hidden>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-brand"><span class="brand-icon">◆</span><span>WLTH</span></div>
+                <p class="footer-text">Your data never leaves your device. <a href="privacy.html">Privacy Policy</a></p>
+                <p class="footer-copy">&copy; 2026 WLTH. Crafted with precision.</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Unified Add Modal -->
+    <div class="modal" id="entry-modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content glass">
+            <button class="modal-close" id="modal-close" aria-label="Close">&times;</button>
+            <h3 class="modal-title" id="modal-title">Add Entry</h3>
+
+            <div class="modal-tabs" id="modal-tabs">
+                <button class="modal-tab active" data-kind="expense">Expense</button>
+                <button class="modal-tab" data-kind="income">Income</button>
+                <button class="modal-tab" data-kind="investment">Investment</button>
+                <button class="modal-tab" data-kind="debt">Debt</button>
+            </div>
+
+            <form id="entry-form" novalidate>
+                <input type="hidden" id="entry-kind" value="expense">
+
+                <!-- Shared: name/description -->
+                <div class="form-group">
+                    <label id="label-name" for="f-name">Description</label>
+                    <input type="text" id="f-name" placeholder="What was this for?" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label id="label-amount" for="f-amount">Amount</label>
+                        <div class="input-with-prefix">
+                            <span class="input-prefix">$</span>
+                            <input type="number" id="f-amount" placeholder="0.00" step="0.01" min="0" required>
+                        </div>
+                    </div>
+                    <!-- Category: transactions only -->
+                    <div class="form-group field-tx">
+                        <label for="f-category">Category <span class="auto-badge" id="cat-auto" hidden>✨ auto</span></label>
+                        <select id="f-category">
+                            <option value="housing">🏠 Housing</option>
+                            <option value="food">🍔 Food & Dining</option>
+                            <option value="transport">🚗 Transportation</option>
+                            <option value="utilities">💡 Utilities</option>
+                            <option value="entertainment">🎬 Entertainment</option>
+                            <option value="healthcare">🏥 Healthcare</option>
+                            <option value="shopping">🛍️ Shopping</option>
+                            <option value="salary">💼 Salary</option>
+                            <option value="business">🏢 Business</option>
+                            <option value="other">📦 Other</option>
+                        </select>
+                    </div>
+                    <!-- Asset type: investments only -->
+                    <div class="form-group field-inv">
+                        <label for="f-asset-type">Asset Type <span class="auto-badge" id="asset-auto" hidden>✨ auto</span></label>
+                        <select id="f-asset-type">
+                            <option value="stocks">📊 Stocks & ETFs</option>
+                            <option value="crypto">🪙 Cryptocurrency</option>
+                            <option value="realestate">🏠 Real Estate</option>
+                            <option value="bonds">📜 Bonds & Fixed</option>
+                            <option value="cash">💵 Cash & Savings</option>
+                            <option value="other">📦 Other</option>
+                        </select>
+                    </div>
+                    <!-- Debt type: debts only -->
+                    <div class="form-group field-debt">
+                        <label for="f-debt-type">Debt Type</label>
+                        <select id="f-debt-type">
+                            <option value="credit">💳 Credit Card</option>
+                            <option value="mortgage">🏠 Mortgage</option>
+                            <option value="auto">🚗 Auto Loan</option>
+                            <option value="student">🎓 Student Loan</option>
+                            <option value="personal">👤 Personal Loan</option>
+                            <option value="other">📦 Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Debt extra fields -->
+                <div class="form-row field-debt">
+                    <div class="form-group">
+                        <label for="f-rate">APR (%)</label>
+                        <input type="number" id="f-rate" placeholder="0.0" step="0.01" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="f-minimum">Min Payment</label>
+                        <div class="input-with-prefix">
+                            <span class="input-prefix">$</span>
+                            <input type="number" id="f-minimum" placeholder="0.00" step="0.01" min="0">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="f-date">Date</label>
+                    <input type="date" id="f-date" required>
+                </div>
+
+                <button type="submit" class="btn-primary btn-full btn-glow"><span id="submit-label">Save Expense</span><span class="btn-shimmer"></span></button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirm dialog -->
+    <div class="modal" id="confirm-modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content glass modal-sm">
+            <h3 class="modal-title" id="confirm-title">Are you sure?</h3>
+            <p class="confirm-text" id="confirm-text"></p>
+            <div class="confirm-actions">
+                <button class="btn-secondary" id="confirm-cancel">Cancel</button>
+                <button class="btn-primary btn-danger-solid" id="confirm-ok">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Keyboard hint (desktop only) -->
+    <div class="press-hint">Press <kbd>?</kbd> for shortcuts</div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

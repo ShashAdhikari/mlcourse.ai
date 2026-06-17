@@ -85,6 +85,9 @@
     --duration-fast: 150ms;
     --duration-normal: 300ms;
     --duration-slow: 500ms;
+
+    /* Layout */
+    --nav-h: 72px;
 }
 
 /* ==================== BASE ==================== */
@@ -99,7 +102,7 @@ body {
     background: var(--bg-primary);
     color: var(--text-primary);
     line-height: 1.6;
-    overflow-x: hidden;
+    overflow-x: clip;
     min-height: 100vh;
 }
 
@@ -246,13 +249,11 @@ body:hover .cursor-glow {
     position: relative;
     z-index: 1;
     opacity: 0;
-    transform: translateY(20px);
 }
 
 .app.loaded {
     opacity: 1;
-    transform: translateY(0);
-    transition: opacity 0.8s var(--ease-out), transform 0.8s var(--ease-out);
+    transition: opacity 0.8s var(--ease-out);
 }
 
 /* ==================== NAVIGATION ==================== */
@@ -400,7 +401,7 @@ body:hover .cursor-glow {
     justify-content: center;
     position: relative;
     padding: var(--space-20) var(--space-8);
-    padding-top: calc(var(--space-20) + 80px);
+    padding-top: var(--space-20);
 }
 
 .hero-content {
@@ -1395,6 +1396,10 @@ section {
 }
 
 @media (max-width: 768px) {
+    :root {
+        --nav-h: 60px;
+    }
+
     .nav {
         padding: var(--space-3) var(--space-4);
     }
@@ -1442,7 +1447,7 @@ section {
 
     .hero {
         padding: var(--space-8) var(--space-4);
-        padding-top: calc(var(--space-16) + 60px);
+        padding-top: var(--space-16);
     }
 
     .hero-visual {
@@ -1675,14 +1680,14 @@ section {
 
 /* ---------- TICKER ---------- */
 .ticker {
-    position: sticky; top: 0; z-index: 900;
+    position: sticky; top: var(--nav-h); z-index: 900;
     overflow: hidden; white-space: nowrap;
     background: rgba(10,10,15,0.7);
     backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
     border-top: 1px solid var(--border-color);
     border-bottom: 1px solid var(--border-color);
     padding: var(--space-2) 0;
-    margin-top: 0;
+    margin-top: var(--nav-h);
 }
 [data-theme="light"] .ticker { background: rgba(244,245,251,0.8); }
 .ticker-track { display: inline-flex; align-items: center; gap: var(--space-4); padding-left: 100%; animation: tickerScroll 60s linear infinite; }
@@ -1694,7 +1699,7 @@ section {
 .ticker-metric .tk-val { color: var(--accent-green); font-weight: 600; font-family: var(--font-display); }
 .ticker-sep { color: var(--accent-green); opacity: 0.5; font-size: 0.6rem; margin: 0 var(--space-3); }
 @media (prefers-reduced-motion: reduce) {
-    .ticker { overflow-x: auto; }
+    .ticker { overflow-x: auto; top: var(--nav-h); }
     .ticker-track { animation: none; padding-left: var(--space-4); }
 }
 
@@ -1994,3 +1999,100 @@ body:hover .orb-3 { transform: translate(5px, 5px) scale(0.98); }
     100% { opacity: 0; transform: translateY(-10px); }
 }
 @media (max-width: 768px) { .press-hint { display: none; } }
+
+/* ==================== RECURRING TRANSACTIONS ==================== */
+
+/* Frequency badge */
+.freq-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--accent-blue);
+    background: var(--accent-blue-dim);
+    border: 1px solid rgba(79, 172, 254, 0.25);
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    margin-left: var(--space-2);
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+[data-theme="light"] .freq-badge {
+    color: #1a6bb8;
+}
+
+/* Recurring transaction row highlight */
+.transaction-item.recurring {
+    background: linear-gradient(90deg, var(--accent-blue-dim) 0%, transparent 30%);
+    border-left: 3px solid var(--accent-blue);
+    padding-left: calc(var(--space-4) - 3px);
+}
+
+.transaction-item.recurring:hover {
+    background: linear-gradient(90deg, var(--accent-blue-dim) 0%, var(--bg-card) 30%);
+}
+
+/* Velocity recurring indicator */
+.velocity-recurring {
+    display: flex;
+    gap: var(--space-2);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: var(--space-1);
+}
+
+.velocity-recurring .rec-inc {
+    color: var(--accent-green);
+}
+
+.velocity-recurring .rec-exp {
+    color: var(--accent-red);
+}
+
+/* Recurring summary box */
+.recurring-summary {
+    margin-top: var(--space-5);
+    padding: var(--space-5);
+}
+
+.rec-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-4);
+}
+
+.rec-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.rec-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.rec-value {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.rec-value.positive { color: var(--accent-green); }
+.rec-value.negative { color: var(--accent-red); }
+
+.rec-empty {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    text-align: center;
+    padding: var(--space-2) 0;
+}
+
+@media (max-width: 640px) {
+    .rec-grid { grid-template-columns: 1fr; gap: var(--space-3); }
+    .rec-item { flex-direction: row; justify-content: space-between; align-items: center; }
+}

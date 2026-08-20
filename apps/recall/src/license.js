@@ -3,8 +3,13 @@
 // Key format:  RECALL-<payloadB64url>.<sigB64url>
 //   ('.' separates payload from signature because '.' is not in the
 //   base64url alphabet — '-' is, which would make the split ambiguous.)
-//   payload = UTF-8 JSON {email, plan, iat}  (iat = unix seconds issued-at)
+//   payload = UTF-8 JSON {email, decks, iat}  (iat = unix seconds issued-at)
+//     decks = ['*'] for all-access, or a list of deck ids for a single-deck buy
 //   sig     = Ed25519 signature over the raw payload bytes
+//
+// v1 keys carried {email, plan:'pro'} with no deck list. Those were sold as
+// all-access, so entitledDecks() still grants everything for them — a key a
+// customer paid for must never stop working because the format moved on.
 //
 // Keys are minted offline with tools/make-license.mjs (private key never
 // ships). The app embeds only the public key and verifies with WebCrypto,
@@ -26,6 +31,24 @@ export const bytesToB64u = (bytes) => {
   for (const b of bytes) bin += String.fromCharCode(b);
   return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 };
+
+/**
+ * What a set of verified claims unlocks.
+ * @returns {{all: boolean, decks: Set<string>}}
+ */
+export function entitledDecks(claims) {
+  if (!claims || typeof claims !== 'object') return { all: false, decks: new Set() };
+  if (claims.plan === 'pro' && claims.decks === undefined) return { all: true, decks: new Set() }; // v1 key
+  const list = Array.isArray(claims.decks) ? claims.decks.filter((d) => typeof d === 'string') : [];
+  if (list.includes('*')) return { all: true, decks: new Set() };
+  return { all: false, decks: new Set(list) };
+}
+
+/** Does a verified claim set unlock this deck? */
+export function unlocksDeck(claims, deckId) {
+  const e = entitledDecks(claims);
+  return e.all || e.decks.has(deckId);
+}
 
 /** Parse without verifying. Returns {payloadBytes, sigBytes, claims} or null. */
 export function parseLicense(key) {

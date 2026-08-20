@@ -1,0 +1,225 @@
+{
+  "id": "physics",
+  "title": "Physics",
+  "blurb": "Mechanics through quantum, organised around the questions that expose whether you understand a principle or merely remember its formula.",
+  "topics": [
+    { "id": "mechanics", "title": "Classical Mechanics", "free": true },
+    { "id": "waves", "title": "Waves & Oscillations", "free": true },
+    { "id": "electromagnetism", "title": "Electromagnetism", "free": false },
+    { "id": "thermodynamics", "title": "Thermodynamics", "free": false },
+    { "id": "relativity", "title": "Special Relativity", "free": false },
+    { "id": "quantum", "title": "Quantum Mechanics", "free": false }
+  ],
+  "cards": [
+    {
+      "id": "mec-01", "topic": "mechanics", "difficulty": 1,
+      "q": "State Newton's three laws and explain what the first one is really for.",
+      "a": "(1) A body keeps constant velocity unless acted on by a net force. (2) F = dp/dt, reducing to F = ma at constant mass. (3) Forces come in equal, opposite pairs on different bodies. The first law is not a special case of the second — it defines what an inertial frame is, and the second law only holds in such frames.",
+      "why": "Reading the first law as 'the second law with F = 0' misses its job: it picks out the class of reference frames in which the dynamics take their simple form. In a rotating or accelerating frame a free body visibly accelerates, and you must add fictitious forces (centrifugal, Coriolis) to keep F = ma. Those forces have no third-law partner, which is exactly the diagnostic that you have left an inertial frame.",
+      "followup": "'If forces are always equal and opposite, why does anything accelerate?' The pair acts on different bodies — they never cancel on a single object's free-body diagram."
+    },
+    {
+      "id": "mec-02", "topic": "mechanics", "difficulty": 1,
+      "q": "Why is momentum conserved, and how does that differ from conservation of energy?",
+      "a": "Momentum is conserved when no external force acts, following directly from the third law: internal forces cancel pairwise. Kinetic energy need not be conserved, because internal forces can convert it to heat, sound, or deformation. Every collision conserves momentum; only elastic collisions conserve kinetic energy.",
+      "why": "Noether's theorem gives the deeper reason: momentum conservation follows from spatial translation symmetry — physics is the same here as there — while energy conservation follows from time-translation symmetry. Angular momentum comes from rotational symmetry. That is why conservation laws feel more fundamental than force laws: they are statements about the symmetry of physical law rather than about any particular interaction.",
+      "followup": "'Is momentum conserved in an expanding universe?' Time-translation symmetry fails at cosmological scales, and energy conservation becomes genuinely subtle — the symmetry argument is doing real work."
+    },
+    {
+      "id": "mec-03", "topic": "mechanics", "difficulty": 2,
+      "q": "What is the difference between the Lagrangian and Newtonian formulations?",
+      "a": "Newton tracks vector forces and accelerations in a chosen coordinate system. Lagrangian mechanics defines L = T − V and asserts that the true path extremizes the action ∫L dt, yielding the Euler–Lagrange equations. It is scalar, coordinate-free, and handles constraints by choosing generalized coordinates rather than by computing constraint forces.",
+      "why": "The practical advantage shows up immediately with constraints: a bead on a wire needs one generalized coordinate instead of a vector normal force you neither know nor care about. The conceptual advantage is deeper — symmetries of L give conservation laws directly through Noether's theorem, and the action principle generalizes to fields, relativity, and quantum mechanics, where Feynman's path integral sums e^{iS/ℏ} over all paths.",
+      "followup": "'What does the Hamiltonian formulation add?' It trades second-order equations for twice as many first-order ones in phase space — the natural setting for statistical and quantum mechanics."
+    },
+    {
+      "id": "mec-04", "topic": "mechanics", "difficulty": 2,
+      "q": "Explain why a spinning gyroscope precesses instead of falling over.",
+      "a": "Gravity exerts a torque about the pivot. Torque changes angular momentum by dL = τ dt, and the torque vector is perpendicular to L, so it rotates L rather than lengthening it — the axis sweeps around horizontally at rate Ω = τ/L instead of tipping down.",
+      "why": "The lesson is that torque changes angular momentum the way force changes momentum — and a perpendicular push turns rather than speeds up, exactly as a perpendicular force produces circular motion. The prediction is testable and counterintuitive: spinning faster increases L, so precession gets slower, not faster. This same reasoning explains why a moving bicycle is stable and why Earth's axis precesses over 26,000 years.",
+      "followup": "'What happens as the spin slows?' Ω rises, precession becomes wobbly nutation, and the gyroscope finally falls — which is why the effect looks like magic only while spinning fast."
+    },
+    {
+      "id": "mec-05", "topic": "mechanics", "difficulty": 2,
+      "q": "What does it mean that gravitational and inertial mass are equal?",
+      "a": "Inertial mass measures resistance to acceleration (F = ma); gravitational mass measures coupling to gravity (F = GMm/r²). Their equality — verified to about one part in 10¹⁵ — means all objects fall with the same acceleration regardless of composition. In Newtonian physics this is an unexplained coincidence.",
+      "why": "Einstein took the coincidence as a principle: if gravity accelerates everything identically, then locally gravity is indistinguishable from being in an accelerating frame. That equivalence principle is the seed of general relativity, where gravity ceases to be a force and becomes the curvature of spacetime — objects follow straight lines (geodesics) through curved geometry. A free-falling observer feels nothing precisely because they are not being pushed.",
+      "followup": "'How is the equivalence only local?' Tidal forces reveal true curvature — two falling objects converge toward Earth's centre, which no uniform acceleration can mimic."
+    },
+    {
+      "id": "wav-01", "topic": "waves", "difficulty": 1,
+      "q": "Why is simple harmonic motion so ubiquitous in physics?",
+      "a": "Because near any stable equilibrium, the potential energy's Taylor expansion has a vanishing linear term and a leading quadratic one, V ≈ ½kx². That gives a linear restoring force F = −kx and therefore sinusoidal motion with ω = √(k/m). Any stable system, sufficiently gently disturbed, oscillates harmonically.",
+      "why": "The argument explains the universality without appealing to springs at all: pendulums, molecular bonds, LC circuits, and lattice vibrations all inherit the same equation from the same Taylor argument. It also predicts its own limits — push far enough and the cubic and quartic terms matter, which is when anharmonicity appears (a pendulum's period starts depending on amplitude, and thermal expansion becomes possible).",
+      "followup": "'Why does SHM's period not depend on amplitude?' Restoring force scales linearly with displacement, so a larger swing has proportionally more acceleration — the two effects cancel exactly."
+    },
+    {
+      "id": "wav-02", "topic": "waves", "difficulty": 1,
+      "q": "Distinguish resonance from forced oscillation, and explain why damping matters.",
+      "a": "Forced oscillation is a system driven at any frequency; it settles into steady motion at the driving frequency. Resonance is the special case where the drive matches the natural frequency and energy is fed in perfectly in phase each cycle, producing a large amplitude. Damping sets that peak's height — with no damping the amplitude grows without bound.",
+      "why": "The quality factor Q captures the trade-off: high Q gives a tall, narrow resonance (good for tuning a radio or a laser cavity), low Q gives a broad, blunt one (good for a car suspension, which must absorb rather than amplify). This single parameter explains both why engineers design bridges away from resonance with pedestrian footfall rates and why MRI machines work — nuclear spins have exceptionally sharp resonances.",
+      "followup": "'What is the phase relationship at resonance?' The response lags the drive by 90°, which is precisely why the driving force is always aligned with velocity and pumps in energy every instant."
+    },
+    {
+      "id": "wav-03", "topic": "waves", "difficulty": 2,
+      "q": "What causes interference and diffraction, and what do they demonstrate?",
+      "a": "Both follow from superposition: overlapping waves add amplitudes, producing reinforcement where they arrive in phase and cancellation where they arrive out of phase. Interference is the pattern from discrete sources; diffraction is spreading and patterning when a wave meets an obstacle or aperture comparable to its wavelength.",
+      "why": "They are the signature of wave behavior, which is why the double-slit experiment settles the wave–particle debate so decisively — and why observing it with single electrons is so disquieting. Diffraction also sets a hard engineering limit: an aperture of size D cannot resolve detail finer than about λ/D, which is why telescopes need large mirrors, why electron microscopes beat optical ones, and why chip lithography keeps pushing to shorter wavelengths.",
+      "followup": "'Why is the sky's resolution limited even with a perfect lens?' Diffraction at the aperture — the Rayleigh criterion is a property of waves, not of manufacturing quality."
+    },
+    {
+      "id": "wav-04", "topic": "waves", "difficulty": 2,
+      "q": "Explain the Doppler effect and how the relativistic version differs.",
+      "a": "Relative motion between source and observer compresses or stretches the observed wavelength, raising pitch on approach and lowering it on recession. Classically the formula distinguishes a moving source from a moving observer, because the medium provides a preferred frame. Relativistically, with no medium for light, only relative velocity can matter — and time dilation adds a transverse effect with no classical analogue.",
+      "why": "The transverse Doppler shift is the sharp test: classically a source moving perpendicular to your line of sight produces no shift, but relativistically its clock runs slow, so you still see a redshift. That effect has been confirmed and is direct evidence for time dilation. The longitudinal case gives astronomy its central tool — redshift measurements yielded galactic recession and the expanding universe.",
+      "followup": "'Is cosmological redshift a Doppler shift?' Not strictly — it comes from space expanding while light is in transit, not from motion through space."
+    },
+    {
+      "id": "wav-05", "topic": "waves", "difficulty": 3,
+      "q": "What does Fourier analysis say about waves, and what trade-off does it impose?",
+      "a": "Any reasonable waveform decomposes into a sum of sinusoids; the frequency spectrum is an equivalent description of the same signal. The trade-off is that time and frequency localization are conjugate: a signal confined to a short duration must contain a broad band of frequencies, and a pure single frequency must extend infinitely in time.",
+      "why": "That trade-off, Δt·Δf ≳ 1, is a theorem about waves, not a limitation of instruments — which is why a very short musical note has no definite pitch and why a brief radio pulse occupies wide bandwidth. Multiplying it by Planck's constant turns it directly into Heisenberg's uncertainty principle: quantum uncertainty is the same mathematical fact applied to matter waves, which is a far less mysterious framing than the usual one.",
+      "followup": "'How do spectrograms handle this?' They choose a window length, explicitly trading time resolution against frequency resolution — you cannot have both."
+    },
+    {
+      "id": "emg-01", "topic": "electromagnetism", "difficulty": 2,
+      "q": "State what each of Maxwell's equations says physically.",
+      "a": "Gauss's law: electric field diverges from charge. Gauss for magnetism: no magnetic monopoles, field lines always close. Faraday: a changing magnetic field produces a circulating electric field. Ampère–Maxwell: currents and changing electric fields produce circulating magnetic fields. Together they make electric and magnetic fields two aspects of one entity.",
+      "why": "Maxwell's addition of the displacement-current term was the decisive step — it made the equations consistent with charge conservation and, unexpectedly, predicted self-sustaining waves: a changing E makes B, whose change remakes E. Their speed came out as 1/√(ε₀μ₀), numerically equal to the measured speed of light, which identified light as an electromagnetic wave. That is a high-water mark of theoretical prediction.",
+      "followup": "'What breaks if monopoles exist?' The second equation gains a source term and the symmetry between E and B becomes exact — Dirac showed a single monopole would explain charge quantization."
+    },
+    {
+      "id": "emg-02", "topic": "electromagnetism", "difficulty": 2,
+      "q": "Why does a changing magnetic field induce a current, and what does Lenz's law add?",
+      "a": "Faraday's law: an EMF equal to −dΦ/dt appears around any loop through which magnetic flux changes. Lenz's law is the minus sign — the induced current flows so its own field opposes the change that produced it. Push a magnet toward a loop and the loop pushes back.",
+      "why": "The minus sign is energy conservation in disguise. If the induced current reinforced the change, the effect would amplify itself and generate energy from nothing. Because it opposes, you must do mechanical work to move the magnet, and that work is exactly what appears as electrical energy — the operating principle of every generator, and equally of regenerative braking and induction cooktops.",
+      "followup": "'Why does a magnet fall slowly down a copper pipe?' Induced eddy currents oppose the changing flux, producing a retarding force that grows with speed until it balances gravity."
+    },
+    {
+      "id": "emg-03", "topic": "electromagnetism", "difficulty": 2,
+      "q": "Why does charge sit on the surface of a conductor?",
+      "a": "Mobile charges rearrange until the field inside vanishes — any residual internal field would keep pushing them. With E = 0 inside, Gauss's law forces zero enclosed charge for any interior surface, so all excess charge must reside on the boundary, distributed so the interior field cancels everywhere.",
+      "why": "This is why a Faraday cage works: external fields cannot penetrate a conducting shell, protecting aircraft from lightning and shielding sensitive electronics. It also explains why charge concentrates at sharp points — surface charge density scales inversely with radius of curvature, producing intense local fields that ionize air. That is the entire operating principle of lightning rods and corona discharge.",
+      "followup": "'Does a cage need to be solid?' No — a mesh works provided its holes are much smaller than the wavelength, which is why microwave oven doors are transparent to light but not microwaves."
+    },
+    {
+      "id": "emg-04", "topic": "electromagnetism", "difficulty": 3,
+      "q": "How are electricity and magnetism unified by relativity?",
+      "a": "They are frame-dependent components of one electromagnetic field tensor. A static charge produces only an electric field; viewed from a moving frame, that same charge is a current and produces a magnetic field too. What you call electric versus magnetic depends on your motion, but the underlying field is one object.",
+      "why": "The current-carrying wire makes it concrete: in the lab a neutral wire attracts a moving charge magnetically, while in the charge's rest frame length contraction makes the positive and negative charge densities unequal, so the wire appears charged and the same force is purely electrostatic. Same physics, different accounting. Magnetism is, quite literally, electrostatics plus relativity — remarkable given that magnetic effects are visible at everyday drift velocities of millimetres per second.",
+      "followup": "'How does such a tiny velocity produce a visible effect?' The relativistic correction is minuscule per charge, but it acts on the colossal density of conduction electrons, and the electrostatic force is enormously strong."
+    },
+    {
+      "id": "emg-05", "topic": "electromagnetism", "difficulty": 3,
+      "q": "What is electromagnetic radiation, and what actually produces it?",
+      "a": "Self-propagating oscillations of E and B fields, mutually perpendicular and perpendicular to the direction of travel, moving at c without any medium. Radiation requires accelerating charge: a static charge has a static field, a uniformly moving charge carries its field along, but an accelerating charge produces a kink in the field lines that propagates away carrying energy.",
+      "why": "The kink picture explains why the radiated power depends on acceleration squared (Larmor's formula) and why antennas work by shaking electrons back and forth. It also creates a classical crisis: an electron orbiting a nucleus is accelerating, so it should radiate and spiral in within nanoseconds. That the atom is stable was direct evidence that classical electrodynamics fails at atomic scale, motivating quantum theory.",
+      "followup": "'Why is the sky blue?' Rayleigh scattering off air molecules scales as 1/λ⁴, so short-wavelength blue scatters far more strongly than red."
+    },
+    {
+      "id": "thm-01", "topic": "thermodynamics", "difficulty": 1,
+      "q": "State the laws of thermodynamics and what each forbids.",
+      "a": "Zeroth: thermal equilibrium is transitive, which is what makes temperature well-defined. First: energy is conserved, ΔU = Q − W, forbidding perpetual motion of the first kind. Second: total entropy never decreases, forbidding perpetual motion of the second kind and giving time a direction. Third: entropy approaches a constant as T → 0, making absolute zero unreachable in finite steps.",
+      "why": "The first law says you cannot win; the second says you cannot break even. Together they set every efficiency limit in engineering — the Carnot bound 1 − T_c/T_h is not a technology problem but a law, which is why power plants reject waste heat by necessity rather than by poor design. The second law is also the only fundamental law that distinguishes past from future.",
+      "followup": "'Does life violate the second law?' No — organisms decrease their own entropy while exporting more to their surroundings; the total still rises."
+    },
+    {
+      "id": "thm-02", "topic": "thermodynamics", "difficulty": 2,
+      "q": "What is entropy, in both the thermodynamic and statistical senses?",
+      "a": "Thermodynamically, dS = δQ_rev/T — a state function tracking reversible heat flow per unit temperature. Statistically, S = k ln W, where W counts the microstates consistent with the observed macrostate. Entropy measures how many microscopic arrangements produce the same macroscopic description.",
+      "why": "Boltzmann's formula demystifies the second law: entropy increases because overwhelmingly more microstates correspond to disordered macrostates, so a system wandering randomly through its states is found in high-multiplicity configurations essentially always. Nothing forbids the air in a room collecting in one corner — it is merely so improbable that it will not happen in the universe's lifetime. The law is statistical, not mechanical.",
+      "followup": "'How does this connect to information theory?' Shannon entropy has the same form; both measure missing information, and Landauer showed erasing one bit must dissipate at least kT ln 2 of heat."
+    },
+    {
+      "id": "thm-03", "topic": "thermodynamics", "difficulty": 2,
+      "q": "Why can't a heat engine be 100% efficient?",
+      "a": "An engine takes heat from a hot reservoir, converts some to work, and must dump the rest to a cold reservoir. Complete conversion would decrease total entropy: extracting Q_h at T_h lowers the source's entropy by Q_h/T_h, and only heat rejected to the cold sink restores the balance. The maximum efficiency is Carnot's 1 − T_c/T_h.",
+      "why": "The entropy accounting shows this is a constraint on any conceivable engine, not on our engineering. It also explains why efficiency rises with the temperature ratio — power plants run as hot as materials permit and reject heat as cold as the environment allows. And it identifies what makes energy 'useful': energy is conserved but its capacity to do work degrades as entropy rises, which is why free energy, not energy, is the currency that matters.",
+      "followup": "'Do heat pumps break this?' No — they move heat rather than convert it, so their coefficient of performance can exceed 1 without violating anything."
+    },
+    {
+      "id": "thm-04", "topic": "thermodynamics", "difficulty": 2,
+      "q": "What is temperature, fundamentally?",
+      "a": "Not average energy, but the reciprocal of how entropy changes with energy: 1/T = ∂S/∂U. Temperature measures a system's reluctance to accept more energy — a system whose entropy rises steeply with added energy is cold and absorbs eagerly; one whose entropy barely rises is hot and gives energy up.",
+      "why": "This definition explains why heat flows from hot to cold as a consequence of entropy maximization rather than as a separate law: transferring energy from low ∂S/∂U to high ∂S/∂U raises total entropy. It also permits the exotic case of negative temperature — a system with bounded energy levels and population inversion has entropy *decreasing* with energy, making it hotter than any positive temperature, which is exactly the state a laser medium occupies.",
+      "followup": "'Why is average kinetic energy the usual definition?' It coincides for ideal gases via equipartition, but fails for spins, photons, and anything with bounded energy."
+    },
+    {
+      "id": "thm-05", "topic": "thermodynamics", "difficulty": 3,
+      "q": "What does statistical mechanics add to thermodynamics?",
+      "a": "It derives thermodynamics from microscopic mechanics plus probability. The Boltzmann distribution P(E) ∝ e^(−E/kT) gives the probability of a microstate at temperature T, and the partition function Z = Σe^(−E/kT) encodes everything — free energy, entropy, and all thermodynamic quantities follow from derivatives of ln Z.",
+      "why": "Thermodynamics describes relationships between macroscopic quantities but cannot say why a particular substance has the heat capacity it does; statistical mechanics computes it from the energy levels. The exponential weighting also explains activation phenomena — reaction rates, semiconductor conduction, and viscosity all vary as e^(−E_a/kT), which is why modest temperature changes produce dramatic rate changes.",
+      "followup": "'Why is the partition function called that?' It describes how probability is partitioned among states; its logarithm's derivatives generate observables exactly like a moment generating function."
+    },
+    {
+      "id": "rel-01", "topic": "relativity", "difficulty": 1,
+      "q": "State the two postulates of special relativity and their immediate consequences.",
+      "a": "(1) The laws of physics are identical in all inertial frames. (2) The speed of light in vacuum is the same for every inertial observer, regardless of the source's motion. From these alone follow time dilation, length contraction, relativity of simultaneity, and E = mc².",
+      "why": "The second postulate is the radical one because it is incompatible with Galilean velocity addition — and something had to give. Einstein's insight was that absolute time was the assumption to abandon, not the constancy of c. Every counterintuitive consequence flows from that single choice, which is why relativity is best learned as one decision with many implications rather than as a list of separate effects.",
+      "followup": "'Was the Michelson–Morley experiment the motivation?' Einstein emphasized the asymmetry in Maxwell's treatment of moving magnets and conductors — a theoretical inelegance, not just an experimental null result."
+    },
+    {
+      "id": "rel-02", "topic": "relativity", "difficulty": 2,
+      "q": "Explain the relativity of simultaneity and why it is the root of the other effects.",
+      "a": "Two events simultaneous in one frame are generally not simultaneous in another moving relative to it. Since the speed of light must be the same for everyone, observers in relative motion necessarily disagree about which distant events happen 'at the same time' — there is no universal present moment.",
+      "why": "This is the conceptual root because time dilation and length contraction are consequences of it. Measuring a moving object's length means noting both ends at the same time, and observers disagree about what that means — so they disagree about length. The train-and-lightning thought experiment makes it concrete, and it also resolves apparent paradoxes: the pole-in-barn puzzle dissolves once you notice the two frames disagree about whether the doors shut simultaneously.",
+      "followup": "'Does this permit changing the past?' No — the relativity of simultaneity applies only to spacelike-separated events, which cannot influence one another. Causal order is preserved for everyone."
+    },
+    {
+      "id": "rel-03", "topic": "relativity", "difficulty": 2,
+      "q": "Resolve the twin paradox.",
+      "a": "The situation is not symmetric. The travelling twin must accelerate to turn around, so they occupy two different inertial frames while the stay-at-home twin occupies one throughout. Only inertial observers may apply the simple time-dilation formula naively, and the traveller's change of frame shifts their notion of simultaneity — accounting for the elapsed time on the other twin's clock during the turnaround.",
+      "why": "The cleanest resolution avoids acceleration entirely: in spacetime, proper time is the 'length' of a worldline, and the straight (inertial) path between two events has the *maximum* proper time. The traveller's bent path is shorter in elapsed time, exactly as a bent road is longer in space — with the sign flipped by the Minkowski metric. Ageing less is geometry, not a mystery.",
+      "followup": "'Is this experimentally verified?' Yes — atomic clocks flown on aircraft (Hafele–Keating) and the GPS system, which corrects for both special and general relativistic effects to stay accurate."
+    },
+    {
+      "id": "rel-04", "topic": "relativity", "difficulty": 2,
+      "q": "What does E = mc² actually claim?",
+      "a": "That mass and energy are the same quantity in different units, with c² as the conversion factor. A system's mass measures its total internal energy — rest mass, kinetic energy of constituents, and binding energy alike. The full relation is E² = (pc)² + (mc²)², reducing to E = mc² only for something at rest.",
+      "why": "The system-level reading is what most explanations miss: a hot object weighs marginally more than a cold one, and a proton's mass comes overwhelmingly from gluon field energy rather than from the tiny quark masses. Nuclear energy release is likewise not the conversion of matter into energy but the conversion of binding energy into kinetic energy, with a corresponding decrease in the system's mass.",
+      "followup": "'Do photons have mass?' Zero rest mass, but nonzero energy and momentum E = pc — and a box of photons weighs more than an empty one."
+    },
+    {
+      "id": "rel-05", "topic": "relativity", "difficulty": 3,
+      "q": "What is spacetime interval, and why is it more fundamental than distance or duration?",
+      "a": "s² = (ct)² − x² − y² − z², the Minkowski-signature combination of separation in time and space. Unlike lengths and durations separately — which vary by observer — the interval is invariant: every inertial observer computes the same value for a given pair of events.",
+      "why": "Its invariance makes it the true geometry of spacetime, with the minus signs distinguishing it from Euclidean distance and giving three regimes: timelike (s² > 0, causally connectable, ordering fixed for all observers), spacelike (s² < 0, no causal contact, ordering frame-dependent), and lightlike (s² = 0, the path of light). Causality is thus built into the geometry itself, not imposed as an extra rule.",
+      "followup": "'How does general relativity extend this?' The flat Minkowski metric becomes a curved one determined by energy and momentum — gravity is that curvature."
+    },
+    {
+      "id": "qtm-01", "topic": "quantum", "difficulty": 2,
+      "q": "What does the wavefunction represent, and what does the Born rule say?",
+      "a": "ψ(x,t) is a complex-valued amplitude containing everything knowable about a system. It is not directly observable; the Born rule says |ψ(x)|² gives the probability density of finding the particle at x. Phases matter because amplitudes, not probabilities, superpose — which is what produces interference.",
+      "why": "The amplitude-versus-probability distinction is the entire quantum difference. Classically you add probabilities of alternative paths; quantum mechanically you add complex amplitudes and square at the end, so terms can cancel. That cross term is interference, and it disappears the moment the paths become distinguishable — which is exactly what measurement and decoherence accomplish, and why the double-slit pattern vanishes when you detect which slit was used.",
+      "followup": "'Why must ψ be complex?' A real amplitude could not encode phase evolution; the Schrödinger equation's i is what makes probability conserve while allowing interference."
+    },
+    {
+      "id": "qtm-02", "topic": "quantum", "difficulty": 2,
+      "q": "State the Heisenberg uncertainty principle and explain what it is not.",
+      "a": "σ_x σ_p ≥ ℏ/2: the spreads of position and momentum in the *state* obey a lower bound. It is not a statement about clumsy instruments disturbing the system, nor about our ignorance of definite underlying values — a particle simply does not possess a sharp position and a sharp momentum simultaneously.",
+      "why": "The reason is mathematical and unmysterious once seen: position and momentum wavefunctions are Fourier transforms of one another, and no function can be sharply localized in both a variable and its Fourier conjugate. It is the same time–frequency trade-off musicians know, scaled by ℏ. This also explains the stability of atoms — confining an electron more tightly raises its momentum spread and hence its kinetic energy, so there is a minimum-energy compromise.",
+      "followup": "'Which other pairs are conjugate?' Energy and time, and angular momentum components — any pair of non-commuting observables obeys an analogous bound."
+    },
+    {
+      "id": "qtm-03", "topic": "quantum", "difficulty": 2,
+      "q": "What is quantum superposition, and how does it differ from classical ignorance?",
+      "a": "A system can occupy a linear combination of basis states, α|0⟩ + β|1⟩, and this is a definite physical state — not a description of not knowing which one it is in. The difference is empirical: superpositions produce interference between the branches, whereas classical mixtures produce only weighted averages of outcomes.",
+      "why": "The distinction is testable, which is what makes it physics rather than interpretation. A superposition passing through an interferometer shows fringes; a statistical mixture of the same two states never does. Decoherence explains the transition — coupling to the environment rapidly entangles the branches with countless environmental degrees of freedom, destroying the relative phase and leaving what is effectively a classical mixture. That is why macroscopic superpositions are so fragile.",
+      "followup": "'Is Schrödinger's cat ever really in superposition?' Decoherence times for anything cat-sized are astronomically short — the thought experiment illustrates the measurement problem, not a realistic scenario."
+    },
+    {
+      "id": "qtm-04", "topic": "quantum", "difficulty": 3,
+      "q": "What is quantum entanglement, and what did Bell prove about it?",
+      "a": "Entangled particles share a joint state that cannot be factored into individual states, so measuring one immediately constrains the other's statistics regardless of separation. Bell proved that no theory with local hidden variables can reproduce quantum correlations — and experiments have repeatedly confirmed the quantum predictions, violating Bell inequalities.",
+      "why": "Bell converted a philosophical dispute into an experimental question, which is why the result matters so much: nature is genuinely non-local in correlations, or particles genuinely lack pre-existing values, but you cannot keep both locality and realism. Crucially, entanglement transmits no usable signal — each side's marginal statistics look perfectly random, and only comparing results afterward through a classical channel reveals the correlation. Causality survives.",
+      "followup": "'What is entanglement good for?' Quantum key distribution, teleportation of states, and the speedups in quantum computing — all exploit correlations no classical resource can produce."
+    },
+    {
+      "id": "qtm-05", "topic": "quantum", "difficulty": 3,
+      "q": "Why are energy levels quantized in bound systems?",
+      "a": "Bound states impose boundary conditions on the wavefunction — it must vanish at infinity or match at potential walls. Only certain discrete wavelengths satisfy those conditions, exactly as a guitar string of fixed length supports only specific harmonics. Free, unbound particles have no such constraint and their energies form a continuum.",
+      "why": "The standing-wave analogy makes quantization unsurprising rather than mystical: confinement plus wave behavior always yields discrete modes. It also predicts the correct trends — tighter confinement means shorter allowed wavelengths and larger level spacing, which is why small quantum dots fluoresce blue and large ones red, and why nuclear transitions (tiny box) release far more energy than atomic ones.",
+      "followup": "'Why does the ground state have nonzero energy?' A zero-energy state would mean a perfectly localized, motionless particle, which uncertainty forbids — zero-point energy is the minimum compromise."
+    }
+  ]
+}

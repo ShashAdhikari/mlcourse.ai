@@ -1,0 +1,225 @@
+{
+  "id": "microeconomics",
+  "title": "Microeconomics",
+  "blurb": "Prices, incentives, market power and failure — the models economists actually reason with, and the assumptions each one rests on.",
+  "topics": [
+    { "id": "markets", "title": "Supply & Demand", "free": true },
+    { "id": "consumer", "title": "Consumer Choice", "free": true },
+    { "id": "producer", "title": "Production & Costs", "free": false },
+    { "id": "structure", "title": "Market Structure", "free": false },
+    { "id": "failure", "title": "Market Failure", "free": false },
+    { "id": "welfare", "title": "Welfare & Policy", "free": false }
+  ],
+  "cards": [
+    {
+      "id": "mkt-01", "topic": "markets", "difficulty": 1,
+      "q": "What does a demand curve represent, and why must you distinguish movement along it from a shift of it?",
+      "a": "It shows quantity demanded at each price, holding everything else constant. A price change moves you *along* the curve; a change in income, tastes, substitute prices, or expectations *shifts* the whole curve. Confusing the two produces the classic error of claiming higher prices cause higher demand when both are being driven by a demand shift.",
+      "why": "The distinction is the identification problem in disguise: observed price-quantity pairs are equilibria where both curves intersect, so the scatter of market data traces neither curve. Recovering a demand curve requires something that shifts supply while leaving demand alone — an instrument. This is exactly why weather shocks and tax changes are so valued in empirical work, and why naive regression of quantity on price estimates nothing meaningful.",
+      "followup": "'What is a Giffen good?' An inferior good where the income effect overwhelms the substitution effect, so demand genuinely rises with price — theoretically coherent, empirically very rare."
+    },
+    {
+      "id": "mkt-02", "topic": "markets", "difficulty": 1,
+      "q": "Define price elasticity of demand and explain what determines it.",
+      "a": "The percentage change in quantity demanded per percentage change in price, normally negative. Demand is elastic if the magnitude exceeds 1, inelastic below 1. Determinants: availability of substitutes, whether the good is a necessity, the share of budget it consumes, and the time horizon — elasticity rises over time as adjustment becomes possible.",
+      "why": "The revenue implication is what makes it operational: raising price increases revenue when demand is inelastic and decreases it when elastic, so knowing the elasticity determines pricing strategy directly. The time dimension explains why short-run petrol demand barely responds to price while long-run demand responds substantially — people cannot change cars or commutes overnight, but they can over a decade.",
+      "followup": "'Why is elasticity not the same as the slope?' Slope depends on units; elasticity is unit-free, which is what makes it comparable across goods and markets."
+    },
+    {
+      "id": "mkt-03", "topic": "markets", "difficulty": 2,
+      "q": "Who really bears a tax, and what determines the incidence?",
+      "a": "Statutory incidence — who legally remits the tax — is irrelevant to economic incidence. The burden falls on whichever side is less elastic, because the more elastic side can more easily withdraw from the market. If demand is perfectly inelastic, consumers bear it all regardless of who writes the cheque.",
+      "why": "This is one of economics' most robust and most ignored results. It explains why payroll taxes nominally split between employer and employee are largely borne by workers, since labour supply is relatively inelastic, and why taxing luxury yachts destroyed boatbuilding jobs rather than burdening the wealthy — demand for yachts was highly elastic. Legislating who pays a tax does not determine who bears it.",
+      "followup": "'What creates deadweight loss?' The transactions that no longer happen — loss grows with elasticity and with the square of the tax rate."
+    },
+    {
+      "id": "mkt-04", "topic": "markets", "difficulty": 2,
+      "q": "What do price ceilings and floors do, and why do shortages persist under them?",
+      "a": "A binding price ceiling below equilibrium creates excess demand — a shortage — because quantity supplied falls while quantity demanded rises. A binding floor above equilibrium creates a surplus. The shortage persists because price is prevented from doing its rationing job, so allocation happens instead by queuing, quality reduction, or informal markets.",
+      "why": "The crucial point is that non-price rationing is not free — the resources spent queuing or searching are pure waste that neither buyer nor seller captures, which is why the welfare loss exceeds the simple triangle. Rent control illustrates the dynamics: it benefits current tenants while reducing supply, discouraging maintenance, and reducing mobility, with costs falling largely on future and outside renters who have no political voice.",
+      "followup": "'When can a price ceiling improve outcomes?' Facing a monopoly, a well-set ceiling can increase both output and welfare — the standard result assumes competition."
+    },
+    {
+      "id": "mkt-05", "topic": "markets", "difficulty": 2,
+      "q": "What does it mean that prices convey information?",
+      "a": "Hayek's argument: a price aggregates dispersed knowledge held by millions of participants — about scarcity, preferences, technology — into a single number that guides action without anyone needing to possess the underlying information. A rising copper price tells users to economize without telling them why.",
+      "why": "This reframes the central planning debate as an information problem rather than an incentive one: even a perfectly benevolent planner faces the impossibility of aggregating knowledge that exists only locally and often tacitly. It also explains why price controls do more damage than the static welfare triangle suggests — they suppress the signal, so the shortage persists rather than calling forth new supply. The same logic underlies prediction markets.",
+      "followup": "'Where does the mechanism break?' Externalities and public goods, where prices omit costs and benefits, so the signal is systematically wrong."
+    },
+    {
+      "id": "csm-01", "topic": "consumer", "difficulty": 1,
+      "q": "What is diminishing marginal utility, and what does it explain?",
+      "a": "Each additional unit of a good yields less added satisfaction than the previous one. It explains downward-sloping demand, since willingness to pay falls as consumption rises, and it explains diversification of consumption across goods rather than spending everything on one.",
+      "why": "Applied to wealth rather than goods, it does much heavier lifting: diminishing marginal utility of income is what makes people risk-averse (a fair gamble has lower expected utility than its certain equivalent) and what underlies the utilitarian argument for redistribution, since a pound is worth more to a poor person than a rich one. It also resolves the St Petersburg paradox, where infinite expected value commands only finite willingness to pay.",
+      "followup": "'Is utility measurable?' Ordinal preference rankings suffice for demand theory; cardinal utility is needed only for choice under uncertainty and interpersonal comparison."
+    },
+    {
+      "id": "csm-02", "topic": "consumer", "difficulty": 2,
+      "q": "Decompose a price change into substitution and income effects.",
+      "a": "When a price falls, the substitution effect makes the good relatively cheaper so consumption rises — always in this direction. The income effect reflects increased real purchasing power, raising consumption of normal goods and lowering it for inferior goods. Total effect is their sum.",
+      "why": "The decomposition explains the possibility of a Giffen good, where a strong negative income effect on an inferior staple overwhelms substitution and demand rises with price. More practically it clarifies policy design: a targeted subsidy on one good produces both effects, whereas an equivalent cash transfer produces only the income effect — which is why economists generally prefer cash unless the goal is specifically to change relative consumption.",
+      "followup": "'What does a compensated demand curve show?' The substitution effect alone, holding utility constant — the right object for welfare analysis."
+    },
+    {
+      "id": "csm-03", "topic": "consumer", "difficulty": 2,
+      "q": "What is opportunity cost, and why do sunk costs not belong in a decision?",
+      "a": "Opportunity cost is the value of the best forgone alternative — the true economic cost of any choice. Sunk costs are already incurred and unrecoverable, so they are identical across all options and cannot affect which is best. Only forward-looking costs and benefits are decision-relevant.",
+      "why": "The sunk cost fallacy persists because abandoning a costly commitment feels like accepting waste, when the waste occurred already and the only question is what to do next. Recognizing it is genuinely valuable: it prevents throwing good money after bad in failing projects, and the same logic explains why economic profit differs from accounting profit, since the former subtracts the opportunity cost of capital and owner labour that accounting ignores.",
+      "followup": "'Is a business earning zero economic profit failing?' No — it is exactly covering all opportunity costs, which is the competitive equilibrium outcome."
+    },
+    {
+      "id": "csm-04", "topic": "consumer", "difficulty": 2,
+      "q": "What do indifference curves and budget constraints jointly determine?",
+      "a": "The optimum sits where the highest attainable indifference curve is tangent to the budget line — where the marginal rate of substitution equals the price ratio. At any other point, trading along the budget line reaches a preferred bundle.",
+      "why": "The tangency condition is an equimarginal principle, the same structure as equating marginal cost to marginal revenue: at an optimum, the rate at which you are willing to trade equals the rate at which the market lets you. That single idea generalizes across all of constrained optimization, and its violation is exactly the signal that gains from trade remain. Convexity of preferences is what guarantees the tangency is a maximum and that people prefer mixtures to extremes.",
+      "followup": "'What if preferences are not convex?' The optimum can be a corner solution — you specialize entirely in one good rather than mixing."
+    },
+    {
+      "id": "csm-05", "topic": "consumer", "difficulty": 3,
+      "q": "What does revealed preference theory attempt, and why is it appealing?",
+      "a": "It infers preferences from observed choices rather than assuming an unobservable utility function. If a consumer chooses bundle A when B was affordable, A is revealed preferred to B. The weak and strong axioms impose consistency, and satisfying them is equivalent to the choices being generated by some well-behaved utility function.",
+      "why": "The appeal is methodological: it grounds demand theory in observable behavior rather than introspection about mental states, which was Samuelson's aim in making economics operational. Its limit is equally important — it is a consistency test, not a rationality test. Choices that are stable but influenced by framing, defaults, or menu effects can satisfy the axioms while clearly reflecting manipulable preferences, which is where behavioral economics enters.",
+      "followup": "'What violates the axioms most robustly?' Preference reversals under different elicitation methods — the same person ranks A over B when choosing and B over A when pricing."
+    },
+    {
+      "id": "prd-01", "topic": "producer", "difficulty": 1,
+      "q": "Why do firms produce where marginal cost equals marginal revenue?",
+      "a": "Because profit rises while marginal revenue exceeds marginal cost and falls once marginal cost exceeds marginal revenue, so profit peaks where they are equal. In perfect competition price equals marginal revenue, giving the familiar P = MC condition; under market power marginal revenue lies below price.",
+      "why": "The gap between price and marginal revenue for a price-setter is the source of monopoly inefficiency: selling one more unit requires lowering the price on all units, so marginal revenue falls faster than price, and the firm stops short of the efficient quantity. Recognizing that competition and monopoly share the same optimization rule and differ only in the marginal revenue curve unifies what students often learn as two separate models.",
+      "followup": "'Why is the second-order condition needed?' MC = MR can also identify a profit minimum; you need marginal cost cutting marginal revenue from below."
+    },
+    {
+      "id": "prd-02", "topic": "producer", "difficulty": 2,
+      "q": "Distinguish economies of scale from returns to scale and from learning effects.",
+      "a": "Returns to scale is a technological property of the production function — doubling all inputs more than doubles output. Economies of scale is the cost concept — long-run average cost falls with output, which can also arise from bulk purchasing or fixed-cost spreading. Learning effects reduce cost with cumulative output over time, not with the current rate of production.",
+      "why": "Conflating scale with learning leads to real strategic errors: scale advantages evaporate if a competitor matches your size, while learning advantages persist because a rival must traverse the same cumulative volume. Network effects are different again, operating on the demand side. Diagnosing which mechanism actually produces a cost or value advantage determines whether that advantage is defensible.",
+      "followup": "'What causes diseconomies of scale?' Coordination and agency costs rising with organizational complexity — the reason firms have finite optimal size."
+    },
+    {
+      "id": "prd-03", "topic": "producer", "difficulty": 2,
+      "q": "Why might a firm keep operating at a loss?",
+      "a": "In the short run a firm should produce whenever price exceeds average variable cost, even if it falls short of average total cost. Fixed costs are sunk in the short run, so any contribution above variable cost reduces the loss compared with shutting down. Only when price falls below average variable cost should it stop production.",
+      "why": "This is the sunk cost principle applied to production, and it explains behavior that looks irrational from outside — factories running through downturns, airlines flying loss-making routes. The horizon distinction is what matters: in the long run all costs are variable, so persistent losses do force exit. It also explains why capital-intensive industries with high fixed costs endure brutal price wars, since the shutdown threshold sits so far below full cost.",
+      "followup": "'What is the long-run competitive equilibrium?' Price equals minimum average total cost, economic profit is zero, and entry and exit have exhausted all gains."
+    },
+    {
+      "id": "prd-04", "topic": "producer", "difficulty": 2,
+      "q": "What is the difference between accounting profit and economic profit?",
+      "a": "Accounting profit is revenue minus explicit costs. Economic profit also subtracts implicit opportunity costs — the return the owner's capital could have earned elsewhere and the salary they could have earned working elsewhere. A firm can show healthy accounting profit while destroying economic value.",
+      "why": "The distinction determines whether resources are correctly allocated: zero economic profit means the firm is exactly matching the next best use of its resources, which is the competitive benchmark rather than a sign of failure. It is also the conceptual foundation of economic value added in corporate finance, which charges the business for the capital it employs, and it explains why owner-operated small businesses often earn less than the owner's forgone wage.",
+      "followup": "'Why do firms enter markets with zero economic profit?' They do not — entry occurs where economic profit is positive, and continues until it is competed to zero."
+    },
+    {
+      "id": "prd-05", "topic": "producer", "difficulty": 3,
+      "q": "Why do firms exist at all, rather than everything being contracted through markets?",
+      "a": "Coase's answer: using the price mechanism has costs — searching, negotiating, contracting, monitoring, enforcing. A firm substitutes managerial direction for market transactions when those costs are lower internally. The firm expands until the marginal cost of organizing one more transaction internally equals the cost of transacting for it in the market.",
+      "why": "Williamson developed this into transaction cost economics, identifying asset specificity as the crucial factor: when an investment is valuable only in a specific relationship, whichever party made it is vulnerable to hold-up after the fact, so vertical integration protects it. This explains observed boundary choices — why firms own specialized components and outsource commodity ones — and it predicts outsourcing patterns better than any pure cost comparison.",
+      "followup": "'What is the hold-up problem?' Once a relationship-specific investment is sunk, the other party can renegotiate to capture the value — which deters the investment from being made at all."
+    },
+    {
+      "id": "str-01", "topic": "structure", "difficulty": 1,
+      "q": "What are the conditions for perfect competition, and why does it matter that they are never met?",
+      "a": "Many small buyers and sellers, homogeneous products, perfect information, free entry and exit, and no participant able to influence price. Real markets violate at least one condition essentially always — the model matters as a benchmark of efficiency, not as a description.",
+      "why": "Its value is analytical: it identifies the conditions under which decentralized self-interest produces efficient outcomes, so each violated condition points to a specific reason a real market may fail and a specific candidate remedy. Treating it as descriptive leads to bad policy in both directions — assuming markets are already efficient, or condemning them for falling short of an unattainable ideal. Contestability theory softens it usefully, showing that credible threat of entry can discipline even a single incumbent.",
+      "followup": "'What makes a market contestable?' Free entry and costless exit — sunk costs are what make entry threats non-credible and let incumbents sustain high prices."
+    },
+    {
+      "id": "str-02", "topic": "structure", "difficulty": 2,
+      "q": "How does a monopoly create deadweight loss?",
+      "a": "The monopolist sets marginal revenue equal to marginal cost, and since marginal revenue lies below price, output stops where price exceeds marginal cost. Consumers who value the good above its production cost go unserved, and the value of those forgone transactions is deadweight loss — value destroyed rather than merely transferred.",
+      "why": "The distinction between transfer and loss is what makes the argument normatively forceful: the higher price transfers surplus from consumers to the firm, which is a distributional matter, but the unserved transactions benefit nobody. That is the efficiency case for antitrust. Rent-seeking expenditure to obtain and defend monopoly position adds further real loss, which is why Tullock argued the standard triangle understates the damage.",
+      "followup": "'When is monopoly efficient?' Natural monopoly with declining average cost, where duplicating infrastructure would cost more than the deadweight loss — hence regulation rather than fragmentation."
+    },
+    {
+      "id": "str-03", "topic": "structure", "difficulty": 2,
+      "q": "What is price discrimination, and what conditions make it possible?",
+      "a": "Charging different prices for the same good based on willingness to pay. It requires market power, the ability to segment buyers, and prevention of resale. First-degree charges each buyer their maximum; second-degree uses self-selection through versions or quantities; third-degree segments by observable group.",
+      "why": "Its welfare effect is genuinely ambiguous, which surprises people: discrimination extracts surplus from consumers but can also expand output by serving customers who would be priced out of a single-price market, as with student discounts or differential drug pricing across countries. Second-degree discrimination is the most instructive because it solves an information problem — the seller cannot observe type, so the menu is designed for buyers to sort themselves.",
+      "followup": "'Why must versions be degraded deliberately?' To maintain self-selection — IBM famously slowed a printer to create a cheaper model, since the constraint is incentive compatibility, not cost."
+    },
+    {
+      "id": "str-04", "topic": "structure", "difficulty": 2,
+      "q": "How do Cournot and Bertrand competition differ, and why does the difference matter so much?",
+      "a": "Cournot firms choose quantities and the market clears at the resulting price, producing an outcome between monopoly and perfect competition. Bertrand firms choose prices, and with homogeneous goods and equal costs, competition drives price to marginal cost even with only two firms — the Bertrand paradox.",
+      "why": "The dramatic divergence from the same market structure shows how much the strategic variable matters. Bertrand's stark result is resolved by capacity constraints, product differentiation, or repetition, and Kreps and Scheinkman showed that capacity choice followed by price competition reproduces the Cournot outcome. The practical reading is that industries where capacity is fixed in advance behave like Cournot, while those with flexible capacity and undifferentiated products face brutal price competition.",
+      "followup": "'Why does differentiation soften competition?' It gives each firm residual demand that does not vanish when undercut, restoring positive margins."
+    },
+    {
+      "id": "str-05", "topic": "structure", "difficulty": 3,
+      "q": "Why are cartels unstable?",
+      "a": "A cartel sets output below competitive levels to raise price, but at the cartel price each member's marginal revenue exceeds its marginal cost, so every member has a private incentive to produce more. It is a prisoner's dilemma: collectively they want restriction, individually each wants to cheat.",
+      "why": "This explains the observed conditions for cartel success — few firms, homogeneous products, transparent prices allowing detection of cheating, stable demand, and high entry barriers. Detection is the binding constraint, which is why cartels invest in information sharing and why antitrust authorities target exactly that. Leniency programmes exploit the underlying game directly: offering immunity to the first confessor turns the members' mutual distrust into an enforcement mechanism.",
+      "followup": "'Why does OPEC persist despite this?' Saudi Arabia has historically acted as a swing producer absorbing adjustment, and even OPEC shows persistent quota violation."
+    },
+    {
+      "id": "fai-01", "topic": "failure", "difficulty": 1,
+      "q": "What is an externality, and why does it cause inefficiency?",
+      "a": "A cost or benefit falling on someone not party to the transaction. Because the decision-maker does not bear the full cost or capture the full benefit, private and social marginal cost diverge — producing too much of a negative externality and too little of a positive one relative to the efficient level.",
+      "why": "The framing that matters is that this is a missing-market problem rather than a moral failing: no market exists for clean air, so its value never enters anyone's calculation. That immediately suggests the remedies — create the missing price through a Pigouvian tax or subsidy, or create the missing property right and let bargaining occur. It also explains why the efficient level of pollution is not zero: abatement has rising costs and the optimum equates marginal abatement cost to marginal damage.",
+      "followup": "'Why prefer a carbon tax to a mandate?' It equalizes marginal abatement cost across all emitters, achieving any given reduction at least total cost."
+    },
+    {
+      "id": "fai-02", "topic": "failure", "difficulty": 2,
+      "q": "What does the Coase theorem say, and what is its real lesson?",
+      "a": "With well-defined property rights and zero transaction costs, private bargaining reaches the efficient outcome regardless of who initially holds the rights — the allocation of rights affects distribution but not efficiency. The real lesson is the contrapositive: since transaction costs are never zero, their magnitude determines whether bargaining can work and therefore how rights should be assigned.",
+      "why": "Coase's point was not that government intervention is unnecessary but that the transaction-cost structure should determine the remedy. With few parties and clear rights, bargaining works — a factory and a single neighbouring farm can negotiate. With millions of diffuse parties, as with climate change, bargaining is impossible and taxation or regulation is required. The theorem is therefore a diagnostic for choosing instruments, not an argument against intervention.",
+      "followup": "'Does the initial allocation truly not matter?' Only for efficiency, and only absent income effects — it always matters enormously for who ends up wealthy."
+    },
+    {
+      "id": "fai-03", "topic": "failure", "difficulty": 2,
+      "q": "What distinguishes public goods, common resources, club goods, and private goods?",
+      "a": "Two dimensions: excludability and rivalry. Private goods are both excludable and rival. Public goods are neither — national defence. Common resources are rival but not excludable — fisheries. Club goods are excludable but not rival — a subscription streaming service or an uncongested toll road.",
+      "why": "Each quadrant has a characteristic failure and remedy. Public goods are underprovided through free-riding, so they are typically tax-funded. Common resources are overused through the tragedy of the commons, so they need quotas, property rights, or community governance. Club goods are efficiently produced but underconsumed, since any positive price excludes users who impose no marginal cost — the pricing problem behind digital goods, where marginal cost is essentially zero.",
+      "followup": "'What makes digital goods awkward?' Non-rival with near-zero marginal cost, so efficient pricing is zero — which cannot fund the fixed cost of creation, hence copyright and subscriptions."
+    },
+    {
+      "id": "fai-04", "topic": "failure", "difficulty": 2,
+      "q": "How does asymmetric information cause markets to fail?",
+      "a": "When one party knows more than the other, two problems arise. Adverse selection operates before contracting: uninformed buyers offer average prices, high-quality sellers exit, and quality spirals down. Moral hazard operates after: the party whose actions are unobserved takes less care because they no longer bear the full consequences.",
+      "why": "The market responses are as instructive as the failures: warranties, brands, certifications, and professional licensing all exist to solve credibility problems that price alone cannot. Insurance markets illustrate both problems and both remedies simultaneously — mandates and risk classification address selection, deductibles and co-payments address hazard. Recognizing that these institutions are solutions to information problems, rather than arbitrary friction, is the practical payoff.",
+      "followup": "'Why does credit rationing occur?' Raising rates worsens the borrower pool through selection and encourages riskier projects, so lenders limit quantity rather than raise price."
+    },
+    {
+      "id": "fai-05", "topic": "failure", "difficulty": 3,
+      "q": "What is the theory of the second best, and why is it uncomfortable?",
+      "a": "Lipsey and Lancaster showed that if one optimality condition cannot be satisfied, satisfying the remaining conditions is not generally optimal. Removing one distortion from a distorted economy can reduce welfare — piecemeal reform toward the competitive ideal is not reliably an improvement.",
+      "why": "It is uncomfortable because it undermines the intuitive case for incremental liberalization: eliminating a tariff in an economy with monopoly and taxes elsewhere may worsen the overall allocation. This is not an argument against reform but a demand for analysis of interactions rather than reasoning from first principles about a single market. It explains why economists disagree so often about specific policies while agreeing on general theory.",
+      "followup": "'Does this justify inaction?' No — it argues for empirical evaluation of particular reforms rather than assuming every step toward textbook conditions helps."
+    },
+    {
+      "id": "wel-01", "topic": "welfare", "difficulty": 2,
+      "q": "What do the two fundamental theorems of welfare economics establish?",
+      "a": "The first: any competitive equilibrium is Pareto efficient — decentralized self-interest exhausts gains from trade. The second: any Pareto efficient allocation can be achieved as a competitive equilibrium given suitable lump-sum redistribution of initial endowments, so efficiency and distribution can in principle be separated.",
+      "why": "The second theorem is the more consequential and the more fragile. It underwrites the standard policy position that we should let markets allocate and address distribution through transfers — but it depends on lump-sum transfers, which cannot exist in practice because any transfer conditioned on observable characteristics distorts behavior. Real redistribution therefore always carries efficiency cost, and the clean separation the theorem promises is unavailable.",
+      "followup": "'What assumptions does the first theorem need?' Complete markets, no externalities, no market power, and full information — precisely the list of market failures."
+    },
+    {
+      "id": "wel-02", "topic": "welfare", "difficulty": 2,
+      "q": "What are consumer and producer surplus, and what do they miss?",
+      "a": "Consumer surplus is the gap between willingness to pay and price paid, summed across buyers; producer surplus is price received minus marginal cost. Their sum measures total gains from trade. They miss distribution entirely, weight preferences by ability to pay, and ignore externalities and non-market values.",
+      "why": "The ability-to-pay weighting is the deepest limitation: willingness to pay measures desire filtered through budget, so a wealthy person's mild preference registers as larger than a poor person's urgent need. Total surplus maximization therefore embeds a distributional judgment while presenting itself as neutral efficiency analysis. Being explicit about this is what separates careful welfare economics from the naive version.",
+      "followup": "'What is the equity-efficiency trade-off?' Redistribution generally reduces total surplus through distorted incentives — Okun's leaky bucket, where some value is lost in transit."
+    },
+    {
+      "id": "wel-03", "topic": "welfare", "difficulty": 2,
+      "q": "Why do economists generally prefer cash transfers to in-kind benefits?",
+      "a": "A recipient can always use cash to buy the in-kind good if they want it, so cash weakly dominates on the recipient's own preferences — the same expenditure yields at least as much welfare. In-kind benefits impose the donor's judgment about what the recipient should consume.",
+      "why": "The counterarguments are where the interesting economics sits. Paternalism may be justified where recipients' choices harm children or reflect present bias. In-kind benefits act as a screening device, since only those genuinely in need accept the inconvenience, addressing an information problem. And political economy matters: voters fund food and housing programmes more readily than cash, so in-kind may raise more total support even if it is less efficient per pound.",
+      "followup": "'What does the evidence show about cash transfers?' Large studies find recipients generally do not increase spending on alcohol or tobacco, undercutting the standard paternalist objection."
+    },
+    {
+      "id": "wel-04", "topic": "welfare", "difficulty": 3,
+      "q": "How do behavioral findings challenge standard welfare analysis?",
+      "a": "Standard analysis equates choices with preferences and preferences with welfare. If choices depend on framing, defaults, or reference points, that chain breaks — a person choosing differently under two presentations of the same options cannot have both choices reflect their true welfare. Which choice should count then becomes an open question.",
+      "why": "This is genuinely destabilizing because revealed preference was the discipline's method for keeping welfare analysis empirical. Libertarian paternalism responds by choosing defaults that people would select 'if they had full attention and complete information' — but identifying that counterfactual requires exactly the normative standard revealed preference was meant to avoid. Retirement auto-enrollment works precisely because defaults matter, which concedes the point.",
+      "followup": "'What is the strongest objection to nudging?' Someone must choose the nudge, and their judgment about others' true interests may be no better and is less accountable."
+    },
+    {
+      "id": "wel-05", "topic": "welfare", "difficulty": 3,
+      "q": "What is rent-seeking, and why is it more damaging than the transfer it produces?",
+      "a": "Expending real resources to capture existing value rather than create it — lobbying for tariffs, licensing restrictions, or subsidies. Tullock's insight is that competition to obtain the rent dissipates it: if a monopoly privilege is worth a billion, firms will rationally spend up to a billion pursuing it, and that expenditure is pure waste.",
+      "why": "The waste is larger than the standard deadweight triangle because it consumes genuinely productive resources — the talent of lawyers, lobbyists, and executives redirected from creating value to redistributing it. This reframes political economy: the damage from a protectionist policy includes not just the distorted prices but the entire industry of influence that grows around the possibility of obtaining such policies, and it explains why concentrated benefits with diffuse costs are so politically durable.",
+      "followup": "'Why do diffuse costs lose politically?' Olson's logic — concentrated beneficiaries organize easily, while each of the many losers has too little at stake to act."
+    }
+  ]
+}

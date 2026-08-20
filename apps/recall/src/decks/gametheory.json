@@ -1,0 +1,225 @@
+{
+  "id": "gametheory",
+  "title": "Game Theory",
+  "blurb": "Equilibrium, credibility, repetition and auctions — strategic reasoning as it is actually used in economics, negotiation and mechanism design.",
+  "topics": [
+    { "id": "normal", "title": "Games & Equilibrium", "free": true },
+    { "id": "classic", "title": "Classic Games", "free": true },
+    { "id": "extensive", "title": "Sequential Games", "free": false },
+    { "id": "repeated", "title": "Repeated Games", "free": false },
+    { "id": "information", "title": "Incomplete Information", "free": false },
+    { "id": "mechanism", "title": "Auctions & Mechanism Design", "free": false }
+  ],
+  "cards": [
+    {
+      "id": "nrm-01", "topic": "normal", "difficulty": 1,
+      "q": "What is a Nash equilibrium, and what does it not guarantee?",
+      "a": "A strategy profile where no player can improve their payoff by unilaterally deviating — each player's strategy is a best response to the others'. It does not guarantee efficiency, uniqueness, fairness, or that players will actually reach it. The prisoner's dilemma has a unique Nash equilibrium that is worse for everyone than an available alternative.",
+      "why": "The definition is about stability, not optimality — it identifies where reasoning stops, not where welfare is maximized. That distinction is the single most misused point in applied game theory. Nash proved every finite game has at least one equilibrium in mixed strategies, which guarantees existence but often multiplicity, leaving the genuine question of which equilibrium gets played to be settled by focal points, dynamics, or convention.",
+      "followup": "'Does Nash equilibrium require players to be rational?' Not necessarily — evolutionary dynamics and learning processes converge on equilibria without any deliberation at all."
+    },
+    {
+      "id": "nrm-02", "topic": "normal", "difficulty": 1,
+      "q": "What is a dominant strategy, and how does iterated elimination of dominated strategies work?",
+      "a": "A strictly dominant strategy yields a higher payoff than any alternative regardless of what others do. If one exists, rationality alone selects it. Iterated elimination removes strictly dominated strategies, then removes strategies that became dominated once those were gone, repeating until no more can be eliminated.",
+      "why": "The iteration requires more than individual rationality — it requires common knowledge of rationality, since round two assumes others also eliminated in round one. The beauty-contest game exposes this empirically: asked to pick a number closest to two-thirds of the average, the equilibrium is zero, but real players stop after one or two rounds of reasoning, which is precisely why the winning guess is typically around 20 rather than 0.",
+      "followup": "'Why only strictly dominated?' Eliminating weakly dominated strategies can destroy legitimate equilibria and gives order-dependent results."
+    },
+    {
+      "id": "nrm-03", "topic": "normal", "difficulty": 2,
+      "q": "Why do mixed strategies exist, and what makes a player willing to randomize?",
+      "a": "Some games have no pure-strategy equilibrium — matching pennies is the standard case, since any predictable choice is exploitable. In a mixed equilibrium each player randomizes so that opponents are made *indifferent* between their own options. That indifference is what makes randomizing rational: if you preferred one action you would play it outright.",
+      "why": "The counterintuitive consequence is that your equilibrium probabilities are determined by your opponent's payoffs, not your own — you mix so as to neutralize their incentive to exploit you. This is why penalty-kick and serve-direction data in professional sport match mixed-equilibrium predictions surprisingly well, and why raising a penalty for one of your own actions can leave your behavior unchanged while altering theirs.",
+      "followup": "'Do people really randomize?' Poorly — humans generate detectably non-random sequences, which is exactly why professional play trains explicit randomization devices."
+    },
+    {
+      "id": "nrm-04", "topic": "normal", "difficulty": 2,
+      "q": "What is a zero-sum game, and what does the minimax theorem establish?",
+      "a": "A game where one player's gain exactly equals the other's loss, so interests are strictly opposed. Von Neumann's minimax theorem states every finite two-player zero-sum game has a value: the maximum a player can guarantee equals the minimum the opponent can hold them to, achieved with mixed strategies.",
+      "why": "The theorem makes zero-sum games completely solvable — the value is unique and equilibrium play is interchangeable, so there is no coordination problem. It is also why 'zero-sum' is so often misapplied: most real interactions, including trade, negotiation and most business competition, have gains from cooperation, and treating them as strictly opposed destroys value that both sides could have captured. Recognizing when a situation is genuinely zero-sum is more valuable than the solution technique.",
+      "followup": "'How does this connect to linear programming?' Solving a zero-sum game is a linear program, and the minimax theorem is essentially LP duality."
+    },
+    {
+      "id": "nrm-05", "topic": "normal", "difficulty": 2,
+      "q": "What is Pareto efficiency, and why is it a weak criterion?",
+      "a": "An outcome is Pareto efficient if no one can be made better off without making someone worse off. It is weak because it is silent about distribution: an allocation giving one person everything and everyone else nothing is Pareto efficient, and the criterion cannot rank most pairs of outcomes since almost any change harms someone.",
+      "why": "Its weakness is also why it commands agreement — it requires no interpersonal comparison of utility, so it is the one efficiency judgment nearly everyone accepts. That makes it a floor for evaluation, not a goal: a policy failing Pareto efficiency is definitely improvable, while passing it says almost nothing. The price of anarchy formalizes the gap, measuring how much worse equilibrium outcomes are than the socially optimal ones.",
+      "followup": "'What does Kaldor–Hicks add?' It counts an outcome as an improvement if winners could in principle compensate losers — which requires interpersonal comparison and does not require compensation to occur."
+    },
+    {
+      "id": "cls-01", "topic": "classic", "difficulty": 1,
+      "q": "Explain the prisoner's dilemma and why defection dominates.",
+      "a": "Two suspects each choose to cooperate (stay silent) or defect (confess). Defection yields a better payoff regardless of the other's choice — it dominates — so both defect, producing an outcome worse for both than mutual cooperation. The individually rational choice is collectively disastrous.",
+      "why": "The structure is the canonical model of why self-interest and collective interest diverge, and it recurs everywhere: arms races, price wars, doping in sport, overfishing, and climate negotiation all share the payoff ordering. The important insight is that the tragedy comes from the *structure*, not from malice or stupidity — which means the remedy is to change the structure through repetition, contracts, regulation, or reputation, not to exhort people to be better.",
+      "followup": "'What payoff ordering defines it?' Temptation > Reward > Punishment > Sucker, plus 2·Reward > Temptation + Sucker so that alternating defection is worse than mutual cooperation."
+    },
+    {
+      "id": "cls-02", "topic": "classic", "difficulty": 1,
+      "q": "What do the stag hunt and battle of the sexes illustrate that the prisoner's dilemma does not?",
+      "a": "The stag hunt is a coordination game with two equilibria — both hunt stag (efficient but risky) or both hunt hare (safe but worse). Battle of the sexes has two equilibria that both players prefer to miscoordination, but each prefers a different one. Neither involves dominance; both involve selecting among multiple equilibria.",
+      "why": "These model trust and coordination rather than temptation, and the distinction matters practically. In a stag hunt, cooperation is already an equilibrium — the problem is assurance, not incentive, so communication and credible commitment suffice where the prisoner's dilemma would need enforcement. Many situations diagnosed as prisoner's dilemmas are really stag hunts, and the difference determines whether you need a policeman or merely a phone call.",
+      "followup": "'What is a focal point?' A salient equilibrium selected by shared expectations — Schelling's insight that culture and context solve coordination where mathematics cannot."
+    },
+    {
+      "id": "cls-03", "topic": "classic", "difficulty": 2,
+      "q": "What does the game of chicken model, and why is commitment powerful in it?",
+      "a": "Two players drive toward each other; swerving loses face, neither swerving is catastrophic. There are two pure equilibria, each with one player yielding. The striking feature is that visibly removing your own options — throwing the steering wheel out the window — wins, because your opponent's best response to a committed player is to yield.",
+      "why": "This inverts ordinary intuition about flexibility being valuable: in strategic settings, credible constraint is power precisely because it changes the other player's calculation. Schelling built a theory of conflict around it, and the applications are everywhere — burning bridges, delegating to an inflexible negotiator, taking on debt to deter entry, or legislating automatic tariffs. Crucially the commitment must be *observable and irreversible*, or it does nothing.",
+      "followup": "'What happens if both commit?' The catastrophic outcome — which is why brinkmanship in nuclear standoffs is genuinely dangerous rather than merely clever."
+    },
+    {
+      "id": "cls-04", "topic": "classic", "difficulty": 2,
+      "q": "What is the tragedy of the commons as a game, and how does it differ from a two-player dilemma?",
+      "a": "An n-player prisoner's dilemma over a shared resource: each user's private benefit from extra extraction exceeds their share of the collective cost, so all overuse. Scaling up matters — with many anonymous players, individual contributions become negligible, monitoring is harder, and reputational enforcement weakens dramatically.",
+      "why": "The scaling problem is why solutions that work for two players often fail for thousands. Ostrom's empirical work identified what actually sustains commons management: clear boundaries on who may use the resource, rules made by the users themselves, graduated sanctions, cheap conflict resolution, and recognition by external authorities. That converts an apparently inevitable tragedy into an institutional design problem with known success conditions.",
+      "followup": "'Why does privatization not always work?' Some resources cannot be partitioned — fish stocks and the atmosphere flow across any boundary you draw."
+    },
+    {
+      "id": "cls-05", "topic": "classic", "difficulty": 2,
+      "q": "What is the free-rider problem, and why do public goods get underprovided?",
+      "a": "Public goods are non-excludable and non-rival, so anyone benefits whether or not they contribute. Each individual's rational choice is to enjoy the good without paying, and if all reason that way the good is not produced at all — even though everyone values it above its cost.",
+      "why": "This is why national defence, basic research, and clean air are typically funded by compulsory taxation rather than voluntary contribution: coercion solves a coordination failure that leaves everyone better off. The analysis also explains partial successes — open-source software and Wikipedia get provided because contributors receive private benefits (reputation, skill, use value) alongside the public good, which converts the payoff structure.",
+      "followup": "'What is the Samuelson condition?' Efficient provision requires the *sum* of individual marginal benefits to equal marginal cost — not each person's benefit separately."
+    },
+    {
+      "id": "ext-01", "topic": "extensive", "difficulty": 2,
+      "q": "What is backward induction, and what does it assume?",
+      "a": "In a finite sequential game with perfect information, solve from the final decision backward: determine the optimal choice at each terminal node, then work upward assuming those choices. It yields the subgame perfect equilibrium and assumes common knowledge of rationality holding at every node, including nodes that would only be reached by irrational play.",
+      "why": "That last assumption is where it strains. In the centipede game backward induction says take the money immediately, yet experimental players cooperate for many rounds and earn more. The paradox is sharp: if a player has already deviated from rationality to reach node 5, why should you predict rationality at node 6? Reconciling backward induction with off-path behavior motivated the theory of trembling-hand perfection and beliefs about mistakes.",
+      "followup": "'What is the centipede game?' A sequence of choices where passing grows the pot; backward induction predicts immediate stopping, and real play contradicts it consistently."
+    },
+    {
+      "id": "ext-02", "topic": "extensive", "difficulty": 2,
+      "q": "What is subgame perfection, and what problem with Nash equilibrium does it fix?",
+      "a": "A subgame perfect equilibrium is a strategy profile forming a Nash equilibrium in every subgame, not just overall. It eliminates equilibria sustained by non-credible threats — actions a player would never actually carry out if the moment arrived, but which shape behavior if believed.",
+      "why": "The entry-deterrence game is the standard illustration: an incumbent threatens a price war to deter entry, and 'stay out' is a Nash equilibrium. But if entry occurs, fighting is costlier than accommodating, so the threat is not credible and subgame perfection rules it out. The practical lesson is that threats and promises only work if carrying them out is in your interest at the time — which is precisely why commitment devices and reputation exist.",
+      "followup": "'How does an incumbent make the threat credible?' Build excess capacity, sign supply contracts, or establish a fighting reputation — change the payoffs so fighting really is optimal."
+    },
+    {
+      "id": "ext-03", "topic": "extensive", "difficulty": 2,
+      "q": "Why does first-mover advantage exist in some games and second-mover advantage in others?",
+      "a": "First-mover advantage arises when commitment is valuable — Stackelberg quantity competition lets the leader commit to a large output, forcing the follower to accommodate. Second-mover advantage arises when information is more valuable than commitment, as in rock-paper-scissors or in R&D races where you can learn from the pioneer's mistakes.",
+      "why": "The distinction reduces to whether moving first constrains you or informs your rival. If your action is observable and irreversible, moving first converts your choice into a constraint on their best response, which is valuable. If your action is exploitable once seen, moving first is a liability. This is why sealed bids differ so much from open outcry, and why business strategy about market entry timing is genuinely situation-dependent rather than universally 'move fast'.",
+      "followup": "'What makes Stackelberg leadership work?' Observability and irreversibility — a capacity commitment the follower can see and cannot undo."
+    },
+    {
+      "id": "ext-04", "topic": "extensive", "difficulty": 3,
+      "q": "What is the ultimatum game, and what do its results say about rationality assumptions?",
+      "a": "One player proposes a split of a sum; the other accepts (both get the split) or rejects (both get nothing). Subgame perfection predicts an offer of the smallest possible amount and acceptance, since any positive amount beats zero. Real responders routinely reject offers below about 20-30%, and proposers typically offer 40-50%.",
+      "why": "The results do not show people are irrational; they show the payoff model was wrong. Responders are maximizing utility that includes fairness and the satisfaction of punishing unfairness, and proposers anticipate this. Cross-cultural work found offers varying systematically with market integration and cooperative norms, which supports a social-preference reading rather than a computational-error one. The lesson generalizes: when predictions fail, suspect the utility specification before suspecting rationality.",
+      "followup": "'How does the dictator game isolate the effect?' Removing the rejection option still yields nonzero giving — so proposer behavior reflects genuine other-regarding preference, not only fear of rejection."
+    },
+    {
+      "id": "ext-05", "topic": "extensive", "difficulty": 3,
+      "q": "What is the value of commitment, and how do commitment devices work?",
+      "a": "Commitment means credibly restricting your own future options so others' best responses shift in your favour. Devices include contracts with penalties, delegating to an agent with different incentives, building irreversible capacity, public promises that impose reputational cost, and deliberately destroying alternatives.",
+      "why": "The core paradox is that having fewer options can be strictly better, which contradicts ordinary decision theory where extra options are never harmful. The resolution is that in strategic settings your options are inputs to someone else's reasoning. This also explains commitment against your own future self — Ulysses binding himself to the mast, automatic savings deductions, and enrollment defaults all treat the later self as a separate player whose choices must be constrained now.",
+      "followup": "'Why do central banks value independence?' It commits monetary policy against later political pressure to inflate — a credibility device that lowers inflation expectations today."
+    },
+    {
+      "id": "rep-01", "topic": "repeated", "difficulty": 2,
+      "q": "Why does repetition make cooperation possible in the prisoner's dilemma?",
+      "a": "In a repeated game, current defection can be punished by future retaliation. If players value the future enough — a sufficiently high discount factor — the long-run loss from triggering punishment exceeds the one-off gain from defecting, so cooperation becomes a sustainable equilibrium.",
+      "why": "The condition is quantitative and instructive: cooperation is sustainable when the discount factor exceeds a threshold set by the ratio of temptation gain to cooperative surplus. This says cooperation depends on the shadow of the future, which is why long-term business relationships, small communities, and repeated trading partners sustain trust that one-off transactions cannot — and why anonymity and high turnover corrode cooperation predictably.",
+      "followup": "'What happens with a known final round?' Backward induction unravels cooperation entirely — defect in the last round, so the second-to-last, and so on."
+    },
+    {
+      "id": "rep-02", "topic": "repeated", "difficulty": 2,
+      "q": "What is the folk theorem, and why is it both powerful and unsatisfying?",
+      "a": "In infinitely repeated games with sufficiently patient players, essentially any individually rational payoff profile can be sustained as an equilibrium, supported by suitable punishment strategies. It shows cooperation is possible — but also that almost anything else is, including highly inequitable and inefficient outcomes.",
+      "why": "The unsatisfying part is the loss of predictive power: a theory permitting nearly every outcome predicts none of them. That is why attention shifted to equilibrium selection — which outcomes are focal, evolutionarily stable, or reachable by plausible learning dynamics. The theorem's real contribution is negative and important: it proves that observing cooperation tells you nothing about players being altruistic, since pure self-interest with patience suffices.",
+      "followup": "'What does individually rational mean here?' Each player receives at least their minmax value — what they could guarantee themselves regardless of others' play."
+    },
+    {
+      "id": "rep-03", "topic": "repeated", "difficulty": 2,
+      "q": "What did Axelrod's tournaments reveal about successful strategies?",
+      "a": "Tit-for-tat — cooperate first, then copy the opponent's last move — won repeatedly despite its simplicity. Axelrod identified the traits of successful strategies: be nice (never defect first), retaliatory (punish defection promptly), forgiving (return to cooperation after punishment), and clear (be easy for opponents to understand).",
+      "why": "Clarity is the underrated property: a strategy that opponents cannot decode cannot teach them to cooperate, so cleverness is often self-defeating. Tit-for-tat's weakness is equally instructive — with noise, a single mistaken defection triggers endless mutual recrimination, which is why generous tit-for-tat (occasionally forgiving without cause) outperforms it in noisy environments. That is a real argument for institutional forgiveness in imperfect-monitoring settings.",
+      "followup": "'Can tit-for-tat ever win a head-to-head match?' Never — it can at best draw, since it never defects first. It wins tournaments by producing high mutual scores."
+    },
+    {
+      "id": "rep-04", "topic": "repeated", "difficulty": 3,
+      "q": "How does reputation work in games with incomplete information?",
+      "a": "If there is some probability a player is a committed type who always behaves a certain way, a rational player can imitate that type to build a reputation. Opponents update beliefs from observed behavior, and the reputation's value can make maintaining it rational even when the immediate action is costly.",
+      "why": "The Kreps–Wilson–Milgrom–Roberts result is striking: even a tiny prior probability of a genuinely tough type lets a rational incumbent deter entry for a long sequence of rivals by fighting early entrants. This rescues intuitions that backward induction destroys — the chain-store paradox says fight nobody, while reputation says fight early and reap the deterrence. It explains why firms and states invest in seemingly irrational toughness.",
+      "followup": "'What limits reputation building?' Approaching the end of the horizon — as remaining periods shrink, the reputation's future value falls and the incentive to cash it in rises."
+    },
+    {
+      "id": "rep-05", "topic": "repeated", "difficulty": 3,
+      "q": "What is an evolutionarily stable strategy, and how does it differ from Nash equilibrium?",
+      "a": "An ESS is a strategy that, once adopted by a population, cannot be invaded by any rare mutant strategy — it must be a best response to itself, and if a mutant does equally well against it, the incumbent must do strictly better against the mutant than the mutant does against itself. Every ESS is a Nash equilibrium; not every Nash equilibrium is an ESS.",
+      "why": "The concept replaces deliberation with selection: no rationality is required, only differential reproduction or imitation. That makes it applicable to animal conflict, cultural transmission, and market dynamics where agents do not compute equilibria. The refinement matters because it rules out equilibria that are technically stable but not robust to small perturbations, and the hawk-dove game shows how it predicts stable mixed populations rather than universal aggression.",
+      "followup": "'Does replicator dynamics always converge to an ESS?' No — some games cycle indefinitely, as rock-paper-scissors populations do, never settling."
+    },
+    {
+      "id": "inf-01", "topic": "information", "difficulty": 2,
+      "q": "What is a Bayesian game, and what is a Bayes-Nash equilibrium?",
+      "a": "A game where players have private information — their 'type' — drawn from a commonly known prior. A strategy maps each type to an action, and a Bayes-Nash equilibrium is a profile where every type's action maximizes expected payoff given beliefs about others' types and their type-contingent strategies.",
+      "why": "Harsanyi's insight was to convert incomplete information into imperfect information by adding a fictitious initial move by nature that assigns types — this made an intractable class of problems solvable with existing tools, and won him the Nobel. The framework underlies auction theory, insurance markets, and any setting where the essential difficulty is that you do not know your counterpart's valuation, cost, or risk.",
+      "followup": "'Why is the common prior assumption controversial?' It rules out agreeing to disagree, yet real disagreement about probabilities is pervasive."
+    },
+    {
+      "id": "inf-02", "topic": "information", "difficulty": 2,
+      "q": "What is adverse selection, and how does it destroy markets?",
+      "a": "When one side knows quality and the other does not, the uninformed can only pay an average price. Sellers of above-average goods withdraw, lowering the average, which lowers the price, driving out the next tier — potentially unravelling the market entirely. Akerlof's used-car 'lemons' model is the canonical case.",
+      "why": "The mechanism is selection on the hidden characteristic, not merely uncertainty — a market with random unknown quality works fine, because the average is stable. It is why health insurance requires mandates or risk adjustment (the sickest buy most eagerly), why warranties and certifications exist, and why lending markets ration credit rather than simply raising rates, since a higher rate attracts riskier borrowers and can lower expected returns.",
+      "followup": "'How does signalling help?' An informed party takes a costly action that low types could not profitably imitate — a warranty, a qualification, a large equity stake retained by the founder."
+    },
+    {
+      "id": "inf-03", "topic": "information", "difficulty": 2,
+      "q": "Distinguish moral hazard from adverse selection.",
+      "a": "Adverse selection is hidden *information* before contracting — you cannot observe the type you are dealing with. Moral hazard is hidden *action* after contracting — the insured party changes behavior because they no longer bear the full consequences. One is a selection problem, the other an incentive problem.",
+      "why": "They call for different remedies, which is why the distinction matters commercially. Adverse selection is addressed by screening, signalling, and mandatory participation; moral hazard is addressed by deductibles, co-payments, monitoring, and performance-linked pay. Confusing them produces the wrong fix: making insurance compulsory solves selection while doing nothing about behavior, and a deductible does nothing about who buys.",
+      "followup": "'Where do both appear together?' Banking — lenders cannot observe borrower quality beforehand, and cannot control risk-taking afterwards, which is why covenants and capital requirements coexist."
+    },
+    {
+      "id": "inf-04", "topic": "information", "difficulty": 3,
+      "q": "What is a signalling equilibrium, and what makes a signal credible?",
+      "a": "In Spence's model, workers choose education levels observable to employers. A separating equilibrium exists where high-ability workers acquire education and low-ability ones do not. The signal is credible only if it is *differentially costly* — cheaper for high types than low types — so imitation is unprofitable.",
+      "why": "Differential cost is the entire mechanism, and it means a signal can work even when it produces nothing of value: in the pure model education raises no productivity at all and still sorts efficiently. That is a genuinely uncomfortable conclusion about credentials. The same logic explains peacock tails, conspicuous consumption, and why a startup founder keeping a large illiquid stake convinces investors more than any assertion could.",
+      "followup": "'What is a pooling equilibrium?' All types choose the same action, so the signal conveys nothing and beliefs stay at the prior."
+    },
+    {
+      "id": "inf-05", "topic": "information", "difficulty": 3,
+      "q": "What is the winner's curse, and how should a rational bidder respond?",
+      "a": "In common-value auctions where bidders estimate an unknown true value, the winner is disproportionately likely to be the one who overestimated most. Winning is itself bad news about your estimate. Rational bidders must shade their bids downward, conditioning on the fact that winning means their estimate was the highest of all.",
+      "why": "The subtlety is that you must condition on a hypothetical: not 'what is this worth given my signal' but 'what is it worth given my signal *and* given that my signal was the highest'. Failing to do this is a documented, expensive error in oil-lease bidding, spectrum auctions, and corporate acquisitions. The required shading increases with the number of bidders, which inverts the naive intuition that more competition means bidding more aggressively.",
+      "followup": "'Does the curse apply to private-value auctions?' No — there your valuation is your own, and learning you won says nothing about whether you value it correctly."
+    },
+    {
+      "id": "mec-01", "topic": "mechanism", "difficulty": 2,
+      "q": "Compare the four standard auction formats and state the revenue equivalence theorem.",
+      "a": "English (ascending open), Dutch (descending open), first-price sealed bid, and second-price sealed bid (Vickrey). Revenue equivalence: with risk-neutral bidders, independent private values, symmetric bidders, and payment depending only on bids, all four yield the same expected revenue to the seller.",
+      "why": "The result is startling because the formats feel so different, and its power is in the failure cases — revenue equivalence breaks whenever an assumption does, which tells you which format to choose. Risk-averse bidders make first-price auctions raise more; correlated values favour open ascending formats (the linkage principle); asymmetric bidders and collusion risk change the ranking again. The theorem is therefore a diagnostic tool rather than a claim that format does not matter.",
+      "followup": "'Why are English and second-price strategically equivalent?' In both, you should stay in until the price reaches your value — the winner effectively pays the runner-up's willingness to pay."
+    },
+    {
+      "id": "mec-02", "topic": "mechanism", "difficulty": 2,
+      "q": "Why is truthful bidding a dominant strategy in a second-price auction?",
+      "a": "Because your bid determines only whether you win, never what you pay — the price is set by the second-highest bid. Bidding above your value risks winning at a loss; bidding below only forfeits profitable wins. Neither can improve your outcome regardless of others' bids, so bidding your true value weakly dominates.",
+      "why": "This is the cleanest example of incentive compatibility: the mechanism is designed so honesty is optimal, which removes strategic guesswork and lets the auction allocate efficiently to the highest valuer. Vickrey's insight generalizes into the VCG mechanism, where each participant pays the externality they impose on others — the foundation of modern combinatorial auctions and, in modified form, of online advertising markets.",
+      "followup": "'Why are real ad auctions not pure second-price?' Generalized second-price auctions for multiple slots are not truthful, and many platforms have shifted to first-price with bid guidance."
+    },
+    {
+      "id": "mec-03", "topic": "mechanism", "difficulty": 3,
+      "q": "What is mechanism design, and what does the revelation principle simplify?",
+      "a": "Mechanism design is reverse game theory: choose the rules so that self-interested play produces a desired outcome. The revelation principle states that any outcome achievable by some mechanism is achievable by a direct mechanism in which participants report their types truthfully — so the search can be restricted to incentive-compatible direct mechanisms without loss.",
+      "why": "That restriction converts an unbounded search over all conceivable rules into a constrained optimization problem, which is what made the field tractable. The intuition is that any mechanism can be wrapped in an interface that plays the equilibrium strategy on a participant's behalf, so lying becomes unnecessary. It underpins auction design, optimal taxation, regulation of monopolies, and matching markets.",
+      "followup": "'What does Myerson-Satterthwaite prove?' No mechanism can achieve efficient bilateral trade with private values while being incentive compatible, individually rational, and budget balanced — some efficiency loss is unavoidable."
+    },
+    {
+      "id": "mec-04", "topic": "mechanism", "difficulty": 3,
+      "q": "What does Arrow's impossibility theorem establish about voting?",
+      "a": "No ranked voting system with three or more options can simultaneously satisfy unrestricted domain, Pareto efficiency, independence of irrelevant alternatives, and non-dictatorship. Any method aggregating individual rankings into a social ranking must sacrifice at least one of these seemingly minimal conditions.",
+      "why": "Independence of irrelevant alternatives is usually the casualty, and its violation is exactly the spoiler effect — a third candidate's entry flipping the ranking of the other two, as in most plurality elections. The theorem does not show democracy is impossible; it shows that aggregating *ordinal preferences* is impossible under those axioms. Range and approval voting escape by using cardinal information, at the cost of new strategic vulnerabilities.",
+      "followup": "'What does Gibbard–Satterthwaite add?' Every non-dictatorial ranked system with three or more outcomes is manipulable — strategic voting can never be designed away."
+    },
+    {
+      "id": "mec-05", "topic": "mechanism", "difficulty": 3,
+      "q": "What problem does the Gale-Shapley algorithm solve, and what are its guarantees?",
+      "a": "The stable matching problem: pair two sides with preferences so no pair mutually prefers each other to their assigned partners. Deferred acceptance always produces a stable matching, is strategy-proof for the proposing side, and yields the best stable outcome for proposers and the worst for receivers.",
+      "why": "The proposer-optimality result has real distributional stakes, which is why the direction of proposal in the medical residency match was politically contested and eventually changed to favour applicants. The algorithm is used for residencies, school choice in several cities, and kidney exchange chains — a case where a clean theoretical result translated directly into institutional practice, and where the theory's fine print about who proposes determined who benefits.",
+      "followup": "'Can both sides be strategy-proof?' No — no stable matching mechanism is strategy-proof for both sides simultaneously."
+    }
+  ]
+}

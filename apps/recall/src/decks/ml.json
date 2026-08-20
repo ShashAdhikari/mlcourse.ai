@@ -1,482 +1,658 @@
 {
-  "version": 1,
+  "id": "ml",
+  "title": "Machine Learning",
+  "blurb": "The interview canon: bias-variance, regularization, ensembles, boosting, leakage, and the metrics questions that separate candidates.",
   "topics": [
-    { "id": "foundations", "title": "ML Foundations", "free": true },
-    { "id": "linear", "title": "Linear Models & Regularization", "free": true },
-    { "id": "metrics", "title": "Metrics & Validation", "free": true },
-    { "id": "trees", "title": "Decision Trees & kNN", "free": false },
-    { "id": "ensembles", "title": "Bagging & Random Forests", "free": false },
-    { "id": "boosting", "title": "Gradient Boosting", "free": false },
-    { "id": "features", "title": "Feature Engineering", "free": false },
-    { "id": "unsupervised", "title": "Unsupervised Learning", "free": false },
-    { "id": "sgd", "title": "Optimization & SGD", "free": false },
-    { "id": "timeseries", "title": "Time Series", "free": false }
+    {
+      "id": "foundations",
+      "title": "ML Foundations",
+      "free": true
+    },
+    {
+      "id": "linear",
+      "title": "Linear Models & Regularization",
+      "free": true
+    },
+    {
+      "id": "metrics",
+      "title": "Metrics & Validation",
+      "free": false
+    },
+    {
+      "id": "trees",
+      "title": "Decision Trees & kNN",
+      "free": false
+    },
+    {
+      "id": "ensembles",
+      "title": "Bagging & Random Forests",
+      "free": false
+    },
+    {
+      "id": "boosting",
+      "title": "Gradient Boosting",
+      "free": false
+    },
+    {
+      "id": "features",
+      "title": "Feature Engineering",
+      "free": false
+    },
+    {
+      "id": "unsupervised",
+      "title": "Unsupervised Learning",
+      "free": false
+    },
+    {
+      "id": "sgd",
+      "title": "Optimization & SGD",
+      "free": false
+    },
+    {
+      "id": "timeseries",
+      "title": "Time Series",
+      "free": false
+    }
   ],
   "cards": [
     {
-      "id": "fnd-01", "topic": "foundations", "difficulty": 1,
+      "id": "fnd-01",
+      "topic": "foundations",
+      "difficulty": 1,
       "q": "What is the bias–variance tradeoff?",
       "a": "Expected test error decomposes into bias² + variance + irreducible noise. Bias is error from a model too simple to capture the true signal; variance is error from sensitivity to the particular training sample. Increasing model capacity lowers bias but raises variance, so you tune capacity (and regularization) to minimize their sum.",
       "why": "Under squared loss, E[(y − f̂(x))²] = (E[f̂] − f)² + Var(f̂) + σ². A linear fit to a sine wave has high bias; a depth-30 tree on 500 points has high variance. Regularization, more data, and ensembling are all levers that move you along this tradeoff — more data reduces variance without adding bias, which is why it is the safest lever.",
       "followup": "Interviewers often push: 'Which term does bagging reduce, and why doesn't it touch the other?' (Variance; averaging correlated-but-not-identical predictors leaves the shared bias intact.)"
     },
     {
-      "id": "fnd-02", "topic": "foundations", "difficulty": 1,
+      "id": "fnd-02",
+      "topic": "foundations",
+      "difficulty": 1,
       "q": "How do you detect overfitting vs. underfitting, and what do you change in each case?",
       "a": "Compare train and validation error. Underfitting: both are high and close — increase capacity, add features, train longer, reduce regularization. Overfitting: train error is low while validation error is much higher — add regularization, get more data, simplify the model, or use early stopping.",
       "why": "The train/validation gap is the diagnostic. Learning curves make it actionable: if validation error is still falling as training-set size grows, more data will help (variance problem); if the curves have converged at a high value, the model family itself is too weak (bias problem) and more data is wasted effort.",
       "followup": "Trap: 'Train accuracy 99%, val accuracy 97% — overfitting?' Not necessarily; a small gap can be optimal. What matters is whether reducing the gap raises validation performance."
     },
     {
-      "id": "fnd-03", "topic": "foundations", "difficulty": 2,
+      "id": "fnd-03",
+      "topic": "foundations",
+      "difficulty": 2,
       "q": "Why do you need three data splits — train, validation, and test?",
       "a": "Train fits parameters; validation selects hyperparameters and models; test estimates final generalization exactly once. If you tune on the test set, its error estimate becomes optimistically biased because you have implicitly fit to it.",
       "why": "Every choice made by looking at a dataset leaks information from it. After dozens of hyperparameter trials, the best validation score is biased upward by selection (a multiple-comparisons effect), which is why the winning model usually scores slightly worse on the held-out test set. Kaggle's public/private leaderboard split exists precisely to punish tuning against the public score.",
       "followup": "'What if the dataset is tiny?' Nested cross-validation: an inner CV loop tunes, an outer loop estimates generalization."
     },
     {
-      "id": "fnd-04", "topic": "foundations", "difficulty": 2,
+      "id": "fnd-04",
+      "topic": "foundations",
+      "difficulty": 2,
       "q": "What is data leakage? Give two realistic examples and how to prevent them.",
       "a": "Leakage is when information unavailable at prediction time enters training, inflating offline metrics. Examples: fitting a scaler or imputer on the full dataset before splitting (test statistics leak into train), and using a feature computed after the label event, like 'account_closed_date' when predicting churn. Prevention: build all preprocessing inside a pipeline fit only on training folds, and audit every feature for temporal availability.",
       "why": "Leakage is the most common cause of models that ace offline evaluation and fail in production. Subtle forms include duplicate rows landing in both splits, group leakage (the same patient in train and test), and target encoding computed on the full data. The discipline is one rule: nothing derived from validation/test rows may influence any training-time decision.",
       "followup": "'Your model's AUC is 0.99 on a hard problem — what's your first hypothesis?' Leakage, and the first audit is the top feature importances."
     },
     {
-      "id": "fnd-05", "topic": "foundations", "difficulty": 2,
+      "id": "fnd-05",
+      "topic": "foundations",
+      "difficulty": 2,
       "q": "What is the curse of dimensionality, and which models suffer most?",
       "a": "As dimensionality grows, volume grows exponentially, so a fixed sample becomes vanishingly sparse: all pairwise distances concentrate toward the same value and 'nearest' neighbors stop being meaningfully near. Distance-based methods (kNN, K-means, RBF kernels) degrade first; models that select or weight features (trees, regularized linear models) cope better.",
       "why": "In d dimensions, covering [0,1]^d at resolution 0.1 needs 10^d points. The contrast between nearest and farthest neighbor distances shrinks as d grows, destroying the locality assumption kNN relies on. Practical outs: dimensionality reduction, feature selection, or metrics learned from data.",
       "followup": "'Why do images (10⁵ pixels) still work with ML?' Real data lies near low-dimensional manifolds; effective dimensionality is far below ambient dimensionality."
     },
     {
-      "id": "fnd-06", "topic": "foundations", "difficulty": 1,
+      "id": "fnd-06",
+      "topic": "foundations",
+      "difficulty": 1,
       "q": "Generative vs. discriminative models — what's the difference?",
       "a": "Discriminative models learn p(y|x) or a decision boundary directly (logistic regression, trees, SVMs). Generative models learn the joint p(x, y) — equivalently p(x|y) and p(y) — and derive predictions via Bayes' rule (Naive Bayes, LDA). Discriminative models usually win on pure classification accuracy with enough data; generative ones can handle missing features, generate samples, and often need less data.",
       "why": "Ng & Jordan's classic result: Naive Bayes reaches its (higher) asymptotic error faster, logistic regression reaches a lower asymptote — so the generative model can win in the small-sample regime even with a wrong independence assumption.",
       "followup": "'Is a GBM generative or discriminative?' Discriminative — it models the conditional target directly and knows nothing about p(x)."
     },
     {
-      "id": "fnd-07", "topic": "foundations", "difficulty": 3,
+      "id": "fnd-07",
+      "topic": "foundations",
+      "difficulty": 3,
       "q": "Why does maximizing likelihood correspond to minimizing log loss / MSE?",
       "a": "MLE maximizes Σ log p(y|x; θ). For a Bernoulli output model this sum is exactly negative cross-entropy (log loss); for a Gaussian output with fixed variance it is MSE up to constants. So the common loss functions are negative log-likelihoods under specific noise assumptions.",
       "why": "This framing tells you when a loss is wrong: MSE assumes homoscedastic Gaussian noise, so with heavy-tailed noise MLE reasoning leads to robust losses (Huber, MAE ≙ Laplace noise). It also unifies regularization: an L2 penalty is a Gaussian prior on weights (MAP estimation), L1 a Laplace prior.",
       "followup": "'What noise model gives MAE?' Laplace-distributed residuals; the median is the MLE of its location."
     },
     {
-      "id": "lin-01", "topic": "linear", "difficulty": 1,
+      "id": "lin-01",
+      "topic": "linear",
+      "difficulty": 1,
       "q": "Compare L1 (lasso) and L2 (ridge) regularization. Why does L1 produce sparse solutions?",
       "a": "Both penalize weight magnitude to reduce variance. L2 shrinks all weights smoothly toward zero but rarely to exactly zero; L1 drives some weights exactly to zero, performing feature selection. Geometrically, the L1 constraint region is a diamond whose corners sit on the axes — the loss contours usually first touch a corner, where some coordinates are zero.",
       "why": "Alternative view: L1's gradient magnitude is constant (λ·sign(w)), so the pull toward zero doesn't fade as w shrinks and small weights get pushed all the way to 0; L2's pull (2λw) vanishes near zero. With correlated features, ridge splits weight among them while lasso arbitrarily picks one — elastic net blends both to fix that instability.",
       "followup": "'When would you prefer ridge?' Many small true effects, or correlated features where selection instability hurts interpretation."
     },
     {
-      "id": "lin-02", "topic": "linear", "difficulty": 1,
+      "id": "lin-02",
+      "topic": "linear",
+      "difficulty": 1,
       "q": "Why use log loss for logistic regression instead of MSE?",
       "a": "Log loss is the negative log-likelihood of the Bernoulli model, and paired with the sigmoid it yields a convex objective with well-behaved gradients (error × input). MSE on sigmoid outputs is non-convex and its gradient contains σ'(z), which vanishes for confident wrong predictions — the model learns slowest exactly when it is most wrong.",
       "why": "With log loss the gradient w.r.t. the logit is simply (p − y): a confidently wrong prediction (p≈1, y=0) gets a maximal gradient. Log loss is also a proper scoring rule, so its minimizer is the true conditional probability — you get calibrated probabilities in expectation, which MSE-on-probabilities does not guarantee in the same clean way.",
       "followup": "'What happens to logistic regression weights on linearly separable data?' They diverge to infinity chasing probability 1 — regularization caps them."
     },
     {
-      "id": "lin-03", "topic": "linear", "difficulty": 2,
+      "id": "lin-03",
+      "topic": "linear",
+      "difficulty": 2,
       "q": "How does multicollinearity affect linear regression, and what do you do about it?",
       "a": "Correlated predictors make XᵀX ill-conditioned: coefficient estimates become high-variance, unstable, and individually uninterpretable (signs can flip between samples), though predictions can remain fine. Remedies: drop or combine features, PCA, or — most commonly — ridge regularization, which adds λI to XᵀX and restores conditioning.",
       "why": "Coefficient variance scales with the variance inflation factor 1/(1 − R²_j) — a feature explained by the others (R²_j → 1) has unbounded coefficient variance. This is why 'the model works but the coefficients make no sense' is the classic multicollinearity symptom, and why interpretation demands more care than prediction.",
       "followup": "'Does multicollinearity hurt a random forest?' Prediction, barely; but it dilutes and splits impurity-based feature importances across the correlated group."
     },
     {
-      "id": "lin-04", "topic": "linear", "difficulty": 2,
+      "id": "lin-04",
+      "topic": "linear",
+      "difficulty": 2,
       "q": "Why must features be scaled before regularized linear models, but not for plain OLS predictions?",
       "a": "The penalty λΣwⱼ² treats all coefficients identically, but a feature measured in grams needs a 1000× smaller coefficient than the same feature in kilograms — so without scaling, the penalty arbitrarily punishes features by their units. Plain OLS is scale-equivariant: rescaling a feature just rescales its coefficient, leaving predictions unchanged.",
       "why": "The same logic applies to anything mixing coordinates non-equivariantly: distance-based models (kNN, K-means, SVM-RBF) and gradient descent itself, where poor scaling elongates loss contours and forces tiny learning rates. Tree-based models are the notable exception — splits depend only on feature order, which scaling preserves.",
       "followup": "'Standardize or min-max?' Standardize by default; min-max when bounded ranges matter (pixel inputs, neural nets with saturating activations)."
     },
     {
-      "id": "lin-05", "topic": "linear", "difficulty": 2,
+      "id": "lin-05",
+      "topic": "linear",
+      "difficulty": 2,
       "q": "Interpret a logistic regression coefficient of 0.7 on a binary feature.",
       "a": "Holding other features fixed, that feature flips the log-odds up by 0.7, i.e. multiplies the odds of the positive class by e^0.7 ≈ 2.0. It does not add a fixed amount to the probability — the probability change depends on where you start on the sigmoid.",
       "why": "Log-odds additivity is the whole interpretability contract of logistic regression: effects are constant in odds space, not probability space. From base p=0.5, odds double → p≈0.67 (+17 pts); from p=0.01, odds double → p≈0.02 (+1 pt). Confusing these is a classic interview slip.",
       "followup": "'Is that coefficient causal?' No — it's an association conditional on the included covariates; confounding, collider bias, and selection all still apply."
     },
     {
-      "id": "lin-06", "topic": "linear", "difficulty": 3,
+      "id": "lin-06",
+      "topic": "linear",
+      "difficulty": 3,
       "q": "What does the SVM hinge loss do differently from log loss, and what is the margin story?",
       "a": "Hinge loss max(0, 1 − y·f(x)) is exactly zero for points beyond the margin, so only margin violators and boundary points (support vectors) shape the solution — yielding sparse dual solutions and boundaries robust to easy points. Log loss never reaches zero, so every point keeps pulling on the boundary. Maximizing the margin 2/‖w‖ is a capacity control equivalent to the ‖w‖² penalty.",
       "why": "Statistical learning theory bounds generalization by margin, not dimensionality — the justification for kernels: map to a huge feature space, control capacity via margin instead. Hinge's cost: no natural probability outputs (Platt scaling is bolted on) and non-differentiability at the hinge (subgradients handle it).",
       "followup": "'Why can adding one outlier move an SVM boundary a lot?' With small C slack is cheap and it won't; with large C the violator's slack dominates the objective."
     },
     {
-      "id": "lin-07", "topic": "linear", "difficulty": 2,
+      "id": "lin-07",
+      "topic": "linear",
+      "difficulty": 2,
       "q": "Your logistic regression underperforms gradient boosting on tabular data. Name three likely reasons rooted in model assumptions.",
       "a": "1) Non-linear feature–target relationships: logistic regression sees only linear log-odds effects unless you engineer transforms/binning. 2) Interactions: it cannot represent 'feature A matters only when B is high' without explicit interaction terms. 3) Preprocessing sensitivity: unscaled features, raw skewed distributions, and un-encoded categoricals hurt it, while trees absorb monotone transforms and thresholds natively.",
       "why": "The flip side is the reason linear models persist: with strong feature engineering they match GBMs surprisingly often, remain calibrated, train in seconds, and their failure modes are auditable. A strong answer names the gap and the fix: splines/binning for non-linearity, crosses for interactions, target encoding for high-cardinality categoricals.",
       "followup": "'When does logistic regression beat GBM?' Tiny datasets, very wide sparse data (text), regulated settings needing coefficients, and heavily non-stationary domains where a simple model degrades more gracefully."
     },
     {
-      "id": "met-01", "topic": "metrics", "difficulty": 1,
+      "id": "met-01",
+      "topic": "metrics",
+      "difficulty": 1,
       "q": "Precision vs. recall — define both and give a scenario where each is the priority.",
       "a": "Precision = TP/(TP+FP): of predicted positives, how many are real. Recall = TP/(TP+FN): of real positives, how many were caught. Cancer screening prioritizes recall (a miss is catastrophic, a false alarm costs a follow-up test); a spam filter or an automated account-ban system prioritizes precision (a false positive destroys legitimate value).",
       "why": "The two trade off along the decision threshold: lower the threshold and recall rises while precision typically falls. F1 is their harmonic mean — punishing imbalance — but the honest answer is that the right blend comes from the cost matrix of the application, not from a symmetric formula.",
       "followup": "'Recall is 100% — impressed?' Predict everyone positive and you get it trivially; always ask for the paired precision."
     },
     {
-      "id": "met-02", "topic": "metrics", "difficulty": 2,
+      "id": "met-02",
+      "topic": "metrics",
+      "difficulty": 2,
       "q": "What does ROC AUC actually measure, and when is it misleading?",
       "a": "AUC is the probability a random positive is ranked above a random negative — a threshold-free ranking metric. It misleads under heavy class imbalance: false-positive rate divides by the huge negative class, so a model drowning you in false positives can still post AUC 0.95. Precision–recall curves expose what ROC hides there.",
       "why": "FPR = FP/(all negatives): with 1M negatives, 10k false positives is FPR 1% — invisible on a ROC curve — while precision might be 9%. AUC is also insensitive to calibration (any monotone rescaling of scores preserves it), so a great-AUC model can output terrible probabilities.",
       "followup": "'AUC 0.5 means the model is useless?' It means ranking is no better than chance overall — but a model can still be locally informative, and AUC < 0.5 means invert your predictions."
     },
     {
-      "id": "met-03", "topic": "metrics", "difficulty": 2,
+      "id": "met-03",
+      "topic": "metrics",
+      "difficulty": 2,
       "q": "With 99% negative class, accuracy is 99% by predicting all-negative. Design a proper evaluation for this imbalanced problem.",
       "a": "Drop accuracy. Use precision–recall AUC or F1 at an operating threshold chosen from business costs; report the confusion matrix at that threshold. Use stratified K-fold so folds preserve the ratio. Consider balanced class weights or resampling for training — but always evaluate on the untouched natural distribution.",
       "why": "The deepest point: choose the operating threshold on validation data by expected cost — e.g. cost of a missed fraud vs. cost of a manual review — rather than defaulting to 0.5. Oversampling before splitting is a classic leakage bug: duplicated minority rows land in both train and validation folds and inflate scores.",
       "followup": "'Does SMOTE help?' Sometimes for weak learners; for GBMs, class weights or threshold tuning usually match it without leakage risk from synthetic points near class boundaries."
     },
     {
-      "id": "met-04", "topic": "metrics", "difficulty": 1,
+      "id": "met-04",
+      "topic": "metrics",
+      "difficulty": 1,
       "q": "How does K-fold cross-validation work, and what does K trade off?",
       "a": "Split data into K folds; train K times, each time holding one fold out for validation; average the scores. Larger K → more training data per fit (lower pessimistic bias in the estimate) but K× cost and higher variance between highly-overlapping training sets. K=5 or 10 is standard; leave-one-out is the K=N extreme.",
       "why": "The averaged score estimates generalization of the *procedure*, not of one final model — after CV you refit on all data. Crucial refinements: stratify for classification; group by entity (patient, user) when rows share an identity; never shuffle time series — use expanding-window splits instead.",
       "followup": "'Your CV score is great, test score much worse — list causes.' Leakage across folds, group overlap, temporal leakage, or heavy hyperparameter search overfitting the CV signal."
     },
     {
-      "id": "met-05", "topic": "metrics", "difficulty": 3,
+      "id": "met-05",
+      "topic": "metrics",
+      "difficulty": 3,
       "q": "What is calibration, how do you measure it, and how do you fix a miscalibrated model?",
       "a": "A model is calibrated if among predictions of p≈0.8, about 80% are positive — scores behave as probabilities. Measure with reliability diagrams, expected calibration error, or Brier score. Fix post-hoc on a held-out set: Platt scaling (fit a sigmoid to scores) or isotonic regression (monotone, needs more data).",
       "why": "Ranking metrics like AUC are blind to calibration, yet decisions that multiply probability by cost (expected loss, triage, bidding) need real probabilities. Well-regularized logistic regression is naturally near-calibrated; boosted trees and modern neural nets are often overconfident. Log loss uniquely rewards both discrimination and calibration.",
       "followup": "'Why does upsampling the minority class break calibration?' The model learns on a distribution with an artificial base rate; scores need shifting back (prior correction) to match reality."
     },
     {
-      "id": "met-06", "topic": "metrics", "difficulty": 2,
+      "id": "met-06",
+      "topic": "metrics",
+      "difficulty": 2,
       "q": "RMSE vs. MAE — how do they treat errors differently and how does that guide the choice?",
       "a": "RMSE squares errors, so it disproportionately punishes large misses and is minimized by the conditional mean; MAE weighs all magnitudes linearly and is minimized by the conditional median, making it robust to outliers. Choose by whether big errors are truly disproportionately costly, and by whether you want a mean-like or median-like forecast.",
       "why": "On skewed targets (income, sales), the mean-vs-median distinction is not academic: an RMSE-optimal model systematically predicts above the median to appease the long tail. Training loss matters too — optimizing MAE then reporting RMSE leaves an avoidable gap. MAPE adds a different pathology: it divides by y, exploding near zero and asymmetrically favoring under-prediction.",
       "followup": "'RMSE is always ≥ MAE — why?' Jensen's inequality; equality only when all errors have identical magnitude. A large ratio flags a few huge errors."
     },
     {
-      "id": "met-07", "topic": "metrics", "difficulty": 2,
+      "id": "met-07",
+      "topic": "metrics",
+      "difficulty": 2,
       "q": "Your model shows 0.94 AUC offline but degrades within weeks in production. Walk through your diagnosis.",
       "a": "First separate data drift from concept drift: compare feature distributions (PSI, KS tests) between training and live traffic, and check whether the label relationship itself changed. Then audit for training-serving skew (features computed differently online), delayed or shifted labels, and feedback loops where the model's own actions alter the data. Fix with monitoring, scheduled retraining, and strictly point-in-time features.",
       "why": "The offline number was probably real — the world moved. Classic culprits: a feature pipeline that backfills with future data offline but not online (temporal leakage inflating offline scores), upstream schema changes silently nulling a feature, and seasonality absent from the training window. Production ML is a monitoring problem as much as a modeling problem.",
       "followup": "'What single artifact prevents most training-serving skew?' A shared feature pipeline (or feature store) executing the same code offline and online."
     },
     {
-      "id": "tre-01", "topic": "trees", "difficulty": 1,
+      "id": "tre-01",
+      "topic": "trees",
+      "difficulty": 1,
       "q": "How does a decision tree choose its splits?",
       "a": "Greedily: at each node, scan candidate (feature, threshold) pairs and pick the one maximizing impurity decrease — Gini or entropy (information gain) for classification, variance reduction (MSE) for regression. Recurse until a stopping rule: max depth, min samples per leaf, or minimum gain.",
       "why": "Greedy means locally optimal, not globally — XOR-style problems where no single split helps can defeat it (finding the optimal tree is NP-hard). Gini ≈ entropy in practice; Gini is cheaper (no log). Each split is chosen on the node's own subsample, which is why deep nodes, deciding on few points, are the noisiest — the root of tree variance.",
       "followup": "'Why do trees handle mixed feature scales and monotone transforms for free?' Splits use only the ordering of values, which those transforms preserve."
     },
     {
-      "id": "tre-02", "topic": "trees", "difficulty": 2,
+      "id": "tre-02",
+      "topic": "trees",
+      "difficulty": 2,
       "q": "Why do single decision trees overfit so easily, and which knobs control it?",
       "a": "Grown to purity, a tree can dedicate a leaf to nearly every training point — memorization — and greedy splits deep in the tree are fit to tiny samples, so the structure itself is unstable: small data perturbations produce different trees. Control: max_depth, min_samples_leaf, min impurity decrease, or cost-complexity (post-)pruning; or accept instability and average many trees (forests).",
       "why": "Tree variance is structural: an early split flips and the whole subtree below changes. Pre-pruning (depth/leaf limits) risks stopping before a good split pays off two levels later; post-pruning grows fully then collapses branches that don't earn their complexity on validation — usually better, and what CART's cost-complexity pruning does.",
       "followup": "'min_samples_leaf=1, max_depth=None — what's train accuracy on clean data?' ~100% by construction; the tree can isolate every point."
     },
     {
-      "id": "tre-03", "topic": "trees", "difficulty": 2,
+      "id": "tre-03",
+      "topic": "trees",
+      "difficulty": 2,
       "q": "How does kNN make predictions, and what are its main failure modes?",
       "a": "No training: store the data; at query time take the k nearest points under some metric and vote (or average). Failure modes: wrong k (k=1 memorizes noise, huge k blurs to the prior), unscaled features silently dominating the metric, irrelevant features corrupting distances, high dimensionality collapsing distance contrast, and O(N) query cost at scale.",
       "why": "kNN is the purest bias–variance dial: k controls smoothness directly, so it's the classic exam example (error vs. k is U-shaped on validation, monotone on train). Its asymptotic elegance — 1-NN error ≤ 2× Bayes error as N→∞ — coexists with practical fragility; approximate indexes (KD-trees in low-d, HNSW/LSH in high-d) handle the cost.",
       "followup": "'Odd k for binary classification — why?' Avoids tied votes; also weight votes by inverse distance so nearer neighbors count more."
     },
     {
-      "id": "tre-04", "topic": "trees", "difficulty": 2,
+      "id": "tre-04",
+      "topic": "trees",
+      "difficulty": 2,
       "q": "What does a decision tree predict for inputs outside the training range, and why does this matter?",
       "a": "A constant — the value of the leaf the input falls into; trees are piecewise-constant and cannot extrapolate trends. A tree trained on house prices through 2020 predicts 2020-level prices for a 2026 listing no matter how the market moved. This bites any target with trend or growth: time series, prices, anything unbounded.",
       "why": "Same limitation flows through forests and GBMs — sums of trees are still piecewise-constant. Standard remedies: detrend or difference the target first, predict ratios/residuals instead of levels, or fall back to linear components for the extrapolating direction (hybrid models).",
       "followup": "'Would a linear model extrapolate here?' Yes, linearly — which is a feature or a hazard depending on whether the trend is real."
     },
     {
-      "id": "tre-05", "topic": "trees", "difficulty": 3,
+      "id": "tre-05",
+      "topic": "trees",
+      "difficulty": 3,
       "q": "Why are impurity-based (Gini) feature importances biased, and what do you use instead?",
       "a": "Two biases: high-cardinality/continuous features offer more candidate split points, so they accumulate impurity credit by sheer opportunity — even pure-noise ID-like columns rank high; and correlated features split the credit unpredictably. Prefer permutation importance on held-out data, or SHAP values; sanity-check with a random noise column as a benchmark.",
       "why": "Impurity importance is computed on training data, so it also inherits overfitting: a feature exploited for memorization looks 'important'. Permutation importance asks the operational question — how much does validation performance drop when this feature's values are shuffled — though it too spreads credit oddly across correlated features (drop-column importance is the expensive gold standard).",
       "followup": "'Your top importance is user_id-like — reaction?' Leakage/memorization alarm: retrain without it and expect the honest score."
     },
     {
-      "id": "tre-06", "topic": "trees", "difficulty": 2,
+      "id": "tre-06",
+      "topic": "trees",
+      "difficulty": 2,
       "q": "How do decision boundaries of a decision tree and kNN differ geometrically?",
       "a": "Trees carve axis-aligned rectangles: every boundary segment is perpendicular to a feature axis, so oblique class boundaries get approximated by staircases. kNN's boundary is locally adaptive and can follow any orientation, smooth for large k and jagged (Voronoi-like islands around noise points) for k=1.",
       "why": "Axis-alignment is why a 45° linear boundary — trivial for logistic regression — costs a tree many splits, and why rotating features (or PCA) can dramatically change tree performance while leaving kNN (isotropic metric) unaffected. Being able to sketch these three boundary types on a whiteboard is a standard interview check.",
       "followup": "'Which of the three is invariant to feature rescaling?' Only the tree — kNN and logistic-with-regularization both change."
     },
     {
-      "id": "tre-07", "topic": "trees", "difficulty": 1,
+      "id": "tre-07",
+      "topic": "trees",
+      "difficulty": 1,
       "q": "How do trees split on categorical features, and what goes wrong with naive one-hot for high cardinality?",
       "a": "Either subset splits (send categories {a, c, f} left — optimal orderings exist for binary targets by sorting categories by mean target) or one-hot dummies. One-hot with hundreds of categories gives each dummy a weak, fragmented signal: trees waste depth peeling off one category at a time, and importance scatters across dummies.",
       "why": "This is why LightGBM/CatBoost handle categoricals natively (sorted-subset splits, ordered target statistics) and often beat one-hot pipelines on such data. For linear models one-hot is fine (with regularization); for trees, native handling or careful target encoding usually wins — with target encoding needing CV-fold discipline to avoid leakage.",
       "followup": "'Why is unregularized target encoding leaky?' Each row's encoding contains its own label; rare categories nearly copy the target into a feature."
     },
     {
-      "id": "ens-01", "topic": "ensembles", "difficulty": 1,
+      "id": "ens-01",
+      "topic": "ensembles",
+      "difficulty": 1,
       "q": "Why does averaging many models reduce error? What limits the benefit?",
       "a": "Averaging keeps bias but shrinks variance: for models with variance σ² and pairwise correlation ρ, ensemble variance is ρσ² + (1−ρ)σ²/M. The 1/M term dies with ensemble size, leaving ρσ² — so correlation between members, not member count, is the binding constraint. Diversity is the whole game.",
       "why": "That formula is the design rationale of every ensemble method: bagging decorrelates via bootstrap resampling; random forests add feature subsampling to cut ρ further; stacking mixes different model families. It also explains diminishing returns — past ~100 trees, extra trees polish the vanishing 1/M term while ρσ² stands untouched.",
       "followup": "'Averaging 1000 copies of the same tree helps how much?' Zero — ρ=1 leaves variance at σ²."
     },
     {
-      "id": "ens-02", "topic": "ensembles", "difficulty": 1,
+      "id": "ens-02",
+      "topic": "ensembles",
+      "difficulty": 1,
       "q": "Describe the bootstrap. Why does each bootstrap sample leave out ~37% of the data?",
       "a": "The bootstrap draws N samples with replacement from an N-point dataset, simulating fresh draws from the population. A given point escapes all N draws with probability (1 − 1/N)^N → e⁻¹ ≈ 0.368, so about 37% of points are absent from each resample — these 'out-of-bag' points serve as a free validation set.",
       "why": "The bootstrap's statistical purpose is estimating an estimator's sampling variance without new data; bagging repurposes it to *create* that variance among models and average it away. The 63/37 split is the mechanism behind OOB evaluation and one source of member diversity in forests.",
       "followup": "'Bootstrap a time series?' Not naively — i.i.d. resampling destroys autocorrelation; block bootstrap resamples contiguous chunks."
     },
     {
-      "id": "ens-03", "topic": "ensembles", "difficulty": 2,
+      "id": "ens-03",
+      "topic": "ensembles",
+      "difficulty": 2,
       "q": "Random forest = bagging + one extra trick. What is it and why does it matter so much?",
       "a": "At every split, only a random subset of features (typically √p for classification, p/3 for regression) is considered. Without it, one dominant feature grabs the root split of nearly every bagged tree, making trees highly correlated — and correlated trees barely benefit from averaging. Feature subsampling forces trees to find alternative structure, cutting ρ and unlocking variance reduction.",
       "why": "This connects directly to ρσ² + (1−ρ)σ²/M: bootstrap alone lowers ρ modestly; feature subsampling attacks it head-on, at the price of slightly worse (higher-bias) individual trees — a trade that wins because variance was the dominant error term for deep trees.",
       "followup": "'max_features=p turns the forest into what?' Plain bagged trees — and with strong features, noticeably more correlated ones."
     },
     {
-      "id": "ens-04", "topic": "ensembles", "difficulty": 2,
+      "id": "ens-04",
+      "topic": "ensembles",
+      "difficulty": 2,
       "q": "What is out-of-bag (OOB) error and when is it a valid substitute for cross-validation?",
       "a": "Each training point is predicted using only the ~37% of trees that never saw it in their bootstrap sample; aggregating these gives an almost-free generalization estimate, usually close to CV for random forests. It's valid when rows are i.i.d. — it inherits none of CV's protections, so grouped rows or temporal order still require group/time-aware splits.",
       "why": "OOB is slightly pessimistic (each point is predicted by ~M/e trees, a smaller ensemble than the full forest), which vanishes for large M. Practical caveat: if you tune hyperparameters against OOB repeatedly, it stops being an unbiased estimate — the same selection bias as tuning on any fixed validation signal.",
       "followup": "'Does GBM have OOB?' Not in the same sense — sequential fitting means later trees depend on all earlier data; use a validation set or CV."
     },
     {
-      "id": "ens-05", "topic": "ensembles", "difficulty": 2,
+      "id": "ens-05",
+      "topic": "ensembles",
+      "difficulty": 2,
       "q": "Why don't random forests overfit as you add more trees — and in what sense can they still overfit?",
       "a": "More trees only average more draws of the same randomized tree distribution: the ensemble converges to its expectation, and test error plateaus rather than U-turning. But the forest can absolutely overfit via each tree's capacity — fully-deep trees on small noisy data yield a converged ensemble that has memorized noise. 'More trees' is safe; 'deeper trees' is not.",
       "why": "Distinguish the two axes: n_estimators controls Monte-Carlo error of the average (monotone improvement, diminishing returns); tree depth / min_samples_leaf controls the complexity of the limiting model. Breiman's 'random forests don't overfit' claim refers only to the first axis and is routinely misquoted in interviews.",
       "followup": "'GBM with more trees — same story?' Opposite: boosting keeps reducing training loss, so test error genuinely U-turns; n_estimators needs early stopping."
     },
     {
-      "id": "ens-06", "topic": "ensembles", "difficulty": 3,
+      "id": "ens-06",
+      "topic": "ensembles",
+      "difficulty": 3,
       "q": "Explain stacking. What is the cardinal implementation mistake?",
       "a": "Train diverse base models, then train a meta-model on their predictions. The cardinal sin: feeding the meta-model base predictions made on the base models' own training data — those are overfit-optimistic, so the meta-model learns to over-trust the most overfit base model. Correct: out-of-fold predictions — each row's meta-features come from models that never trained on it.",
       "why": "OOF construction: split into K folds; for each fold, base models trained on the other K−1 folds predict it; concatenating gives leak-free meta-features for every training row. At inference, base models retrained on all data feed the meta-model. A simple linear/logistic meta-model usually suffices; complexity belongs in the base layer, diversity being what stacking harvests.",
       "followup": "'Stacking vs. simple averaging — when does averaging win?' Few base models, similar strength, small data: the meta-model's own variance outweighs its ability to learn weights."
     },
     {
-      "id": "ens-07", "topic": "ensembles", "difficulty": 1,
+      "id": "ens-07",
+      "topic": "ensembles",
+      "difficulty": 1,
       "q": "Bagging vs. boosting — contrast the mechanisms and what each primarily reduces.",
       "a": "Bagging trains high-variance learners independently in parallel on bootstrap samples and averages — reducing variance. Boosting trains weak, high-bias learners sequentially, each fitting what the ensemble still gets wrong, summing them — reducing bias (and, with shrinkage, controlling variance). Forests want deep trees; boosting wants shallow ones.",
       "why": "The learner-choice asymmetry is the tell that you understand it: bagging needs members with variance to average away (deep trees), while boosting supplies capacity through sequential accumulation, so members should be individually weak (depth 3–8) or the first trees overfit and later ones amplify noise. Boosting is also sensitive to label noise — it keeps hammering unfixable points — where bagging shrugs.",
       "followup": "'Which parallelizes trivially?' Bagging across trees. Boosting is sequential across trees (though modern GBMs parallelize within each tree's construction)."
     },
     {
-      "id": "bst-01", "topic": "boosting", "difficulty": 2,
+      "id": "bst-01",
+      "topic": "boosting",
+      "difficulty": 2,
       "q": "Explain gradient boosting as gradient descent in function space.",
       "a": "The ensemble F is built additively: at step m, compute the negative gradient of the loss at current predictions — the 'pseudo-residuals' (for MSE, literally the residuals y − F(x)) — fit a small tree to them, and update F ← F + η·tree. Each tree is one descent step; the learning rate η is the step size.",
       "why": "The gradient view is what generalizes it beyond regression: swap in log loss and pseudo-residuals become (y − p); swap in quantile loss and you get gradient boosted quantile regression. The base tree is just a function approximator for the gradient direction. XGBoost sharpens this with second-order (Newton-style) steps using the Hessian per leaf.",
       "followup": "'Why fit the gradient rather than the label each round?' Fitting labels each round would just refit the same function; fitting the gradient moves you toward the loss minimum incrementally."
     },
     {
-      "id": "bst-02", "topic": "boosting", "difficulty": 2,
+      "id": "bst-02",
+      "topic": "boosting",
+      "difficulty": 2,
       "q": "How do learning rate and number of trees interact in a GBM? What is the standard tuning recipe?",
       "a": "They trade off almost linearly: halving η needs roughly double the trees for the same training progress, but smaller steps generalize better — many small corrections overfit less than few large ones. Recipe: fix η smallish (0.05–0.1), set n_estimators high, and let early stopping on a validation set pick the effective count; tune depth and subsampling around that.",
       "why": "Shrinkage is regularization-by-under-reaction: each tree only partially corrects, so idiosyncratic noise gets averaged across many trees rather than memorized by one. That's also why (unlike forests) GBM test error genuinely rises past the optimal tree count — boosting keeps optimizing training loss into the noise. Early stopping converts that U-curve into a solved problem.",
       "followup": "'η=1.0, 50 trees vs η=0.05, 1000 trees — same training loss; which generalizes better and why?' Usually the latter — smaller, partially-canceling steps act like model averaging."
     },
     {
-      "id": "bst-03", "topic": "boosting", "difficulty": 3,
+      "id": "bst-03",
+      "topic": "boosting",
+      "difficulty": 3,
       "q": "What does XGBoost add over classic gradient boosting?",
       "a": "A regularized objective (L2 on leaf weights, γ penalty per leaf) optimized with second-order Taylor expansion — leaf values and split gains come in closed form from gradient/Hessian sums (gain ∝ G²/(H+λ)). Plus systems work: histogram/approximate split finding, sparsity-aware default directions for missing values, column subsampling, parallel split evaluation.",
       "why": "The closed-form gain is the intellectual core: split quality is computed from accumulated (g, h) statistics rather than refitting, making splits both principled (regularization inside the split criterion) and fast. Native missing-value routing (learn which child NaNs go to) removes a whole imputation step. LightGBM adds leaf-wise growth and GOSS sampling; CatBoost adds ordered boosting and target-statistic categorical encoding.",
       "followup": "'Why does the λ in the denominator of G²/(H+λ) regularize?' It shrinks leaf scores and demands more evidence (larger G²) before a split's gain clears the γ bar."
     },
     {
-      "id": "bst-04", "topic": "boosting", "difficulty": 2,
+      "id": "bst-04",
+      "topic": "boosting",
+      "difficulty": 2,
       "q": "Your GBM overfits. Rank the knobs you'd reach for and the mechanism of each.",
       "a": "1) Early stopping on validation loss — directly caps effective capacity. 2) Lower learning rate (with more trees) — smaller, self-averaging steps. 3) Shallower trees / larger min_child_weight — limits per-tree interaction depth and leaf noise. 4) Subsampling rows and columns per tree — decorrelates trees, bagging-style. 5) Stronger L1/L2 leaf regularization. More data beats all of them when available.",
       "why": "Knowing the mechanism ranks the knobs for the case at hand: if validation loss dives early then climbs, stopping/η are the levers; if the model exploits rare deep interactions, depth is; if a few features dominate every tree, column subsampling helps. Depth in boosting sets interaction order (depth-k trees capture up to k-way interactions) — a modeling statement, not just a capacity dial.",
       "followup": "'Why is depth 6 huge for GBM but shallow for a forest?' Boosting sums hundreds of depth-6 trees — capacity accrues across the sequence; a forest's capacity lives inside each single tree."
     },
     {
-      "id": "bst-05", "topic": "boosting", "difficulty": 2,
+      "id": "bst-05",
+      "topic": "boosting",
+      "difficulty": 2,
       "q": "Why does gradient boosting dominate on tabular data but not on images or text?",
       "a": "Tabular features are individually meaningful with heterogeneous scales and types; axis-aligned thresholds and their compositions are exactly the right inductive bias, learned sample-efficiently. Images/text are perceptual: raw inputs (pixels, characters) are individually meaningless, and the signal lives in hierarchical, translation-invariant structure — the inductive bias of convolutions and attention, which trees lack entirely.",
       "why": "'Right inductive bias for the data' is the answer's spine. Deep learning on tabular data must learn feature interactions from scratch that trees get almost free (and neural nets remain unprotected against uninformative features, which greedy split selection filters naturally — a point the 'why do trees win on tables' papers keep confirming). Conversely a GBM on raw pixels sees millions of features whose thresholds mean nothing.",
       "followup": "'When do neural nets win on tabular?' Massive data, heavy categorical embeddings shared across tasks, multimodal inputs, or when you need representation transfer."
     },
     {
-      "id": "bst-06", "topic": "boosting", "difficulty": 3,
+      "id": "bst-06",
+      "topic": "boosting",
+      "difficulty": 3,
       "q": "What is ordered target encoding (CatBoost-style) and what leakage does it prevent?",
       "a": "Naive target encoding replaces a category with the mean target over all rows — including the row itself, so each row's feature contains its own label (worst for rare categories: the encoding nearly equals the label). CatBoost computes each row's encoding only from rows that appear 'before' it in a random permutation, plus a smoothing prior — so no row ever sees its own target.",
       "why": "The general principle is point-in-time correctness applied to feature engineering. Outside CatBoost you get the same protection with out-of-fold target encoding (encode fold k using statistics from the other folds) plus smoothing toward the global mean weighted by category count. Unsmoothed encodings of rare categories are label leaks even out-of-fold — the prior is not optional.",
       "followup": "'Why does target encoding beat one-hot for 10k categories?' One dense, ordered, information-bearing column instead of 10k sparse ones — trees can threshold it directly."
     },
     {
-      "id": "bst-07", "topic": "boosting", "difficulty": 1,
+      "id": "bst-07",
+      "topic": "boosting",
+      "difficulty": 1,
       "q": "Random forest vs. gradient boosting — how do you choose in practice?",
       "a": "GBM (XGBoost/LightGBM/CatBoost) is the default for maximum tabular accuracy — but it demands tuning and a clean validation setup for early stopping. Random forest is the robust near-zero-tuning baseline: hard to misconfigure, parallel, gives OOB estimates, tolerates noise. Start with a forest to establish a floor; graduate to GBM when the effort is justified.",
       "why": "Their failure modes differ more than their accuracy: mistuned GBM (too deep, no stopping) silently overfits, while a forest degrades gracefully; on heavy label noise boosting chases mislabeled points where a forest averages over them. Forests are also embarrassingly parallel across trees. When latency matters, a GBM often hits equal accuracy with fewer, shallower trees.",
       "followup": "'Which gives better-calibrated probabilities out of the box?' Neither is reliable — forests compress toward the middle, boosting is overconfident; calibrate either post-hoc."
     },
     {
-      "id": "fea-01", "topic": "features", "difficulty": 1,
+      "id": "fea-01",
+      "topic": "features",
+      "difficulty": 1,
       "q": "Compare strategies for encoding categorical variables and when each fits.",
       "a": "One-hot: safe default for low cardinality, required for linear models. Ordinal codes: only when a true order exists (or for tree models that can carve arbitrary subsets anyway). Target encoding: high cardinality, with out-of-fold discipline and smoothing. Hashing: unbounded/streaming vocabularies, at the cost of collisions and interpretability. Embeddings: neural models or shared structure across many tasks.",
       "why": "The two spines of the choice: model family (linear models need encodings that make effects linear; trees need encodings that make good thresholds) and cardinality (one-hot's cost and sparsity grow linearly; target/hashing stay constant-width). Rare-category pooling ('other' bucket) and unseen-category handling at serving time are the production details interviewers probe.",
       "followup": "'City has 5000 values, model is logistic regression — what do you do?' Target-encode out-of-fold with smoothing, or hash; one-hot with strong L1 is the sparse alternative."
     },
     {
-      "id": "fea-02", "topic": "features", "difficulty": 1,
+      "id": "fea-02",
+      "topic": "features",
+      "difficulty": 1,
       "q": "How do you handle missing values, and what does the best choice depend on?",
       "a": "First ask why they're missing — the mechanism (MCAR/MAR/MNAR) decides everything. Options: simple mean/median imputation (fine for MCAR), model-based imputation (kNN/iterative) for structured missingness, native handling in GBMs (learned default split direction), and — often most valuable — an explicit 'was_missing' indicator, because missingness itself is frequently a signal (MNAR).",
       "why": "Classic MNAR example: income is missing more often for high earners — mean imputation then systematically distorts exactly the informative tail, while an indicator column lets the model exploit the missingness signal. Also an ordering rule: fit imputers on training folds only (imputation is preprocessing, and leaks like any other preprocessing), and make sure serving-time missingness follows the same path.",
       "followup": "'Feature 40% missing — drop it?' Not reflexively: check indicator-vs-target association first; 40%-missing-but-MNAR can be a top feature via the indicator alone."
     },
     {
-      "id": "fea-03", "topic": "features", "difficulty": 2,
+      "id": "fea-03",
+      "topic": "features",
+      "difficulty": 2,
       "q": "Why does log-transforming a skewed feature or target help, and when do you avoid it?",
       "a": "For features feeding linear/distance-based models, the log tames leverage of huge values and often linearizes multiplicative relationships. For targets, training on log(y) makes MSE optimize relative rather than absolute error and stops the long tail from dominating the loss. Avoid when zeros/negatives make it undefined (use log1p or asinh), when errors on the original scale are what's costly, and note it does nothing for tree splits on features.",
       "why": "The subtle exam point is the back-transform: exp(prediction of E[log y]) estimates the *median*-ish of y, not the mean — E[y] needs a bias correction (exp(μ + σ²/2) under lognormality). Also a modeling statement: log target means the model's additive effects become multiplicative (percentage) effects, which is usually the natural scale for prices and counts.",
       "followup": "'Does a tree care about log(feature)?' No — monotone transforms preserve split orderings exactly. Log-target for a tree does change things: the loss is now on log scale."
     },
     {
-      "id": "fea-04", "topic": "features", "difficulty": 2,
+      "id": "fea-04",
+      "topic": "features",
+      "difficulty": 2,
       "q": "Name the three families of feature selection and one concrete method from each.",
       "a": "Filters: score features independently of any model — mutual information, correlation with target; fast, ignores interactions. Wrappers: search feature subsets by refitting a model — recursive feature elimination (RFE), forward selection; captures interactions, expensive, risks overfitting the selection to the CV signal. Embedded: selection inside training — L1 regularization, tree split-based selection.",
       "why": "The interview trap lives in evaluation: selecting features on the full dataset and then cross-validating the model on the same data is selection leakage — the famous case study shows near-perfect CV accuracy on pure noise. Selection must sit inside the CV loop (inside the pipeline). Also: 'irrelevant alone' ≠ irrelevant — XOR-style features that only matter jointly defeat filters.",
       "followup": "'Why can removing features improve a kNN but rarely a GBM?' kNN's metric is corrupted by every noise dimension; GBM's greedy split search simply ignores unhelpful features."
     },
     {
-      "id": "fea-05", "topic": "features", "difficulty": 2,
+      "id": "fea-05",
+      "topic": "features",
+      "difficulty": 2,
       "q": "You have timestamps. What features do you engineer, and what's the right way to encode cyclical ones?",
       "a": "Decompose: hour, day-of-week, month, is-weekend/holiday, time-since-last-event, event counts in trailing windows. Cyclic components (hour, month, day-of-week) should not be raw integers for linear/distance models — hour 23 and hour 0 are neighbors. Encode as sin/cos pairs: (sin 2πh/24, cos 2πh/24) puts the cycle on a circle where distances are honest.",
       "why": "Trees can split raw hour integers into arbitrary ranges, so sin/cos matters less there (though it can still help with smoother boundaries at the wrap point). The larger principle is injecting known invariances into the representation instead of hoping the model discovers them — the tabular cousin of convolution's translation invariance.",
       "followup": "'Why two coordinates, not just sin?' sin alone is ambiguous (sin(2)=sin(π−2) collapses different hours); the pair makes the mapping injective."
     },
     {
-      "id": "fea-06", "topic": "features", "difficulty": 3,
+      "id": "fea-06",
+      "topic": "features",
+      "difficulty": 3,
       "q": "Design leak-free features for churn prediction with events arriving over time.",
       "a": "Fix a prediction time T per example and compute every feature strictly from data before T — trailing windows (logins last 7/30/90 days), recency (days since last purchase), tenure, trend deltas between windows. The label comes from after T (e.g. no activity in T+30). Training rows must replay history point-in-time; joins against 'current' profile tables are the classic leak.",
       "why": "The insidious leaks are structural: a 'days_inactive' feature computed at data-extraction time (not at T) literally encodes the label; slowly-changing dimensions joined at their latest value import the future; even the sampling of who gets a training row can leak outcome. This is why feature stores emphasize point-in-time-correct joins, and why time-based validation splits are non-negotiable for temporal products.",
       "followup": "'How do you test a pipeline for temporal leakage?' Train with features shifted to use only data before T−k for growing k — performance should degrade smoothly; a cliff at k=0 flags a leak."
     },
     {
-      "id": "fea-07", "topic": "features", "difficulty": 1,
+      "id": "fea-07",
+      "topic": "features",
+      "difficulty": 1,
       "q": "Which model families require feature scaling, which don't, and why?",
       "a": "Need scaling: anything using distances or dot products with penalties — kNN, K-means, SVMs, regularized linear/logistic models, PCA, and neural networks (for optimization health). Don't: tree-based models (trees, forests, GBMs) — splits depend only on value order, invariant to monotone transforms. Unregularized OLS is scale-equivariant: predictions unchanged, coefficients rescale.",
       "why": "Three distinct mechanisms make scaling matter, and naming them is the strong answer: (1) geometry — unscaled features dominate distance metrics; (2) penalties — L1/L2 compare coefficient magnitudes across features, meaningless across units; (3) optimization — ill-conditioned loss surfaces slow gradient descent. PCA is the sneaky one: without standardization it faithfully reports that the largest-variance *unit* dominates.",
       "followup": "'Fit the scaler on train+test?' No — statistics of the test set leak into training; fit on train, apply to test."
     },
     {
-      "id": "uns-01", "topic": "unsupervised", "difficulty": 1,
+      "id": "uns-01",
+      "topic": "unsupervised",
+      "difficulty": 1,
       "q": "Walk through the K-means algorithm. What is it optimizing, and what can go wrong?",
       "a": "Initialize k centroids; alternate: assign each point to its nearest centroid, then move each centroid to its cluster's mean; stop at stability. It monotonically decreases within-cluster sum of squares (inertia) — but only to a local minimum, so initialization matters (k-means++ spreads seeds; run multiple restarts). You must choose k, and features must be scaled.",
       "why": "It's exactly coordinate descent on inertia (assignment step and update step each optimize one block), which is why convergence is guaranteed but global optimality is not. Implicit assumptions do the damage: spherical, similar-size, similar-density clusters in Euclidean space — elongated or nested structures get sliced wrongly no matter how many restarts you do.",
       "followup": "'Why must the centroid update be the mean?' The mean minimizes summed squared distance; swap the objective to L1 and the update becomes the median (k-medians)."
     },
     {
-      "id": "uns-02", "topic": "unsupervised", "difficulty": 2,
+      "id": "uns-02",
+      "topic": "unsupervised",
+      "difficulty": 2,
       "q": "How do you choose the number of clusters?",
       "a": "There is no ground truth — triangulate: the elbow of inertia vs. k (where marginal gain collapses), silhouette score (cohesion vs. separation, peaks at good k), gap statistic (inertia vs. a null reference distribution), and stability (do clusters persist under resampling?). Ultimately validate against the downstream purpose: do the clusters mean something actionable?",
       "why": "Inertia alone is unusable — it decreases monotonically in k (k=N gives zero). Silhouette (b−a)/max(a,b) per point gives an interpretable −1..1 scale and diagnoses individual misassigned points, but favors convex clusters. The honest senior answer is that k is a modeling decision serving a use case (e.g. 'we can build 5 distinct campaigns'), and metrics only guardrail it.",
       "followup": "'Silhouette near 0 everywhere — meaning?' Points sit near cluster boundaries — likely no real cluster structure at that k (or at all)."
     },
     {
-      "id": "uns-03", "topic": "unsupervised", "difficulty": 2,
+      "id": "uns-03",
+      "topic": "unsupervised",
+      "difficulty": 2,
       "q": "What does PCA do, and what do the principal components and explained variance mean?",
       "a": "PCA finds an orthogonal basis of directions ordered by data variance — eigenvectors of the covariance matrix (equivalently SVD of centered X). Projecting onto the top d components gives the best rank-d linear reconstruction in squared error. Explained variance ratios say how much structure each direction carries; the cumulative curve guides how many to keep.",
       "why": "Dual view worth stating: maximum-variance directions ≡ minimum-reconstruction-error subspace. Practical caveats: standardize first (else it ranks units, not structure); components are linear combinations, so interpretability suffers; and variance ≠ predictive relevance — the top component can be useless for the target while a small one carries the signal (PCA is unsupervised; PLS is the supervised cousin).",
       "followup": "'Why must data be centered?' Uncentered PCA's first component chases the mean offset from the origin instead of the data's spread."
     },
     {
-      "id": "uns-04", "topic": "unsupervised", "difficulty": 2,
+      "id": "uns-04",
+      "topic": "unsupervised",
+      "difficulty": 2,
       "q": "K-means vs. DBSCAN vs. hierarchical clustering — when does each win?",
       "a": "K-means: fast, scalable, spherical similar-sized clusters, k known roughly. DBSCAN: arbitrary shapes, finds its own cluster count, labels outliers as noise — but needs a meaningful density scale (eps) and struggles when densities vary across clusters or dimensionality is high. Hierarchical: no k upfront, dendrogram shows structure at all scales, ideal for taxonomy-like data — O(N²) limits scale.",
       "why": "Each encodes a different definition of 'cluster': compact-around-a-center (k-means), density-connected region (DBSCAN), merge-tree of proximities (hierarchical, flavored by linkage — single chains, complete compacts, Ward ≈ k-means-like). Matching that definition to the data's actual geometry is the entire decision; the two-moons dataset is the classic k-means-fails/DBSCAN-wins picture.",
       "followup": "'Which handles outliers best?' DBSCAN — it has an explicit noise label; k-means must place every point and outliers drag centroids."
     },
     {
-      "id": "uns-05", "topic": "unsupervised", "difficulty": 3,
+      "id": "uns-05",
+      "topic": "unsupervised",
+      "difficulty": 3,
       "q": "t-SNE and UMAP: what are they for, and which properties of the picture can you not trust?",
       "a": "Non-linear embeddings for visualizing high-dimensional structure by preserving local neighborhoods. Do not trust: inter-cluster distances (a far-apart pair may not be dissimilar), cluster sizes/densities (t-SNE expands dense regions), or apparent clusters at low perplexity (it can shatter continua into fake islands). Trust only 'these points are neighbors'.",
       "why": "t-SNE matches neighbor probabilities between spaces (heavy-tailed in 2D to fight crowding), optimizing a local objective — global geometry is explicitly sacrificed. Perplexity sets the neighborhood scale and can manufacture or dissolve structure, so the honest workflow shows several perplexities. UMAP is faster and keeps somewhat more global structure, but the same 'local yes, global no' reading discipline applies. Never feed the embedding to downstream models for distances.",
       "followup": "'PCA vs. t-SNE for a report figure?' PCA when axes and distances must mean something (it's linear and invertible-ish); t-SNE/UMAP when revealing neighborhood structure is the point."
     },
     {
-      "id": "uns-06", "topic": "unsupervised", "difficulty": 2,
+      "id": "uns-06",
+      "topic": "unsupervised",
+      "difficulty": 2,
       "q": "How would you detect anomalies without labels? Compare two approaches.",
       "a": "Isolation Forest: random trees isolate points; anomalies, being few and different, need fewer random splits to isolate, so short average path length = anomalous. Works in moderate-to-high dimensions, near-linear cost, few assumptions. Density/distance methods (kNN distance, Local Outlier Factor): anomaly = point in a sparse region relative to its neighbors — LOF's relative-density trick catches outliers next to dense clusters that global thresholds miss.",
       "why": "The deep contrast is global-model vs. local-density definitions of 'anomalous' — they disagree exactly where it's interesting (a point normal globally but odd for its neighborhood). Practical notes: scaling matters for distance methods; contamination rate sets the threshold and is a product decision; and validate by injecting synthetic anomalies or reviewing top-scored points with domain experts, since there's no labeled metric.",
       "followup": "'One-class SVM fits where?' It learns a boundary around the 'normal' mass in kernel space — elegant, but eps/nu tuning without labels is its weak spot."
     },
     {
-      "id": "sgd-01", "topic": "sgd", "difficulty": 1,
+      "id": "sgd-01",
+      "topic": "sgd",
+      "difficulty": 1,
       "q": "Batch vs. stochastic vs. mini-batch gradient descent — the real trade-offs?",
       "a": "Batch: exact gradient per step, stable but each step costs a full pass — wasteful on redundant data. SGD (single sample): noisy but cheap steps, and the noise helps escape shallow local structure; needs a decaying learning rate to converge. Mini-batch: the practical optimum — averaged noise, hardware-friendly vectorization, one knob (batch size) trading gradient quality against step throughput.",
       "why": "The key economics: with lots of redundant data, an epoch of SGD makes N noisy-but-useful updates for the price of one exact batch step — per-FLOP progress is what matters, not per-step progress. Gradient noise scales as 1/√(batch); very large batches also tend to find sharper minima that generalize slightly worse, which is why batch size interacts with learning rate (scale them together).",
       "followup": "'Why must the SGD learning rate decay for convergence?' With constant η, gradient noise keeps the iterate bouncing in a stationary noise ball around the optimum; Robbins–Monro conditions (Ση=∞, Ση²<∞) shrink it."
     },
     {
-      "id": "sgd-02", "topic": "sgd", "difficulty": 2,
+      "id": "sgd-02",
+      "topic": "sgd",
+      "difficulty": 2,
       "q": "Your training loss diverges / oscillates / crawls. Map each symptom to learning-rate diagnosis and fix.",
       "a": "Diverging (loss → ∞ or NaN): learning rate too high — steps overshoot the minimum and amplify; cut it 10× (and check for exploding gradients / missing normalization). Oscillating without progress: slightly too high, bouncing across a valley — reduce, or add momentum to average out the bounce. Crawling: too low, or stuck on a plateau — raise it, add momentum/adaptive methods, or use a schedule with warmup + decay.",
       "why": "On a quadratic, gradient descent converges iff η < 2/L (L = largest curvature eigenvalue); divergence is literally exceeding that bound along the sharpest direction. Ill-conditioning (L/μ large) is why one global η can be simultaneously too big for steep directions and too small for flat ones — the exact problem momentum and Adam-style per-coordinate scaling address.",
       "followup": "'Loss fine, validation metric flat — is this a learning-rate problem?' Probably not — that pattern points at data, labels, leakage, or the metric, not optimization."
     },
     {
-      "id": "sgd-03", "topic": "sgd", "difficulty": 2,
+      "id": "sgd-03",
+      "topic": "sgd",
+      "difficulty": 2,
       "q": "What do momentum and Adam add to SGD?",
       "a": "Momentum keeps an exponential moving average of gradients: consistent directions accumulate speed while oscillating components cancel — faster along ravines, damped across them. Adam adds a second moving average of squared gradients and divides by its root: a per-parameter step size that shrinks for high-variance/large-gradient coordinates and grows for quiet ones, plus bias correction for the averages' cold start.",
       "why": "Both attack ill-conditioning, from different angles: momentum is a temporal filter (roughly heavy-ball physics), Adam is diagonal preconditioning. That's why Adam shines with sparse/heterogeneous gradients (embeddings, attention) and why plain SGD+momentum, tuned well, still sometimes generalizes slightly better on vision tasks — the adaptive scaling changes the implicit bias of the trajectory. AdamW fixes weight decay by decoupling it from the adaptive step.",
       "followup": "'Why bias correction in Adam?' Zero-initialized EMAs underestimate early moments; dividing by (1−βᵗ) unbiases the first steps so they aren't tiny."
     },
     {
-      "id": "sgd-04", "topic": "sgd", "difficulty": 2,
+      "id": "sgd-04",
+      "topic": "sgd",
+      "difficulty": 2,
       "q": "Why is early stopping a form of regularization, and how do you implement it correctly?",
       "a": "Optimization fits dominant, generalizable structure first and noise later, so time-in-training acts as a capacity dial; stopping at the validation minimum halts before noise-fitting. Implement: monitor validation loss, keep the best checkpoint, stop after a patience window without improvement, restore the best weights. The validation set used for stopping is part of model selection — final numbers come from a separate test set.",
       "why": "For linear least squares, early-stopped gradient descent is provably close to ridge regression with λ ~ 1/(ηt) — 'training time' and 'penalty strength' are two faces of one capacity constraint. The same logic gives GBMs their n_estimators-by-early-stopping recipe. Patience matters because validation curves are noisy — stopping at the first uptick is premature.",
       "followup": "'Early stopping with K-fold CV — where's the wrinkle?' Each fold stops at a different iteration; either average the stopping points for the final refit or hold out a stopping set from the training data."
     },
     {
-      "id": "sgd-05", "topic": "sgd", "difficulty": 3,
+      "id": "sgd-05",
+      "topic": "sgd",
+      "difficulty": 3,
       "q": "Why does regularization in deep learning go beyond L2 — what do dropout and implicit regularization add?",
       "a": "Dropout randomly zeroes units in training, forcing redundant representations and preventing co-adaptation — approximately training an exponential ensemble of subnetworks that share weights (at inference, scaling approximates the ensemble average). Implicit regularization: SGD's noise and geometry bias solutions toward flat minima that generalize, which is part of why overparameterized nets generalize despite capacity to memorize.",
       "why": "The modern picture is that explicit penalties are only one lever among architecture (convolution = built-in invariance), data augmentation (regularization through the data distribution), normalization layers, early stopping, and optimizer-induced bias. Double descent reframes the classic U-curve: past the interpolation threshold, more capacity can *reduce* test error — memorization capacity and generalization are not opposites in this regime.",
       "followup": "'Why is dropout usually off at inference?' You want the deterministic ensemble-average behavior; keeping it on gives one random subnetwork (though Monte-Carlo dropout exploits exactly that for uncertainty estimates)."
     },
     {
-      "id": "sgd-06", "topic": "sgd", "difficulty": 1,
+      "id": "sgd-06",
+      "topic": "sgd",
+      "difficulty": 1,
       "q": "Why is (log) loss convex for logistic regression but non-convex for neural networks, and what follows?",
       "a": "Logistic regression composes a linear function with a convex loss — the objective is convex in the weights, so any local minimum is global and optimization is 'solved'. Stacking layers with non-linear activations destroys convexity: permuting hidden units leaves the function unchanged (many equivalent minima), and saddle points proliferate. Consequently deep learning outcomes depend on initialization, learning-rate schedules, and normalization — optimization becomes empirical craft.",
       "why": "The reassuring modern finding: in high dimensions the practical obstacle is saddle points and plateaus rather than bad local minima — for wide networks most local minima are near-equivalent in quality, and SGD noise escapes saddles. That's why 'non-convex' stopped being a reason not to use deep nets, and why symmetry-breaking initialization (never all-zeros) is mandatory.",
       "followup": "'Is ridge regression's objective strictly convex?' Yes for λ>0 — XᵀX+λI is positive definite, so the minimizer is unique even with collinear features."
     },
     {
-      "id": "tsr-01", "topic": "timeseries", "difficulty": 1,
+      "id": "tsr-01",
+      "topic": "timeseries",
+      "difficulty": 1,
       "q": "Why can't you use standard K-fold cross-validation on time series, and what do you use instead?",
       "a": "Random folds train on the future to predict the past — temporal leakage — and autocorrelation puts near-duplicate neighboring points in train and validation, inflating scores. Use forward-chaining: expanding-window or rolling-window splits where validation always lies strictly after training, optionally with a gap between them matching the deployment horizon.",
       "why": "The gap matters when features use trailing windows: a 7-day rolling-mean feature computed at validation start overlaps raw data from the training period, so leakage persists even in forward splits — the purge/embargo idea from financial ML. The evaluation must also mirror the retraining cadence you'll actually run in production (train weekly, predict next week).",
       "followup": "'Is shuffling ever OK on temporal data?' Only if rows are genuinely exchangeable given features — i.e. the process is stationary and you'll never predict across the time boundary. Rare; default to forward splits."
     },
     {
-      "id": "tsr-02", "topic": "timeseries", "difficulty": 2,
+      "id": "tsr-02",
+      "topic": "timeseries",
+      "difficulty": 2,
       "q": "What is stationarity, why do models want it, and how do you get it?",
       "a": "A stationary series has time-invariant distributional properties — constant mean, variance, autocovariance. Models want it because learning transferable patterns requires the future to statistically resemble the past; trends and changing variance break that contract. Achieve it by differencing (removes trend), seasonal differencing, log/Box-Cox transforms (stabilize variance), or explicitly modeling trend/seasonality and working with residuals.",
       "why": "Two failure signatures of ignoring it: models that just predict 'recent level' (trees can't extrapolate a trend), and spurious regression — two independent trending series correlate strongly just by both trending, the classic econometrics trap. ADF/KPSS tests give evidence, but plots (rolling mean/variance, ACF decaying slowly ⇒ non-stationary) are usually more informative than test p-values.",
       "followup": "'Difference once or twice?' Once removes linear trend; twice quadratic. Over-differencing adds noise and negative autocorrelation — difference minimally."
     },
     {
-      "id": "tsr-03", "topic": "timeseries", "difficulty": 2,
+      "id": "tsr-03",
+      "topic": "timeseries",
+      "difficulty": 2,
       "q": "Turn 'forecast next week's demand' into a supervised ML problem — what features and what pitfalls?",
       "a": "Each row = (series, timestamp): features are lags (t−1, t−7, t−28), rolling statistics (mean/std/min/max over trailing windows), calendar features (day-of-week, holidays, promos), and cross-series aggregates; target = value at t+h. Pitfalls: every feature must use only data available at prediction time (a rolling mean must exclude the target's own window), and validation must be forward-chained.",
       "why": "The multi-horizon subtlety separates candidates: predicting t+7 means your freshest usable lag is t, and recursive strategies (feed predictions back as lags) compound errors while direct strategies (one model per horizon) need more models — a real design trade-off. Global models pooling many related series (one model over all SKUs, with series-ID features) usually beat per-series models by sharing statistical strength — the M-competitions' recurring lesson.",
       "followup": "'Why did the model with a lag-0 rolling feature look amazing offline?' The window included the target period itself — the most common time-series leak."
     },
     {
-      "id": "tsr-04", "topic": "timeseries", "difficulty": 2,
+      "id": "tsr-04",
+      "topic": "timeseries",
+      "difficulty": 2,
       "q": "Decompose a time series: what are trend, seasonality, and residual, and why decompose at all?",
       "a": "Trend: the slow-moving level. Seasonality: fixed-period repeating pattern (weekly, yearly). Residual: what remains — ideally structureless noise; structure in the residual means signal your decomposition missed. Additive (y = T+S+R) when seasonal swings are constant in absolute size; multiplicative (y = T·S·R, or additive-on-log) when swings scale with the level.",
       "why": "Decomposition (e.g. STL) serves three masters: understanding (is growth real or seasonal?), preprocessing (models fit de-seasonalized residuals more easily — even a GBM benefits from having trend removed since trees can't extrapolate it), and anomaly detection (a point odd relative to trend+season, not in raw value). The additive-vs-multiplicative choice is diagnosable by eye: does December's spike grow with the company?",
       "followup": "'Baseline forecast before any ML?' Seasonal naive — repeat last period's value (t−7 for daily-weekly). Any model that can't beat it isn't earning its complexity."
     },
     {
-      "id": "tsr-05", "topic": "timeseries", "difficulty": 3,
+      "id": "tsr-05",
+      "topic": "timeseries",
+      "difficulty": 3,
       "q": "When do classical methods (ARIMA/ETS) beat gradient boosting for forecasting, and vice versa?",
       "a": "Classical wins: single or few series, short history, clear trend/seasonal structure (they extrapolate trend natively and give probabilistic intervals), and strong small-data efficiency. GBM wins: many related series to pool, rich exogenous features (promos, prices, weather), non-linear feature effects — with the caveat that you must hand it detrended targets or trend features because trees can't extrapolate.",
       "why": "The M4/M5 competition arc tells the story: statistical methods held their own on heterogeneous single series (M4), while a LightGBM on pooled series with engineered features won M5 — the crossover is data volume × feature richness. Hybrids (fit trend/season classically, ML on residuals) capture both strengths; deep sequence models need even more scale to pay off.",
       "followup": "'How does a GBM get prediction intervals?' Quantile loss — train separate models at the 5th/95th percentile pinball loss (or use conformal prediction on residuals)."
     },
     {
-      "id": "tsr-06", "topic": "timeseries", "difficulty": 1,
+      "id": "tsr-06",
+      "topic": "timeseries",
+      "difficulty": 1,
       "q": "What is autocorrelation, and what do ACF/PACF plots tell you?",
       "a": "Autocorrelation is the correlation of a series with its own lagged values. The ACF at lag k shows total correlation with t−k (including paths through intermediate lags); the PACF shows the direct correlation after controlling for shorter lags. Spikes reveal structure: seasonal periods show as ACF peaks at the period; PACF cutting off after lag p suggests an AR(p) process.",
       "why": "Beyond ARIMA order selection (ACF cuts off ⇒ MA order, PACF cuts off ⇒ AR order), these plots are feature-engineering guides for ML: significant lags are exactly the lags worth adding as features. A slowly, linearly decaying ACF is the visual signature of non-stationarity — difference first, then re-read the plots. Residual ACF after modeling should be flat: remaining spikes mean captured-able structure remains.",

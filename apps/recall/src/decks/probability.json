@@ -1,0 +1,232 @@
+{
+  "id": "probability",
+  "title": "Probability",
+  "blurb": "Conditioning, distributions, limit theorems, and the paradoxes that catch out people who never learned to condition properly.",
+  "topics": [
+    { "id": "foundations", "title": "Axioms & Conditioning", "free": true },
+    { "id": "variables", "title": "Random Variables", "free": true },
+    { "id": "expectation", "title": "Expectation & Moments", "free": false },
+    { "id": "limits", "title": "Limit Theorems", "free": false },
+    { "id": "paradoxes", "title": "Paradoxes & Fallacies", "free": false },
+    { "id": "processes", "title": "Stochastic Processes", "free": false }
+  ],
+  "cards": [
+    {
+      "id": "fnd-01", "topic": "foundations", "difficulty": 1,
+      "q": "State the axioms of probability and explain what each one rules out.",
+      "a": "Kolmogorov's three: (1) P(A) ≥ 0 for every event — no negative probabilities; (2) P(Ω) = 1 — the sample space exhausts the possibilities; (3) countable additivity — for disjoint events, P(∪Aᵢ) = ΣP(Aᵢ). Everything else, including P(Aᶜ) = 1 − P(A) and inclusion–exclusion, is derived.",
+      "why": "The third axiom is the one doing real work. Finite additivity is intuitive; extending it to countably infinite unions is what makes limits, convergence, and continuous distributions possible — and it is exactly why the sample space needs a σ-algebra rather than 'all subsets'. Non-measurable sets (Vitali sets) show that the naive version is inconsistent with translation invariance.",
+      "followup": "'Why can't we just assign probability to every subset of [0,1]?' Because a uniform, translation-invariant measure on all subsets provably doesn't exist — hence measurable events only."
+    },
+    {
+      "id": "fnd-02", "topic": "foundations", "difficulty": 1,
+      "q": "Define conditional probability and explain what conditioning actually does to the sample space.",
+      "a": "P(A|B) = P(A ∩ B)/P(B) for P(B) > 0. Conditioning renormalizes: it discards the part of the sample space where B is false and rescales what remains so total probability is 1 again. P(·|B) is itself a legitimate probability measure satisfying all three axioms.",
+      "why": "Seeing conditioning as 'shrink the universe, renormalize' resolves most confusion. The gambler who says 'I've flipped five heads, tails is due' is conditioning on the wrong thing: the coin's future is independent of the past, so the conditional distribution is unchanged. Nearly every probability paradox is a disagreement about which universe you have shrunk to.",
+      "followup": "'Is P(A|B) a probability measure in A? In B?' In A yes, fully. In B no — P(A|·) doesn't satisfy the axioms as a function of the conditioning event."
+    },
+    {
+      "id": "fnd-03", "topic": "foundations", "difficulty": 2,
+      "q": "State Bayes' theorem and explain each term in the language of evidence.",
+      "a": "P(H|E) = P(E|H)·P(H) / P(E). P(H) is the prior — belief before evidence; P(E|H) is the likelihood — how well the hypothesis predicts what you saw; P(E) is the marginal likelihood, a normalizing constant Σ P(E|Hᵢ)P(Hᵢ); P(H|E) is the posterior. In odds form: posterior odds = prior odds × likelihood ratio.",
+      "why": "The odds form is the one to internalize because it isolates the evidence's contribution: the likelihood ratio P(E|H)/P(E|¬H) is exactly how many times more likely the evidence is under H. Evidence with a ratio near 1 is worthless regardless of how dramatic it feels, and a very strong likelihood ratio still can't rescue a hypothesis with a tiny prior.",
+      "followup": "'Which term do people most often ignore?' The prior — the base-rate fallacy. Also P(E|¬H): evidence that is likely under every hypothesis discriminates nothing."
+    },
+    {
+      "id": "fnd-04", "topic": "foundations", "difficulty": 2,
+      "q": "A test is 99% accurate for a disease affecting 1 in 10,000. You test positive. What's the probability you have it?",
+      "a": "About 1%. Of 1,000,000 people: 100 have the disease and ~99 test positive; 999,900 are healthy and ~9,999 falsely test positive. So P(disease|positive) ≈ 99/(99 + 9,999) ≈ 0.98%. The false positives from the enormous healthy population swamp the true positives.",
+      "why": "This is the base-rate fallacy, and natural frequencies (counts out of a million) make it obvious where percentages make it opaque — which is a communication lesson, not just a math one. The structural insight: when the base rate is far below the false-positive rate, a positive result mostly tells you about test error, not disease. It's also why screening asymptomatic populations differs from testing symptomatic ones — symptoms raise the prior.",
+      "followup": "'What single number would most improve the answer?' The false-positive rate separately from '99% accurate' — accuracy conflates sensitivity and specificity."
+    },
+    {
+      "id": "fnd-05", "topic": "foundations", "difficulty": 2,
+      "q": "Distinguish independence, mutual exclusivity, and conditional independence.",
+      "a": "Independent: P(A∩B) = P(A)P(B) — knowing one tells you nothing about the other. Mutually exclusive: A∩B = ∅, so they cannot co-occur — which makes them maximally *dependent* (if A happened, B definitely didn't). Conditionally independent given C: P(A∩B|C) = P(A|C)P(B|C) — independent within each stratum of C.",
+      "why": "The exclusive/independent confusion is the most common beginner error, and stating it as 'exclusivity is strong dependence' fixes it permanently. Conditional independence is subtler: it neither implies nor is implied by marginal independence. Two effects of a common cause are dependent marginally but independent given the cause; conversely, conditioning on a common effect (a collider) creates dependence between previously independent causes — the mechanism behind Berkson's paradox and much of selection bias.",
+      "followup": "'Give a case where conditioning destroys independence.' Two independent coin flips and C = 'their sum is 1'. Given C, the flips are perfectly anti-correlated."
+    },
+    {
+      "id": "fnd-06", "topic": "foundations", "difficulty": 3,
+      "q": "What is the law of total probability, and why is it the workhorse of applied probability?",
+      "a": "For a partition {Bᵢ} of the sample space, P(A) = Σᵢ P(A|Bᵢ)P(Bᵢ). It computes an unconditional probability by conditioning on every way the world could be and averaging with the right weights. The expectation version is the tower property: E[X] = E[E[X|Y]].",
+      "why": "It converts hard unconditional questions into easy conditional ones — the standard trick for recursive problems (condition on the first step) and for mixtures. The tower property generalizes it and is the engine behind variance decomposition: Var(X) = E[Var(X|Y)] + Var(E[X|Y]), which says total variability splits into within-group and between-group parts. That single identity underlies ANOVA, hierarchical models, and the bias–variance decomposition.",
+      "followup": "'Compute E[number of flips until first head] by conditioning.' E = 1 + (1/2)·0 + (1/2)·E ⟹ E = 2."
+    },
+    {
+      "id": "var-01", "topic": "variables", "difficulty": 1,
+      "q": "What is a random variable, and how do PMF, PDF, and CDF differ?",
+      "a": "A random variable is a measurable function from the sample space to the reals — it assigns a number to each outcome; it is neither random nor a variable. Discrete variables have a PMF, P(X = x), summing to 1. Continuous variables have a PDF f(x) ≥ 0 integrating to 1, where f(x) is a density, not a probability. The CDF F(x) = P(X ≤ x) exists for both and fully characterizes the distribution.",
+      "why": "The density-is-not-a-probability point matters: f(x) can exceed 1 (a Uniform(0, 0.5) has density 2), and P(X = x) = 0 for any single point in the continuous case — probability lives in intervals. The CDF is the universal object because it handles mixed distributions that are neither purely discrete nor continuous, and its inverse gives the standard sampling trick.",
+      "followup": "'How do you sample any distribution from a Uniform(0,1)?' Inverse-transform: X = F⁻¹(U). Works whenever you can invert the CDF."
+    },
+    {
+      "id": "var-02", "topic": "variables", "difficulty": 1,
+      "q": "When would you model something as Binomial, Poisson, or Geometric?",
+      "a": "Binomial: a fixed number n of independent trials with constant success probability p, counting successes. Poisson: counting events in a fixed interval when events occur independently at constant average rate λ, with no fixed upper bound. Geometric: number of trials until the first success. Poisson is the limit of Binomial as n → ∞ and p → 0 with np = λ held fixed.",
+      "why": "That limit tells you when Poisson is appropriate: many opportunities, each unlikely — website hits, mutations, insurance claims. Its signature is mean = variance = λ, which gives a diagnostic: if your count data has variance well above the mean (overdispersion), Poisson is wrong and negative binomial is the usual fix, typically because the rate itself varies across units.",
+      "followup": "'What's the memorylessness of Geometric?' P(X > m+n | X > m) = P(X > n) — past failures don't make success more due. Exponential is the continuous analogue."
+    },
+    {
+      "id": "var-03", "topic": "variables", "difficulty": 2,
+      "q": "Why is the normal distribution so ubiquitous, and when is assuming it a mistake?",
+      "a": "Because of the CLT: sums and averages of many independent, comparably-sized contributions converge to normal regardless of the components' distributions. It is also the maximum-entropy distribution for a given mean and variance — the least-assuming choice when you know only those two moments. It fails when data is heavy-tailed, generated multiplicatively, bounded, or dominated by a few large contributions.",
+      "why": "The failure modes matter more than the theorem. Financial returns have tails far heavier than normal, so normal-based risk models systematically understate crash probability — a 5σ event is essentially impossible under normality and routine in markets. Multiplicative processes give lognormal, not normal (income, city sizes). And when one component dominates the sum, the CLT's premise of comparable contributions fails outright.",
+      "followup": "'How do you check normality?' QQ-plot against normal quantiles — far more informative than a test, which merely reports whether n was large enough to detect any deviation."
+    },
+    {
+      "id": "var-04", "topic": "variables", "difficulty": 2,
+      "q": "What is a joint distribution, and how do you get marginals and conditionals from it?",
+      "a": "A joint distribution p(x, y) gives probability to combinations. Marginalize by summing or integrating out the other variable: p(x) = Σ_y p(x, y). Condition by slicing and renormalizing: p(y|x) = p(x, y)/p(x). Independence is the special case where the joint factors: p(x, y) = p(x)p(y) for all x, y.",
+      "why": "Marginalizing is averaging over uncertainty you don't care about; conditioning is fixing it to an observed value. They give different answers, and the gap between them is the entirety of Simpson's paradox. The factorization view is also the foundation of graphical models: a Bayesian network is precisely a claim about which conditional factorizations of the joint hold.",
+      "followup": "'Can you recover a joint from its marginals?' No — many joints share the same marginals. The dependence structure (the copula) is exactly the missing information."
+    },
+    {
+      "id": "var-05", "topic": "variables", "difficulty": 3,
+      "q": "How does a change of variables transform a density, and why is the Jacobian there?",
+      "a": "For a monotone transform Y = g(X), f_Y(y) = f_X(g⁻¹(y))·|d g⁻¹/dy|. The derivative factor is the Jacobian; in multiple dimensions it becomes |det J|. It appears because densities are per-unit-volume quantities — a transform that stretches space must dilute the density to keep total probability at 1.",
+      "why": "Forgetting the Jacobian is the classic error, and the intuition prevents it: probability mass is conserved, density is not. This is exactly why the mode of a distribution is not transform-invariant (the mode of log X is not log of the mode of X) while quantiles are — a real trap when reporting 'most likely values' on a transformed scale. Normalizing flows in machine learning are built entirely on tracking these Jacobians.",
+      "followup": "'Is the median transform-invariant under monotone g?' Yes — monotone maps preserve order, so quantiles carry across cleanly. Means and modes do not."
+    },
+    {
+      "id": "exp-01", "topic": "expectation", "difficulty": 1,
+      "q": "Why is linearity of expectation so powerful, and what does it not require?",
+      "a": "E[X + Y] = E[X] + E[Y] always — no independence needed, no matter how the variables are correlated. This lets you decompose a complicated count into indicator variables, take each one's easy expectation, and add, sidestepping the joint distribution entirely.",
+      "why": "The indicator trick is the single highest-yield technique in discrete probability. Expected number of fixed points in a random permutation: each of n positions is fixed with probability 1/n, so the answer is n·(1/n) = 1 — regardless of the ferocious dependence between events. Contrast variance, which emphatically does need independence: Var(X+Y) = Var(X) + Var(Y) + 2Cov(X,Y).",
+      "followup": "'Expected number of distinct coupons after n draws from k types?' k(1 − (1 − 1/k)ⁿ) by indicators on each type — no joint distribution required."
+    },
+    {
+      "id": "exp-02", "topic": "expectation", "difficulty": 1,
+      "q": "Define variance and covariance, and state what correlation adds.",
+      "a": "Var(X) = E[(X − μ)²] = E[X²] − (E[X])², the mean squared deviation. Cov(X,Y) = E[(X−μₓ)(Y−μᵧ)] measures joint linear co-movement but is scale-dependent. Correlation ρ = Cov(X,Y)/(σₓσᵧ) normalizes it to [−1, 1], making it comparable across units.",
+      "why": "Correlation captures *linear* association only: Y = X² with X symmetric about 0 has correlation exactly 0 despite perfect dependence. Zero correlation therefore does not imply independence — except in the jointly normal case, where it does, which is precisely why that assumption is so convenient and so often wrongly assumed.",
+      "followup": "'Why square rather than take absolute deviations?' Squares make variance additive for independent variables and analytically differentiable; mean absolute deviation is more robust but loses both properties."
+    },
+    {
+      "id": "exp-03", "topic": "expectation", "difficulty": 2,
+      "q": "What is the law of the unconscious statistician, and why the name?",
+      "a": "E[g(X)] = Σ g(x)p(x) or ∫ g(x)f(x)dx — you can compute the expectation of a transformed variable using the *original* distribution, without ever deriving the distribution of g(X). The name mocks the practitioner who uses it without realizing it needs proof.",
+      "why": "The saving is enormous: computing E[X²] doesn't require the density of X². It also sets up the crucial warning that E[g(X)] ≠ g(E[X]) in general — Jensen's inequality says the gap has a definite sign for convex g: E[g(X)] ≥ g(E[X]). That single fact explains why the average of ratios isn't the ratio of averages, why volatility drags compound returns below their arithmetic mean, and why a log-transformed model's predictions need bias correction.",
+      "followup": "'Which is bigger, E[1/X] or 1/E[X], for positive X?' E[1/X] — 1/x is convex, so Jensen bites upward."
+    },
+    {
+      "id": "exp-04", "topic": "expectation", "difficulty": 2,
+      "q": "Explain conditional expectation E[X|Y] as a random variable.",
+      "a": "E[X|Y] is not a number but a function of Y — hence itself a random variable. For each value y it returns the average of X within that stratum. The tower property E[E[X|Y]] = E[X] says averaging the strata means, weighted by their probabilities, recovers the overall mean.",
+      "why": "The deeper characterization: E[X|Y] is the best predictor of X given Y under squared error — the projection of X onto the space of functions of Y. That is precisely what a regression estimates, which is why 'regression estimates a conditional expectation' is the honest one-line description of supervised learning with MSE. Variance decomposition Var(X) = E[Var(X|Y)] + Var(E[X|Y]) then reads as unexplained plus explained variance.",
+      "followup": "'What if we use absolute error instead?' The optimal predictor becomes the conditional median, not the mean — the probabilistic root of quantile regression."
+    },
+    {
+      "id": "exp-05", "topic": "expectation", "difficulty": 3,
+      "q": "What do moment generating functions do, and when do you reach for one?",
+      "a": "M(t) = E[e^{tX}]. Differentiating k times at t = 0 yields the k-th raw moment. Crucially, MGFs of independent variables multiply for sums: M_{X+Y}(t) = M_X(t)M_Y(t), and an MGF (where it exists in a neighborhood of 0) determines the distribution uniquely.",
+      "why": "That multiplication property turns convolution — genuinely painful — into multiplication, which is why MGFs prove that sums of independent Poissons are Poisson and sums of independent normals are normal in a line each. They also give the cleanest proof of the CLT and drive Chernoff bounds, where optimizing e^{-ta}M(t) over t yields exponentially decaying tail bounds far sharper than Chebyshev's.",
+      "followup": "'What if the MGF doesn't exist?' Heavy-tailed cases like Cauchy have no MGF — use the characteristic function E[e^{itX}], which always exists."
+    },
+    {
+      "id": "lim-01", "topic": "limits", "difficulty": 1,
+      "q": "State the law of large numbers and say precisely what it does not promise.",
+      "a": "The sample mean of i.i.d. variables with finite mean converges to the true mean: weak LLN gives convergence in probability, strong LLN gives almost-sure convergence. It does *not* promise that deviations get corrected — no 'balancing force' pulls future outcomes to compensate for past imbalance.",
+      "why": "The gambler's fallacy is a misreading of this theorem. After 10 straight heads, the *proportion* approaches 1/2 not because tails becomes likelier but because the fixed excess of 10 is diluted by growing n. In fact the expected absolute difference between heads and tails counts *grows* like √n — the imbalance widens in absolute terms while shrinking in relative terms.",
+      "followup": "'Does LLN hold for Cauchy?' No — the mean doesn't exist, and the sample mean of n Cauchy variables is itself Cauchy, no better than a single observation."
+    },
+    {
+      "id": "lim-02", "topic": "limits", "difficulty": 2,
+      "q": "State the central limit theorem carefully, including its conditions.",
+      "a": "For i.i.d. X₁…Xₙ with finite mean μ and finite variance σ², the standardized sum √n(X̄ − μ)/σ converges in distribution to N(0,1). Finite variance is essential; independence can be relaxed somewhat, and identical distribution can be replaced by conditions (Lyapunov, Lindeberg) ensuring no single term dominates.",
+      "why": "The two conditions map onto real failures. Infinite variance (Pareto with α ≤ 2) yields stable laws with heavy tails instead of normality. Domination by one term breaks it too: a sum where one component carries most of the variance keeps that component's shape. The theorem is also about the *sum*, so convergence in the tails is much slower than in the center — using CLT for extreme quantiles at moderate n is a standard misuse.",
+      "followup": "'How large must n be?' No universal number — depends on skewness. Symmetric distributions converge fast; heavily skewed ones may need hundreds."
+    },
+    {
+      "id": "lim-03", "topic": "limits", "difficulty": 2,
+      "q": "Distinguish convergence in probability, almost surely, and in distribution.",
+      "a": "In probability: P(|Xₙ − X| > ε) → 0 for every ε — the chance of being far off vanishes. Almost surely: P(lim Xₙ = X) = 1 — the sequence itself converges for essentially every outcome. In distribution: CDFs converge pointwise at continuity points — only the shape converges, and the variables need not live on the same space. Strength ordering: a.s. ⟹ in probability ⟹ in distribution.",
+      "why": "The difference between the first two is whether infinitely many excursions are allowed. A 'typewriter sequence' of indicators sweeping across [0,1] with shrinking width converges in probability to 0 but almost surely fails to converge at any point — each point is hit infinitely often. This is exactly the gap between the weak and strong laws of large numbers.",
+      "followup": "'When does convergence in distribution imply in probability?' When the limit is a constant — then the two coincide."
+    },
+    {
+      "id": "lim-04", "topic": "limits", "difficulty": 2,
+      "q": "What do Markov's and Chebyshev's inequalities give you, and why are they so weak?",
+      "a": "Markov: for X ≥ 0, P(X ≥ a) ≤ E[X]/a — using only the mean. Chebyshev: P(|X − μ| ≥ kσ) ≤ 1/k² — using mean and variance. They are weak precisely because they assume almost nothing about the distribution, so they must cover the worst case consistent with those moments.",
+      "why": "Their weakness is the point: they hold universally, which makes them the right tool for proofs (Chebyshev gives the weak LLN in two lines) and the wrong tool for tight numerical bounds. Chebyshev says at most 25% of any distribution lies beyond 2σ; for a normal it's 4.6%. When you can assume more — bounded variables, or an existing MGF — Hoeffding and Chernoff bounds tighten the polynomial decay to exponential.",
+      "followup": "'Is Chebyshev tight?' Yes — a three-point distribution achieves equality, which is why it can't be improved without extra assumptions."
+    },
+    {
+      "id": "lim-05", "topic": "limits", "difficulty": 3,
+      "q": "What does the bootstrap do, and on what theoretical basis does it work?",
+      "a": "Resample the observed data with replacement, recompute the statistic on each resample, and use the spread of those values to estimate the sampling distribution. It works because the empirical distribution converges to the true distribution (Glivenko–Cantelli), so sampling from the data approximates sampling from the population.",
+      "why": "It replaces analytic derivation of a sampling distribution with computation, which is why it handles statistics like the median or a trimmed mean where closed forms are hopeless. It fails where the plug-in principle fails: extreme-order statistics like the sample maximum (the resample can never exceed the observed max), non-smooth functionals, and dependent data — where naive resampling destroys the dependence and a block bootstrap is needed.",
+      "followup": "'How many bootstrap samples?' ~1000 for standard errors, ~10,000 for percentile confidence intervals — extreme quantiles need more resamples to stabilize."
+    },
+    {
+      "id": "par-01", "topic": "paradoxes", "difficulty": 1,
+      "q": "Explain the Monty Hall problem and why switching wins 2/3 of the time.",
+      "a": "Your initial pick is right with probability 1/3 and wrong with 2/3. The host, who knows the doors and always opens a losing one, gives no information about your original door — its 1/3 stays fixed — so the entire remaining 2/3 collapses onto the single unopened door. Switching wins exactly when your first guess was wrong: 2/3 of the time.",
+      "why": "The host's constraint is the whole problem. If he opened a door at random and it happened to be a goat, the odds really would be 50/50 — the information content differs because the *procedure* differs. This is why 'condition on the protocol, not just the outcome' is the general lesson, and the version with 100 doors (host opens 98) makes the intuition immediate.",
+      "followup": "'What if the host sometimes opens your door?' Then his behavior is informative in a different way and you must redo the conditioning from the actual protocol."
+    },
+    {
+      "id": "par-02", "topic": "paradoxes", "difficulty": 1,
+      "q": "Why do only 23 people give a 50% chance of a shared birthday?",
+      "a": "Because the relevant count is pairs, not people: 23 people form 253 pairs, each matching with probability ~1/365. Computing via the complement, P(all distinct) = 365/365 × 364/365 × … × 343/365 ≈ 0.493, so P(a match) ≈ 50.7%.",
+      "why": "Intuition fails because people silently substitute the different question 'does someone share *my* birthday?', which needs 253 people for 50%. The quadratic growth of pairs against linear growth of people is the structural point, and it has real consequences: hash collisions occur after roughly √N insertions, which is why a 64-bit hash starts colliding around 2³² items and cryptographic birthday attacks halve effective key strength.",
+      "followup": "'How many for 99%?' Just 57 — the probability climbs very steeply once pairs pass a few hundred."
+    },
+    {
+      "id": "par-03", "topic": "paradoxes", "difficulty": 2,
+      "q": "What is Simpson's paradox, and how do you decide which aggregation to trust?",
+      "a": "A trend present in every subgroup reverses when the groups are pooled, caused by a confounder correlated with both group membership and the outcome. Which view to trust is not a statistical question but a causal one: you must ask whether the third variable is a confounder (adjust for it) or a mediator on the causal path (adjusting would block the very effect you want).",
+      "why": "The Berkeley admissions case is the canonical example: the university appeared to favor men overall, but department-by-department mostly favored women — women applied disproportionately to more competitive departments. Department is a confounder there, so the disaggregated view is correct. Reverse the causal story — if the treatment itself changes which department you enter — and adjusting becomes the error. No amount of data resolves this; only a causal model does.",
+      "followup": "'Can it happen in continuous data?' Yes — a positive overall regression slope can be negative within every cluster; the same confounding logic applies."
+    },
+    {
+      "id": "par-04", "topic": "paradoxes", "difficulty": 2,
+      "q": "Explain the two-envelope paradox and locate the error.",
+      "a": "You hold an envelope with X; the other holds 2X or X/2 with 'equal probability', giving expected value 1.25X — so you should switch, and then switch again forever. The error is treating X as fixed while assuming the doubling and halving cases are equally likely, which is a claim about the *prior over amounts* — and no proper prior makes it true for every X.",
+      "why": "Correctly set up, let the pair be (A, 2A) with A drawn from some prior. Conditional on your observed amount, the probability you hold the smaller one depends on the prior and cannot be 1/2 everywhere: doing so requires an improper distribution flat over all magnitudes, which isn't a probability distribution at all. The paradox is a diagnostic for improper priors smuggled in as 'no information'.",
+      "followup": "'Does opening the envelope help?' Yes — with a genuine prior, the observed amount is informative, and switching is rational only below a threshold."
+    },
+    {
+      "id": "par-05", "topic": "paradoxes", "difficulty": 3,
+      "q": "What is the prosecutor's fallacy, and what makes it so persuasive?",
+      "a": "Confusing P(evidence | innocent) with P(innocent | evidence). 'The DNA match has a one-in-a-million chance if he's innocent, so there's a one-in-a-million chance he's innocent' inverts the conditional and silently ignores the prior — the size of the suspect pool.",
+      "why": "In a city of 10 million, a one-in-a-million random-match probability means about 10 innocent people also match, so match-alone evidence gives roughly a 1-in-11 chance of guilt, not 999,999-in-a-million. The persuasive force comes from a tiny, vivid number that answers a question nobody asked. Bayes' odds form makes the fix concrete: a likelihood ratio of 10⁶ applied to prior odds of 1-in-10⁷ leaves posterior odds of about 1-in-10.",
+      "followup": "'What's the defence attorney's fallacy?' The mirror error — 'ten people match, so the evidence is worthless' — which ignores that it narrowed 10 million to 10."
+    },
+    {
+      "id": "prc-01", "topic": "processes", "difficulty": 1,
+      "q": "What is a Markov chain, and what does the Markov property actually assume?",
+      "a": "A process where the next state depends only on the current state, not the path taken to reach it: P(Xₙ₊₁ | Xₙ, …, X₀) = P(Xₙ₊₁ | Xₙ). The chain is specified by a transition matrix P whose rows are probability distributions; n-step transitions are given by Pⁿ.",
+      "why": "Memorylessness is an assumption about state design, not about reality: nearly any process becomes Markov if you enlarge the state to include the relevant history. That reframing is the practical skill — a model that seems to violate the property usually just has an under-specified state. It underpins hidden Markov models, MCMC, PageRank, and reinforcement learning, where 'the state' is precisely whatever makes the future conditionally independent of the past.",
+      "followup": "'Make a second-order chain Markov.' Redefine the state as the pair (Xₙ₋₁, Xₙ); the enlarged chain is first-order."
+    },
+    {
+      "id": "prc-02", "topic": "processes", "difficulty": 2,
+      "q": "When does a Markov chain have a unique stationary distribution it converges to?",
+      "a": "When it is irreducible (every state reachable from every other) and aperiodic (no forced cycle length), a finite chain has a unique stationary distribution π satisfying πP = π, and the distribution converges to π from any start. Periodicity breaks convergence but not uniqueness; reducibility breaks uniqueness.",
+      "why": "These conditions are the correctness contract of MCMC: samplers are designed to be irreducible and aperiodic with the target as their stationary distribution, which is exactly why a Metropolis–Hastings chain eventually samples from the posterior. The failure modes are practical too — a chain that can't move between modes is effectively reducible in finite time, which is what 'the sampler got stuck' means.",
+      "followup": "'What is detailed balance?' π(i)P(i,j) = π(j)P(j,i) — a sufficient (not necessary) condition for stationarity, and the one MCMC algorithms engineer directly."
+    },
+    {
+      "id": "prc-03", "topic": "processes", "difficulty": 2,
+      "q": "Describe the Poisson process and its three defining properties.",
+      "a": "A counting process where (1) counts in disjoint intervals are independent, (2) the count in an interval of length t is Poisson(λt), and (3) events don't occur simultaneously. Equivalently, inter-arrival times are i.i.d. Exponential(λ) — the two characterizations are the same process viewed through counts or gaps.",
+      "why": "The exponential inter-arrival view explains memorylessness: waiting time to the next event is independent of how long you've already waited, which is why 'the bus is overdue so it's coming soon' is wrong for a Poisson process. It's also the source of the inspection paradox — the interval containing a randomly chosen instant is longer in expectation than a typical interval, because long intervals are more likely to contain your sample point.",
+      "followup": "'Two independent Poisson processes merged?' Poisson with rate λ₁ + λ₂; splitting by independent coin flips gives independent Poissons — the superposition and thinning properties."
+    },
+    {
+      "id": "prc-04", "topic": "processes", "difficulty": 2,
+      "q": "What is a martingale, and what does the optional stopping theorem forbid?",
+      "a": "A process where the conditional expectation of the next value given all history equals the current value: E[Xₙ₊₁ | ℱₙ] = Xₙ — a fair game. Optional stopping says that under suitable conditions (bounded stopping time, or bounded increments with finite expected stopping time), E[X_τ] = E[X₀]: no stopping rule turns a fair game into a profitable one.",
+      "why": "This is the theorem that kills betting systems. The martingale doubling strategy appears to guarantee profit, and it evades the theorem only by requiring unbounded capital and unbounded time — precisely the conditions the theorem excludes. In finance the same object appears as the fundamental theorem of asset pricing: no arbitrage is equivalent to the existence of a measure under which discounted prices are martingales.",
+      "followup": "'Is a random walk with drift a martingale?' No — it's a sub- or supermartingale depending on the drift's sign; only the driftless walk is fair."
+    },
+    {
+      "id": "prc-05", "topic": "processes", "difficulty": 3,
+      "q": "What is Brownian motion, and which of its properties are most surprising?",
+      "a": "A continuous-time process with B₀ = 0, independent increments, B_t − B_s ~ N(0, t−s), and continuous paths. The surprises: paths are continuous everywhere but differentiable nowhere; they have infinite total variation yet finite quadratic variation equal to t; and the process is self-similar, looking statistically identical at every zoom level.",
+      "why": "Finite quadratic variation is the reason ordinary calculus fails and Itô calculus exists: for smooth functions (dx)² is negligible, but here (dB)² = dt is first-order, which is exactly the extra term in Itô's lemma and the origin of the ½σ²  correction in Black–Scholes. Nowhere-differentiability is also why 'velocity' of a diffusing particle is meaningless and why stochastic integrals need their own definition.",
+      "followup": "'Why does the Black–Scholes drift use r, not the stock's expected return?' Under the risk-neutral measure the discounted price is a martingale; the real-world drift cancels in the hedging argument."
+    }
+  ]
+}

@@ -135,31 +135,72 @@ export function dayKey(now, tzOffsetMin = 0) {
  * @param {number} now - epoch ms
  * @param {object} cfg
  * @param {number} newIntroducedToday - new cards already introduced today
+ * @param {(id: string) => string} [groupOf] - group key (e.g. deck) used to spread
+ *   the daily new-card budget evenly instead of exhausting one group first
  * @returns {{due: string[], learning: string[], fresh: string[]}} card id lists
  */
-export function buildQueue(cards, states, now, cfg = DEFAULT_CONFIG, newIntroducedToday = 0) {
-  const due = [];      // review cards whose due time has passed
-  const learning = []; // learning cards due now (minute-scale)
-  const fresh = [];    // never-seen cards, up to today's new allowance
-
-  const newBudget = Math.max(0, cfg.newPerDay - newIntroducedToday);
+export function buildQueue(cards, states, now, cfg = DEFAULT_CONFIG, newIntroducedToday = 0, groupOf = null) {
+  const due = [];       // review cards whose due time has passed
+  const learning = [];  // learning cards due now (minute-scale)
+  const candidates = []; // every never-seen card, before the daily budget
 
   for (const card of cards) {
     const s = states[card.id];
-    if (!s || s.status === 'new') {
-      if (fresh.length < newBudget) fresh.push(card.id);
-      continue;
-    }
+    if (!s || s.status === 'new') { candidates.push(card.id); continue; }
     if (s.due > now) continue;
     if (s.status === 'learning') learning.push(card.id);
     else if (due.length < cfg.maxReviewsPerDay) due.push(card.id);
   }
+
+  // Spread the new-card budget across groups before truncating; taking the
+  // first N in bank order would hand a new user one subject and nothing else.
+  const newBudget = Math.max(0, cfg.newPerDay - newIntroducedToday);
+  const ordered = groupOf ? roundRobin(candidates, groupOf) : candidates;
+  const fresh = ordered.slice(0, newBudget);
 
   // Most overdue first — highest forgetting risk gets reviewed first.
   const byDue = (a, b) => states[a].due - states[b].due;
   due.sort(byDue);
   learning.sort(byDue);
   return { due, learning, fresh };
+}
+
+/**
+ * Emit ids one-per-group in rotation, preserving each group's internal order.
+ * Keeps a session from serving ten physics cards in a row when several decks
+ * are due — interleaving subjects is also better for retention than blocking.
+ */
+export function roundRobin(ids, keyOf) {
+  const groups = new Map();
+  for (const id of ids) {
+    const k = keyOf(id);
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(id);
+  }
+  const out = [];
+  const lists = [...groups.values()];
+  for (let i = 0; out.length < ids.length; i++) {
+    for (const list of lists) if (i < list.length) out.push(list[i]);
+  }
+  return out;
+}
+
+/**
+ * Order one study session: learning cards first (they are time-critical),
+ * then due reviews with new cards spaced in every `newEvery` reviews. Both
+ * streams are round-robined across decks first.
+ */
+export function orderSession({ due = [], learning = [], fresh = [] }, keyOf = () => '', newEvery = 3) {
+  const reviews = roundRobin(due, keyOf);
+  const news = roundRobin(fresh, keyOf);
+  const out = [...roundRobin(learning, keyOf)];
+  let n = 0;
+  for (let i = 0; i < reviews.length; i++) {
+    out.push(reviews[i]);
+    if ((i + 1) % newEvery === 0 && n < news.length) out.push(news[n++]);
+  }
+  while (n < news.length) out.push(news[n++]);
+  return out;
 }
 
 /** Cards in learning that are scheduled later today (so the UI can say "come back in N min"). */
@@ -178,22 +219,29 @@ export function nextLearningDueAt(states, now) {
 // ---------------------------------------------------------------------------
 
 /**
- * Mastery per topic in [0, 1]. A card contributes by how far along it is:
- * new = 0, learning = 0.25, review scales with interval up to 21 days = 1.
+ * How well one card is known, in [0, 1]: new = 0, learning = 0.25, and review
+ * cards scale with interval up to 21 days = fully known.
  */
+export function cardMastery(state) {
+  if (!state || state.status === 'new') return 0;
+  if (state.status === 'learning') return 0.25;
+  return 0.25 + 0.75 * Math.min(1, state.intervalDays / 21);
+}
+
+/** Mean mastery over any set of cards, in [0, 1]. Empty set scores 0. */
+export function masteryOf(cards, states) {
+  if (!cards.length) return 0;
+  let sum = 0;
+  for (const card of cards) sum += cardMastery(states[card.id]);
+  return sum / cards.length;
+}
+
+/** Mastery grouped by each card's `topic` field. */
 export function topicMastery(cards, states) {
-  const acc = {}; // topic → {sum, n}
-  for (const card of cards) {
-    const t = card.topic;
-    if (!acc[t]) acc[t] = { sum: 0, n: 0 };
-    acc[t].n += 1;
-    const s = states[card.id];
-    if (!s || s.status === 'new') continue;
-    if (s.status === 'learning') acc[t].sum += 0.25;
-    else acc[t].sum += 0.25 + 0.75 * Math.min(1, s.intervalDays / 21);
-  }
+  const groups = {};
+  for (const card of cards) (groups[card.topic] ??= []).push(card);
   const out = {};
-  for (const [t, { sum, n }] of Object.entries(acc)) out[t] = n ? sum / n : 0;
+  for (const [topic, list] of Object.entries(groups)) out[topic] = masteryOf(list, states);
   return out;
 }
 

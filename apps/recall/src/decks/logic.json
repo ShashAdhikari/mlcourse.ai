@@ -1,0 +1,225 @@
+{
+  "id": "logic",
+  "title": "Logic",
+  "blurb": "Propositional and predicate logic, proof systems, modal reasoning, and the incompleteness results that mark the boundary of what formal systems can do.",
+  "topics": [
+    { "id": "propositional", "title": "Propositional Logic", "free": true },
+    { "id": "fallacies", "title": "Fallacies & Reasoning", "free": true },
+    { "id": "predicate", "title": "Predicate Logic", "free": false },
+    { "id": "systems", "title": "Proof Systems", "free": false },
+    { "id": "modal", "title": "Modal Logic", "free": false },
+    { "id": "limits", "title": "Limits of Formal Systems", "free": false }
+  ],
+  "cards": [
+    {
+      "id": "prp-01", "topic": "propositional", "difficulty": 1,
+      "q": "What does the material conditional P → Q mean, and why does it strike people as wrong?",
+      "a": "It is false only when P is true and Q is false; in every other case it is true. So a conditional with a false antecedent is vacuously true — 'if the moon is cheese, I am the Pope' counts as a true statement. It captures truth-functional dependence, not causation, relevance, or explanation.",
+      "why": "The discomfort is legitimate: natural-language conditionals carry relevance implications that the material conditional deliberately discards. It is defined this way because truth-functionality — the value of a compound depending only on its parts' values — is what makes formal logic mechanically checkable. Relevance logics and counterfactual conditionals exist precisely to model what gets left out, which is a good illustration that formal systems are chosen tools rather than discovered truths.",
+      "followup": "'Is P → Q the same as ¬P ∨ Q?' Yes, truth-functionally identical — which makes the vacuous-truth behavior obvious rather than surprising."
+    },
+    {
+      "id": "prp-02", "topic": "propositional", "difficulty": 1,
+      "q": "Distinguish a conditional's converse, inverse, and contrapositive.",
+      "a": "For P → Q: the converse is Q → P, the inverse is ¬P → ¬Q, and the contrapositive is ¬Q → ¬P. Only the contrapositive is logically equivalent to the original. The converse and inverse are equivalent to each other but not to the original statement.",
+      "why": "Affirming the converse is one of the most common reasoning errors in ordinary life: 'all fraudsters use burner phones' does not make burner-phone users fraudsters. The contrapositive's equivalence, by contrast, is a genuinely useful proof tool — it lets you attack a claim from whichever end offers more concrete material, which is why 'if n² is even then n is even' is far easier proved in contrapositive form.",
+      "followup": "'When are a statement and its converse both true?' When the relation is a biconditional, P ↔ Q — which is exactly what a definition asserts."
+    },
+    {
+      "id": "prp-03", "topic": "propositional", "difficulty": 2,
+      "q": "What are tautologies, contradictions, and contingencies, and how do truth tables settle them?",
+      "a": "A tautology is true under every assignment (P ∨ ¬P), a contradiction false under every assignment (P ∧ ¬P), and a contingency true under some and false under others. A truth table enumerates all 2ⁿ assignments, so it decides any propositional formula mechanically — propositional logic is decidable.",
+      "why": "Decidability is the important structural fact, and it comes with a cost: 2ⁿ rows means exponential blowup, and determining satisfiability (SAT) is the original NP-complete problem. So propositional logic is decidable in principle and hard in practice — which is why modern SAT solvers, using clever heuristics rather than brute enumeration, are among the most consequential tools in verification and chip design.",
+      "followup": "'Why is validity checkable via satisfiability?' An argument is valid exactly when its premises plus the negated conclusion are unsatisfiable — the standard reduction solvers use."
+    },
+    {
+      "id": "prp-04", "topic": "propositional", "difficulty": 2,
+      "q": "State De Morgan's laws and explain why they matter beyond logic.",
+      "a": "¬(P ∧ Q) ≡ ¬P ∨ ¬Q and ¬(P ∨ Q) ≡ ¬P ∧ ¬Q. Negation passing through a connective flips conjunction to disjunction and vice versa. 'Not both' means 'at least one fails'; 'neither' means 'not this and not that'.",
+      "why": "They are the rules for correctly negating a claim, which is the skill underneath every proof by contradiction and every debugging session over a compound condition. The same duality reappears throughout: set theory (complement of a union is intersection of complements), Boolean circuits (NAND and NOR universality), database query optimization, and quantifier negation, where ¬∀ becomes ∃¬. Recognizing one pattern across all these is a genuine economy.",
+      "followup": "'Negate: every student passed some exam.' Some student failed every exam — both quantifiers flip and the inner predicate negates."
+    },
+    {
+      "id": "prp-05", "topic": "propositional", "difficulty": 2,
+      "q": "Distinguish validity from soundness in an argument.",
+      "a": "Validity is structural: if the premises were true, the conclusion would have to be true — it concerns form alone. Soundness adds a factual requirement: the argument is valid *and* its premises are actually true. A valid argument can have a false conclusion if it has false premises; a sound argument cannot.",
+      "why": "The separation is what lets logic be a formal discipline: validity is checkable by inspecting structure, while truth of premises belongs to whatever subject the argument is about. It also sharpens criticism — when you disagree with a conclusion you must identify whether the reasoning is invalid or a premise is false, and conflating the two produces most unproductive argument. 'All cats are reptiles; Felix is a cat; so Felix is a reptile' is impeccably valid and entirely unsound.",
+      "followup": "'Can an invalid argument have a true conclusion?' Yes, by luck — which is why a true conclusion never certifies the reasoning that produced it."
+    },
+    {
+      "id": "flc-01", "topic": "fallacies", "difficulty": 1,
+      "q": "Explain affirming the consequent and denying the antecedent.",
+      "a": "Affirming the consequent: from P → Q and Q, concluding P. Denying the antecedent: from P → Q and ¬P, concluding ¬Q. Both are invalid because a conditional constrains only one direction. The valid pair are modus ponens (P → Q, P ⊢ Q) and modus tollens (P → Q, ¬Q ⊢ ¬P).",
+      "why": "Both fallacies are attempts to run the conditional backwards, which is why they feel plausible — real-world conditionals often are near-biconditional, so the inference frequently lands correctly by accident. 'If it rained, the ground is wet; the ground is wet, so it rained' ignores sprinklers. In probabilistic terms these are the confusion of P(Q|P) with P(P|Q), which is exactly the base-rate error in a different costume.",
+      "followup": "'What makes modus tollens valid?' It is modus ponens applied to the contrapositive, which is logically equivalent to the original conditional."
+    },
+    {
+      "id": "flc-02", "topic": "fallacies", "difficulty": 1,
+      "q": "Distinguish formal from informal fallacies and give examples of each.",
+      "a": "A formal fallacy is a defect in structure, invalid regardless of content — affirming the consequent, undistributed middle. An informal fallacy has acceptable form but faulty content or context: straw man, ad hominem, false dilemma, appeal to authority, equivocation. Formal fallacies are decidable; informal ones require judgment about meaning and context.",
+      "why": "The distinction matters because the two need different remedies. Formal errors are caught by symbolizing the argument; informal ones are caught by asking what the words are doing — whether the term shifted meaning mid-argument (equivocation), whether the alternatives offered exhaust the space (false dilemma), whether the position attacked is the one held (straw man). Most real disagreements founder on informal fallacies, which is why formal training alone does not make a good reasoner.",
+      "followup": "'Is appeal to authority always fallacious?' No — deferring to genuine expertise in its domain is reasonable induction; the fallacy is appealing to authority outside its field or treating it as conclusive."
+    },
+    {
+      "id": "flc-03", "topic": "fallacies", "difficulty": 2,
+      "q": "What is equivocation, and why is it so hard to spot?",
+      "a": "Using one term in two different senses within a single argument, so the structure looks valid while the content does not connect. 'Nothing is better than eternal happiness; a cheese sandwich is better than nothing; so a cheese sandwich is better than eternal happiness' equivocates on 'nothing' between a quantifier and a name.",
+      "why": "It hides because formal validity is preserved at the level of symbols — only the interpretation shifts, and natural language rarely flags the shift. This is precisely why definitions matter so much in philosophy and law, and why 'freedom', 'natural', and 'theory' generate so much fruitless argument: each carries several senses that swap silently. The defense is mechanical: pin each key term to one sense and re-read the argument.",
+      "followup": "'How does formalization help?' Distinct senses become distinct symbols, and the argument's invalidity becomes visible as a missing connection."
+    },
+    {
+      "id": "flc-04", "topic": "fallacies", "difficulty": 2,
+      "q": "What is the difference between deductive, inductive, and abductive reasoning?",
+      "a": "Deduction: conclusions follow necessarily from premises — truth-preserving but content-preserving too. Induction: generalizing from observed cases to broader claims — ampliative but defeasible. Abduction: inferring the best explanation for observations — the reasoning of diagnosis and detective work, and the weakest of the three logically.",
+      "why": "Ranking them by certainty inverts their ranking by usefulness: deduction is certain but never tells you anything not already contained in the premises, while induction and abduction generate new knowledge at the cost of possible error. Science runs on abduction (hypothesis formation) plus induction (confirmation) with deduction used to extract testable predictions. Treating inductive conclusions as deductive certainties is a category error that underlies much overconfidence.",
+      "followup": "'What is the problem of induction?' Hume's point: justifying induction requires assuming the future resembles the past, which is itself an inductive claim — circular."
+    },
+    {
+      "id": "flc-05", "topic": "fallacies", "difficulty": 2,
+      "q": "Explain the base-rate fallacy and survivorship bias as reasoning errors.",
+      "a": "Base-rate neglect: judging by how representative evidence seems while ignoring the underlying prevalence — concluding a rare disease from a positive test without accounting for how rare it is. Survivorship bias: reasoning from a sample that has been filtered by the outcome you are studying, so the failures are invisible and the pattern is an artifact of selection.",
+      "why": "Both are failures to ask 'what population am I actually looking at?' Wald's wartime analysis is the canonical illustration: returning aircraft showed bullet holes concentrated in wings, and the correct inference was to armour the engines — planes hit there never returned to be counted. The same structure invalidates 'successful founders dropped out of college' and most retrospective study of winners.",
+      "followup": "'What is the general fix?' Specify the sampling process explicitly — who could have entered your data and who was filtered out before you saw it."
+    },
+    {
+      "id": "prd-01", "topic": "predicate", "difficulty": 2,
+      "q": "What do quantifiers add to propositional logic, and why does their order matter?",
+      "a": "Predicate logic adds objects, predicates, and quantifiers ∀ and ∃, letting you express internal structure that propositional logic treats as atomic. Quantifier order changes meaning entirely: ∀x∃y Loves(x,y) says everyone loves someone (possibly different people), while ∃y∀x Loves(x,y) says one person is loved by everyone.",
+      "why": "The order encodes dependency — in ∀x∃y, the choice of y may depend on x; in ∃y∀x, a single y must work for all x. This is exactly the ε–δ structure in analysis, where δ may depend on ε, and swapping the quantifiers produces uniform continuity instead of ordinary continuity. Getting quantifier order right is one of the highest-value transferable skills in mathematics.",
+      "followup": "'Does ∃∀ imply ∀∃?' Yes, that direction is valid — a single universal witness certainly provides a witness for each. The converse fails."
+    },
+    {
+      "id": "prd-02", "topic": "predicate", "difficulty": 2,
+      "q": "How do you negate quantified statements correctly?",
+      "a": "Negation flips each quantifier and moves inward: ¬∀x P(x) ≡ ∃x ¬P(x), and ¬∃x P(x) ≡ ∀x ¬P(x). For nested quantifiers, apply repeatedly — the negation of ∀x∃y P(x,y) is ∃x∀y ¬P(x,y).",
+      "why": "This is De Morgan generalized to infinite domains, since ∀ is a big conjunction and ∃ a big disjunction. It is the mechanical core of proof by contradiction: to disprove a universal claim you need one counterexample, while to disprove an existential you must rule out every case — an asymmetry that explains why universal claims are easy to refute and hard to prove, and existential claims the reverse.",
+      "followup": "'Negate: every continuous function on [0,1] is bounded.' There is a continuous function on [0,1] that is unbounded — one counterexample suffices, though here none exists."
+    },
+    {
+      "id": "prd-03", "topic": "predicate", "difficulty": 2,
+      "q": "Compare the expressive power and decidability of propositional and first-order logic.",
+      "a": "Propositional logic is decidable — truth tables settle every formula, at exponential cost. First-order logic is expressive enough to formalize mathematics but only semi-decidable: valid formulas can be mechanically proven (completeness), yet no algorithm decides validity in general (Church–Turing undecidability of the Entscheidungsproblem).",
+      "why": "The trade-off is the recurring theme in logic and computer science: expressiveness buys you the ability to say interesting things and costs you the ability to decide them. Semi-decidability has a concrete meaning for automated reasoning — a theorem prover searching for a proof will find one if it exists, but may search forever on a non-theorem without ever reporting failure. That is why proof assistants require human guidance.",
+      "followup": "'Are useful fragments decidable?' Yes — monadic first-order logic and many description logics are, which is exactly why they are used for ontologies and databases."
+    },
+    {
+      "id": "prd-04", "topic": "predicate", "difficulty": 3,
+      "q": "What is the difference between syntax and semantics in logic?",
+      "a": "Syntax concerns symbol manipulation: which strings are well-formed, and which derivations the rules permit — written Γ ⊢ φ. Semantics concerns meaning: interpretations, models, and truth — written Γ ⊨ φ, meaning every model of Γ makes φ true. Soundness says ⊢ implies ⊨; completeness says ⊨ implies ⊢.",
+      "why": "Keeping them apart is the foundational discipline of mathematical logic. Syntax is finite, mechanical, and checkable by a machine that understands nothing; semantics is about truth in possibly infinite structures. That a purely mechanical system can exactly track truth — Gödel's completeness theorem for first-order logic — is remarkable and not guaranteed: second-order logic is not complete in this sense.",
+      "followup": "'Why do we want both soundness and completeness?' Soundness means the system proves nothing false; completeness means it proves everything true. Either alone is unsatisfying."
+    },
+    {
+      "id": "prd-05", "topic": "predicate", "difficulty": 3,
+      "q": "What does the Löwenheim–Skolem theorem say, and why is it unsettling?",
+      "a": "If a countable first-order theory has an infinite model, it has models of every infinite cardinality — including a countable one. So any first-order axiomatization of the real numbers, however carefully written, admits a countable model, despite proving that the reals are uncountable.",
+      "why": "Skolem's paradox is the unsettling consequence: 'uncountable' is being asserted inside a countable model, which is consistent only because the bijection witnessing countability exists outside the model, not within it. The moral is that first-order theories cannot pin down infinite structures up to isomorphism — categoricity is unattainable. Terms like 'set' and 'uncountable' get their meaning relative to a model, which is a genuine limitation on what formal axioms can capture.",
+      "followup": "'Does second-order logic fix this?' It can be categorical for arithmetic, but at the price of losing completeness and effective proof — you cannot have everything."
+    },
+    {
+      "id": "sys-01", "topic": "systems", "difficulty": 2,
+      "q": "What is a formal proof system, and what are the main styles?",
+      "a": "A set of axioms plus inference rules that generate theorems by pure symbol manipulation. Hilbert systems use many axioms and few rules (often just modus ponens); natural deduction uses few axioms and many rules designed to mirror informal reasoning, with introduction and elimination rules per connective; sequent calculus manipulates sequents Γ ⊢ Δ and exposes proof structure most clearly.",
+      "why": "The styles trade human usability against metatheoretic convenience. Hilbert systems are painful to write proofs in but easy to reason *about* because they have so few rules. Natural deduction matches how mathematicians actually argue — assume, derive, discharge — which is why proof assistants like Lean and Coq are built on it. Sequent calculus supports cut-elimination, the key tool for consistency proofs and for the proofs-as-programs correspondence.",
+      "followup": "'What is the Curry–Howard correspondence?' Propositions are types and proofs are programs — which makes type-checking a compiler's proof verification, and underlies dependently typed languages."
+    },
+    {
+      "id": "sys-02", "topic": "systems", "difficulty": 2,
+      "q": "State the soundness and completeness theorems and explain their significance.",
+      "a": "Soundness: everything provable is true in every model (⊢ implies ⊨) — the rules never manufacture falsehood. Completeness (Gödel, 1929): everything true in every model is provable (⊨ implies ⊢) — the rules are strong enough to capture all logical consequence. For first-order logic both hold.",
+      "why": "Together they say provability and logical truth coincide exactly, which licenses the practice of establishing semantic facts by syntactic derivation. The result is often confused with the incompleteness theorems, and distinguishing them is a genuine test of understanding: completeness is about *logic* capturing all logical consequences, while incompleteness is about a *theory* like arithmetic failing to settle all statements in its own language. There is no contradiction.",
+      "followup": "'How do the two coexist?' First-order logic proves everything logically valid; arithmetic's undecidable sentences are simply not logically valid — they are true in some models of the axioms and false in others."
+    },
+    {
+      "id": "sys-03", "topic": "systems", "difficulty": 2,
+      "q": "What is proof by contradiction, and why do constructivists reject some uses of it?",
+      "a": "Assume the negation of your claim, derive a contradiction, conclude the claim. It relies on the law of excluded middle (P ∨ ¬P) and double-negation elimination (¬¬P ⊢ P). Constructivists accept refuting a claim by contradiction but reject proving an existence claim that way, since it establishes that non-existence is impossible without producing the object.",
+      "why": "The distinction is between 'there must be one' and 'here it is'. Intuitionistic logic drops excluded middle precisely so that proofs carry computational content — under Curry–Howard, an existence proof becomes a program that outputs the witness, which is only possible if the proof actually constructs it. This is not philosophical fastidiousness: it is why constructive proofs can be extracted as executable code.",
+      "followup": "'Give a famously non-constructive proof.' That there exist irrational a, b with a^b rational — via √2^√2, whose rationality is left undetermined by the argument."
+    },
+    {
+      "id": "sys-04", "topic": "systems", "difficulty": 3,
+      "q": "What does consistency mean, and how is it related to satisfiability?",
+      "a": "A theory is consistent if it cannot prove both φ and ¬φ. It is satisfiable if some model makes all its axioms true. For first-order logic the two coincide (by completeness): consistent theories have models, and theories with models are consistent. In an inconsistent system everything is provable, which is why inconsistency is fatal rather than merely inconvenient.",
+      "why": "The principle of explosion — from a contradiction, anything follows — is what makes consistency the minimum requirement of any formal system, since an inconsistent theory conveys no information at all. The model-theoretic equivalence turns consistency proofs into construction problems: to show a theory consistent, exhibit a model. That is how non-Euclidean geometry was vindicated — build a model inside Euclidean geometry and the parallel postulate's independence follows.",
+      "followup": "'Do paraconsistent logics really tolerate contradiction?' They restrict explosion so a local inconsistency does not trivialize everything — useful for reasoning over inconsistent databases."
+    },
+    {
+      "id": "sys-05", "topic": "systems", "difficulty": 3,
+      "q": "What is the axiom of choice, and why was it controversial?",
+      "a": "Given any collection of non-empty sets, there is a function selecting one element from each. It is uncontroversial for finite collections and for infinite collections with a rule for choosing, but for arbitrary infinite collections it asserts a chooser exists without describing one — a pure existence claim with no construction.",
+      "why": "Its consequences are both indispensable and bizarre. It is needed for every vector space having a basis, Tychonoff's theorem, and much of analysis; it also yields the Banach–Tarski paradox, decomposing a ball into finitely many pieces that reassemble into two identical balls. Gödel and Cohen showed it is independent of ZF — neither provable nor refutable — so accepting it is a genuine choice about what mathematics you want, not a discoverable fact.",
+      "followup": "'Why does Banach–Tarski not violate volume conservation?' The pieces are non-measurable sets, produced by choice, and have no well-defined volume to conserve."
+    },
+    {
+      "id": "mod-01", "topic": "modal", "difficulty": 2,
+      "q": "What do the modal operators □ and ◇ mean, and how are possible worlds used?",
+      "a": "□P means 'necessarily P' and ◇P means 'possibly P', with ◇P ≡ ¬□¬P. Kripke semantics interprets these over a set of possible worlds with an accessibility relation: □P is true at a world if P holds at every accessible world, ◇P if P holds at some accessible world.",
+      "why": "The possible-worlds machinery makes modality tractable by converting it into quantification over worlds, and its real power is generality — reinterpret the worlds and you get different logics from the same formalism. Worlds as times gives temporal logic; as knowledge states gives epistemic logic; as program states gives dynamic logic, which is how model checkers verify concurrent software. One semantics, many applications.",
+      "followup": "'What does the accessibility relation encode?' Which worlds count as possible from where you stand — reflexivity, transitivity, and symmetry of that relation determine which modal axioms hold."
+    },
+    {
+      "id": "mod-02", "topic": "modal", "difficulty": 2,
+      "q": "How do different modal systems (T, S4, S5) differ?",
+      "a": "They correspond to properties of the accessibility relation. T adds □P → P (reflexive: necessity implies truth). S4 adds □P → □□P (transitive: what is necessary is necessarily necessary). S5 adds ◇P → □◇P (equivalence relation: modal status is world-independent), making all worlds mutually accessible.",
+      "why": "The correspondence between axioms and frame properties is the elegant heart of modal logic — a syntactic axiom exactly characterizes a structural condition on the model. Which system to adopt depends on the interpretation: S5 suits metaphysical necessity, where what is possible should not vary by world, while epistemic logic usually rejects S5 because the corresponding axiom implies you know what you do not know, an unrealistic idealization.",
+      "followup": "'Why is epistemic S5 implausible?' It gives negative introspection — if you do not know P, you know that you do not know P — which real agents plainly lack."
+    },
+    {
+      "id": "mod-03", "topic": "modal", "difficulty": 2,
+      "q": "What is the difference between de re and de dicto necessity?",
+      "a": "De dicto attaches necessity to the proposition: 'necessarily, the number of planets is greater than seven' claims the whole statement holds in every world — false, since planet count varies. De re attaches it to the object: 'the number of planets is such that it necessarily exceeds seven' says of eight itself that it necessarily exceeds seven — true, since eight is essentially greater than seven.",
+      "why": "The ambiguity is a scope distinction — whether the modal operator sits inside or outside the description — and it dissolves several apparent puzzles. It underpins Kripke's argument that names are rigid designators picking the same object in every world, while descriptions are not, which is how 'Hesperus is Phosphorus' can be necessarily true yet discoverable only empirically.",
+      "followup": "'Where else does scope ambiguity bite?' Belief contexts — 'Lois believes Superman can fly' versus 'of Clark Kent, Lois believes he can fly' differ in exactly the same way."
+    },
+    {
+      "id": "mod-04", "topic": "modal", "difficulty": 3,
+      "q": "How does temporal logic extend modal logic, and where is it used?",
+      "a": "It reinterprets accessibility as temporal succession and adds operators: G (always in future), F (eventually), X (next state), and U (until). Linear temporal logic assumes a single future timeline; computation tree logic branches over possible futures, distinguishing 'along all paths' from 'along some path'.",
+      "why": "This is modal logic's most practically consequential application. Model checking verifies that a system satisfies a temporal specification by exhaustively exploring its state space — 'the lift never moves with doors open' (safety, G¬bad) and 'every request is eventually served' (liveness, G(req → F serve)). Hardware and protocol verification rely on it, and the safety/liveness split is now standard vocabulary in distributed systems.",
+      "followup": "'Why is the branching-versus-linear choice significant?' They are expressively incomparable, and the branching version costs more to check — a real engineering trade-off."
+    },
+    {
+      "id": "mod-05", "topic": "modal", "difficulty": 3,
+      "q": "What is epistemic logic, and what does the muddy children puzzle demonstrate?",
+      "a": "Epistemic logic formalizes knowledge with K_i φ ('agent i knows φ') over worlds an agent cannot distinguish. The muddy children puzzle shows that publicly announcing something everyone already knows can still change what they know: the announcement creates common knowledge, which the individual knowledge did not amount to.",
+      "why": "The distinction between everyone-knows and common knowledge (everyone knows that everyone knows, ad infinitum) is genuinely load-bearing. Common knowledge is required for coordination — the coordinated attack problem proves two generals communicating over an unreliable channel can never attain it, which is why distributed consensus is provably hard. It also explains why public announcements matter politically even when the content surprises nobody.",
+      "followup": "'Why can't messages produce common knowledge?' Each acknowledgement adds one level of nesting but never completes the infinite hierarchy — the induction never terminates."
+    },
+    {
+      "id": "lim-01", "topic": "limits", "difficulty": 2,
+      "q": "State Gödel's first incompleteness theorem precisely, and say what it does not claim.",
+      "a": "Any consistent, effectively axiomatized formal system strong enough to express elementary arithmetic contains sentences that are true but unprovable within it. It does *not* claim all systems are incomplete (Presburger arithmetic is complete and decidable), that mathematics is inconsistent, or that human minds transcend machines.",
+      "why": "Every qualifier is load-bearing. 'Effectively axiomatized' rules out cheating by taking all truths as axioms; 'strong enough for arithmetic' is why weaker theories escape; 'consistent' is required because inconsistent systems prove everything. The proof arithmetizes syntax — Gödel numbering encodes statements as numbers so the system can talk about itself — then builds a sentence asserting its own unprovability. It is Cantor's diagonal argument, applied to provability.",
+      "followup": "'Is the Gödel sentence true?' True in the standard model of arithmetic, yes — and unprovable in the system, which is precisely why 'true' and 'provable' come apart."
+    },
+    {
+      "id": "lim-02", "topic": "limits", "difficulty": 3,
+      "q": "What does Gödel's second incompleteness theorem add?",
+      "a": "No consistent system strong enough for arithmetic can prove its own consistency. If it could prove Con(S), it would prove the Gödel sentence too, contradicting the first theorem. Consistency can only be established from a strictly stronger system — whose own consistency is then in question.",
+      "why": "This ended Hilbert's programme, which aimed to secure infinitary mathematics with finitary consistency proofs. The regress is unavoidable: Gentzen proved arithmetic consistent using transfinite induction up to ε₀, a principle arithmetic itself cannot justify. The practical upshot is not despair but recalibration — mathematics rests on assumptions we judge reasonable rather than on self-certifying foundations.",
+      "followup": "'Does this mean we should doubt arithmetic?' No — it means self-certification is impossible, not that arithmetic is suspect. Our confidence rests on use and coherence, not on internal proof."
+    },
+    {
+      "id": "lim-03", "topic": "limits", "difficulty": 2,
+      "q": "What is the halting problem, and why is it undecidable?",
+      "a": "No algorithm can determine, for every program-input pair, whether the program halts. Suppose H decides halting; build D which, given a program P, runs H on (P, P) and loops forever if H says 'halts', halting otherwise. Ask what D(D) does: it halts exactly when it does not. Contradiction.",
+      "why": "This is the same self-referential diagonal as Gödel's and Cantor's proofs, and the family resemblance is the real lesson — assume a complete decider, construct the object that contradicts its own verdict. Rice's theorem generalizes it: every non-trivial semantic property of programs is undecidable, which is why perfect static analyzers, virus detectors, and optimizing compilers cannot exist. Real tools are necessarily approximate, with false positives or false negatives by mathematical necessity.",
+      "followup": "'How do practical analyzers cope?' They are sound but incomplete (or vice versa) — rejecting some safe programs, or accepting some unsafe ones, by deliberate design."
+    },
+    {
+      "id": "lim-04", "topic": "limits", "difficulty": 3,
+      "q": "What is the Church–Turing thesis, and what kind of claim is it?",
+      "a": "That anything effectively computable by a mechanical procedure is computable by a Turing machine. It is not a theorem but a thesis — it identifies an informal notion (effective procedure) with a formal one (Turing computability), so it cannot be proved, only supported by evidence.",
+      "why": "Its support is unusually strong: λ-calculus, recursive functions, register machines, cellular automata, and every other serious model of computation proposed has turned out equivalent in power. That convergence from independent starting points is what makes the thesis credible. Its practical import is that 'undecidable' means undecidable by any means whatsoever, not merely by current techniques — which is why the halting problem will never be solved by better engineering.",
+      "followup": "'Do quantum computers refute it?' No — they change what is efficiently computable, not what is computable at all; the class of decidable problems is unchanged."
+    },
+    {
+      "id": "lim-05", "topic": "limits", "difficulty": 3,
+      "q": "What is the liar paradox, and what have formal responses to it produced?",
+      "a": "'This sentence is false' is true if false and false if true. Formal responses include Tarski's hierarchy, where a language cannot contain its own truth predicate and truth for level n is expressible only at level n+1; Kripke's fixed-point theory, which lets such sentences be neither true nor false; and paraconsistent approaches that tolerate the contradiction without explosion.",
+      "why": "Tarski's undefinability theorem is the substantive result: arithmetic truth is not definable within arithmetic, though provability is — which is exactly the gap the incompleteness theorems exploit. The paradox is therefore not a curiosity but a probe of self-reference, the same mechanism generating Gödel's sentence, the halting problem, and Russell's paradox. Each is a system unable to consistently make a certain claim about itself.",
+      "followup": "'How does Russell's paradox fit?' The set of all sets not containing themselves is the same self-reference in set theory — resolved by restricting comprehension in ZF."
+    }
+  ]
+}

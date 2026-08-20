@@ -1,0 +1,225 @@
+{
+  "id": "finance",
+  "title": "Finance",
+  "blurb": "Discounting, risk, derivatives and valuation — the reasoning behind the formulas, including where each model quietly stops working.",
+  "topics": [
+    { "id": "value", "title": "Time Value of Money", "free": true },
+    { "id": "risk", "title": "Risk & Return", "free": true },
+    { "id": "portfolio", "title": "Portfolio Theory", "free": false },
+    { "id": "derivatives", "title": "Derivatives", "free": false },
+    { "id": "corporate", "title": "Corporate Finance", "free": false },
+    { "id": "markets", "title": "Markets & Behavior", "free": false }
+  ],
+  "cards": [
+    {
+      "id": "val-01", "topic": "value", "difficulty": 1,
+      "q": "Why is a dollar today worth more than a dollar next year?",
+      "a": "Three reasons: it can be invested to earn a return (opportunity cost), inflation erodes future purchasing power, and future payment carries default risk. The discount rate bundles all three, and present value converts future cash flows to today's terms: PV = CF/(1+r)ⁿ.",
+      "why": "Opportunity cost is the primary driver and the one people underweight — even with zero inflation and zero risk, money today is worth more because it can be put to work. This is why the discount rate is properly the return on an alternative investment of comparable risk, not a number pulled from convention. Getting it wrong dominates every other error in a valuation, since it compounds exponentially over the horizon.",
+      "followup": "'Why are long-dated cash flows so sensitive to r?' The discount factor is exponential in n, so a one-point rate change moves a 30-year cash flow far more than a 3-year one."
+    },
+    {
+      "id": "val-02", "topic": "value", "difficulty": 1,
+      "q": "How do NPV and IRR differ, and when does IRR mislead?",
+      "a": "NPV discounts all cash flows at the required rate and sums them — accept if positive. IRR is the discount rate making NPV zero — accept if it exceeds the hurdle rate. IRR misleads with non-conventional cash flows (multiple sign changes give multiple IRRs), when comparing mutually exclusive projects of different scale or timing, and because it implicitly assumes reinvestment at the IRR itself.",
+      "why": "NPV is theoretically correct because it measures value created in currency, which is what shareholders actually receive; IRR is popular because a percentage is comparable across projects without knowing scale. The scale problem is the practical trap: a small project with 50% IRR may create far less value than a large one at 15%, and choosing by IRR systematically favours small, quick projects over larger value-creating ones.",
+      "followup": "'What fixes the reinvestment assumption?' Modified IRR, which discounts outflows at the cost of capital and compounds inflows at a realistic reinvestment rate."
+    },
+    {
+      "id": "val-03", "topic": "value", "difficulty": 2,
+      "q": "How do you value a perpetuity and a growing perpetuity, and what breaks the formula?",
+      "a": "A perpetuity paying C forever is worth C/r. A growing perpetuity where cash flows grow at g is worth C/(r−g), the Gordon growth model. The formula breaks when g ≥ r, which gives a negative or infinite value — mathematically the series diverges.",
+      "why": "The g ≥ r case is not a formula quirk but an economic impossibility: no company can grow faster than its discount rate forever, since it would eventually exceed the whole economy. This makes terminal-value assumptions the most abused input in valuation — a DCF's terminal value often exceeds 70% of total value, and moving g from 2% to 3% with r at 8% raises it by over 20%. Sensitivity analysis on g and r is therefore not optional.",
+      "followup": "'What is a sensible long-run g?' At most nominal GDP growth — anything higher implies the firm eventually becomes the entire economy."
+    },
+    {
+      "id": "val-04", "topic": "value", "difficulty": 2,
+      "q": "Explain the difference between nominal and real rates, and when each is appropriate.",
+      "a": "Nominal rates include expected inflation; real rates are inflation-adjusted. The Fisher relation gives (1+nominal) = (1+real)(1+inflation), approximated as nominal ≈ real + inflation. The rule is consistency: discount nominal cash flows at nominal rates, real cash flows at real rates.",
+      "why": "Mismatching them is a common and material error — discounting inflated future cash flows at a real rate systematically overvalues a project, and the distortion grows with the horizon. The distinction also explains policy behavior: a 5% nominal rate with 7% inflation is a negative real rate, meaning lenders lose purchasing power, which is why real rates rather than headline rates drive investment decisions.",
+      "followup": "'How do TIPS reveal expectations?' The spread between nominal Treasury and inflation-protected yields gives a market-implied inflation expectation, the breakeven rate."
+    },
+    {
+      "id": "val-05", "topic": "value", "difficulty": 2,
+      "q": "What is the difference between compounding frequency and effective annual rate?",
+      "a": "A stated annual rate compounded m times yields an effective rate of (1 + r/m)^m − 1, which exceeds the stated rate whenever m > 1. As m → ∞, continuous compounding gives e^r − 1. Only effective rates are comparable across products with different compounding conventions.",
+      "why": "The gap is why disclosure regimes mandate APR or AER — a credit card quoting 24% nominal compounded monthly actually costs 26.8% annually. Continuous compounding is not merely a limiting curiosity: it makes returns additive across periods, since log returns sum, which is exactly why derivatives pricing and quantitative finance work in continuously compounded terms throughout.",
+      "followup": "'Why do quants prefer log returns?' They are time-additive and symmetric — a +50% then −50% sequence is obviously a loss in log terms, where simple returns obscure it."
+    },
+    {
+      "id": "rsk-01", "topic": "risk", "difficulty": 1,
+      "q": "Distinguish systematic from unsystematic risk, and explain which is compensated.",
+      "a": "Unsystematic (idiosyncratic) risk is firm-specific — a lawsuit, a failed product — and can be diversified away by holding many assets. Systematic risk is market-wide — recessions, rate shocks — and cannot be diversified. Only systematic risk earns a return premium, because investors can eliminate the other kind for free.",
+      "why": "The 'for free' point is the whole argument: markets do not pay you for bearing a risk you could have removed at no cost, so the equilibrium reward attaches only to undiversifiable exposure. This is the core insight behind CAPM and beta, and it explains why a wildly volatile stock might have a low required return if its volatility is uncorrelated with the market, while a stable-looking but highly cyclical business demands more.",
+      "followup": "'How many stocks diversify away idiosyncratic risk?' Most of the benefit arrives by 20-30 holdings; beyond that the marginal gain is small and correlation dominates."
+    },
+    {
+      "id": "rsk-02", "topic": "risk", "difficulty": 1,
+      "q": "What does beta measure, and what does CAPM claim?",
+      "a": "Beta measures an asset's sensitivity to market movements — the covariance with the market divided by market variance. CAPM claims expected return equals the risk-free rate plus beta times the equity risk premium: E[R] = Rf + β(E[Rm] − Rf). Only beta should determine expected return.",
+      "why": "CAPM's empirical record is poor — the relationship between beta and realized returns is flatter than predicted, and size, value, momentum and profitability factors carry returns CAPM says they should not. Yet it remains the standard tool because it provides a disciplined, transparent way to set a hurdle rate, and the underlying logic (only undiversifiable risk is paid) survives even where the single-factor implementation fails.",
+      "followup": "'What did Fama-French add?' Size and value factors, later profitability and investment — multi-factor models with better explanatory power but weaker theoretical grounding."
+    },
+    {
+      "id": "rsk-03", "topic": "risk", "difficulty": 2,
+      "q": "Why is volatility an imperfect measure of risk?",
+      "a": "Volatility treats upside and downside deviation identically, though investors care asymmetrically about losses. It assumes returns are roughly normal, understating tail risk when they are not. And it says nothing about the risk that matters most to a specific investor — permanent capital loss, or failing to meet a liability.",
+      "why": "The fat-tail failure is the expensive one: financial returns exhibit far more extreme moves than a normal distribution allows, so models calibrated on volatility alone assign near-zero probability to events that occur every decade. Alternatives address different gaps — semi-deviation and sortino for asymmetry, VaR and expected shortfall for tails, drawdown for path dependence — but none is complete, which is why risk reporting should be plural.",
+      "followup": "'Why is expected shortfall preferred to VaR?' VaR ignores the severity beyond its threshold and is not subadditive; expected shortfall averages the tail and is coherent."
+    },
+    {
+      "id": "rsk-04", "topic": "risk", "difficulty": 2,
+      "q": "What is the equity risk premium, and why is estimating it so difficult?",
+      "a": "The excess return investors demand for holding equities over risk-free bonds. Historical US estimates run 4-6%, but the standard error on any historical average is enormous — with 100 years of data and ~20% annual volatility, the confidence interval spans several percentage points, which is wider than the quantity being estimated.",
+      "why": "The estimation problem is structural: risk premia are estimated from means, and mean estimates converge painfully slowly compared with variance estimates. Survivorship bias compounds it, since the US was an unusually successful market and global historical premia are lower. This uncertainty flows directly into every cost of capital and hence every valuation — which is why disagreements about company value are often disagreements about this one unobservable number.",
+      "followup": "'What is the equity premium puzzle?' Realized premia are far larger than plausible risk aversion in standard models can justify, suggesting the models are missing something."
+    },
+    {
+      "id": "rsk-05", "topic": "risk", "difficulty": 3,
+      "q": "Why does volatility reduce compound returns, and what is volatility drag?",
+      "a": "Compound growth depends on the geometric mean, which is always below the arithmetic mean when returns vary — approximately arithmetic minus σ²/2. A portfolio gaining 50% then losing 50% has an arithmetic mean of 0% and a realized loss of 25%. Volatility mechanically erodes compounded wealth.",
+      "why": "This is Jensen's inequality applied to multiplicative processes, and it has real consequences: it is why risk reduction can raise long-run returns even without improving average returns, why leveraged ETFs decay in choppy markets regardless of direction, and why rebalancing a diversified portfolio can add return. It also explains why the median outcome of a volatile investment sits well below its expected value — expectation is dominated by rare large outcomes.",
+      "followup": "'What does this imply about position sizing?' The Kelly criterion formalizes it — bet sizes maximizing log wealth, since log wealth is what compounds."
+    },
+    {
+      "id": "prt-01", "topic": "portfolio", "difficulty": 2,
+      "q": "What does modern portfolio theory add beyond 'don't put all your eggs in one basket'?",
+      "a": "It quantifies the benefit: portfolio variance depends on covariances, not just individual variances, so combining assets with correlation below 1 produces a portfolio less volatile than the weighted average of its parts. The efficient frontier is the set of portfolios with maximum expected return for each level of risk.",
+      "why": "The key quantitative insight is that an individual asset's contribution to portfolio risk is its covariance with the portfolio, not its standalone volatility — which is why a volatile but uncorrelated asset can reduce total risk. This reframes asset selection entirely: the right question is never 'is this risky?' but 'what does this add to what I already hold?', which is also the origin of beta as the relevant risk measure.",
+      "followup": "'What happens to correlations in a crisis?' They converge toward 1 — diversification fails precisely when it is needed, which is the standard critique of MPT in stress."
+    },
+    {
+      "id": "prt-02", "topic": "portfolio", "difficulty": 2,
+      "q": "What is the Sharpe ratio, and what are its limitations?",
+      "a": "Excess return per unit of volatility: (Rp − Rf)/σp. It allows comparison of strategies with different risk levels on a single scale. Its limitations: it penalizes upside volatility, assumes normality, is easily gamed by strategies that sell tail risk, and is sensitive to the measurement period.",
+      "why": "The tail-risk gaming problem is the serious one — selling deep out-of-the-money options produces small steady gains and occasional catastrophes, generating an excellent Sharpe ratio right up until the blow-up. This is 'picking up pennies in front of a steamroller', and it means a high Sharpe over a short sample is weak evidence of skill. Judging it requires knowing the strategy's payoff shape, not just its historical ratio.",
+      "followup": "'How long a record is needed for significance?' With a true Sharpe of 0.5, distinguishing it from zero at conventional confidence takes roughly 16 years of data."
+    },
+    {
+      "id": "prt-03", "topic": "portfolio", "difficulty": 2,
+      "q": "Why is mean-variance optimization unstable in practice?",
+      "a": "It is exquisitely sensitive to expected-return inputs, which are the hardest to estimate. Small changes in estimated means produce wildly different optimal weights, often extreme long and short positions. The optimizer effectively maximizes estimation error, loading on assets whose returns were overestimated.",
+      "why": "This 'error maximization' property is why naive 1/N allocation frequently outperforms optimized portfolios out of sample — a result that embarrassed the field and is robustly replicated. Practical responses shrink the inputs toward priors (Black-Litterman), impose weight constraints, or use risk parity, which relies only on covariances since those are estimated far more reliably than means.",
+      "followup": "'Why are covariances easier to estimate?' Second moments converge much faster with sampling frequency, while mean estimates depend on the total span of time, not the number of observations."
+    },
+    {
+      "id": "prt-04", "topic": "portfolio", "difficulty": 3,
+      "q": "What is the difference between alpha and beta, and why does the distinction matter commercially?",
+      "a": "Beta is return earned from exposure to systematic risk factors — available cheaply through index funds. Alpha is return in excess of what factor exposure explains, attributable to skill. The distinction matters because beta costs a few basis points while alpha is charged at 2-and-20, so mislabelling one as the other is expensive.",
+      "why": "Much historical 'alpha' has been reclassified as factor beta as models improved — value, momentum, carry, and volatility-selling strategies once looked like skill and are now purchasable as systematic products. This is the central commercial dynamic of asset management: each newly identified factor converts expensive alpha into cheap beta. Judging a manager requires benchmarking against their actual factor exposures, not a plain index.",
+      "followup": "'What is alternative beta?' Systematic strategies that were formerly sold as hedge-fund alpha, now available as rules-based products at far lower fees."
+    },
+    {
+      "id": "prt-05", "topic": "portfolio", "difficulty": 3,
+      "q": "Why does rebalancing add value, and when does it not?",
+      "a": "Rebalancing sells appreciated assets and buys depreciated ones, mechanically harvesting mean reversion and controlling risk drift. It adds return when asset prices oscillate around stable relative values. It costs return when trends persist, since it repeatedly sells the winner — and it incurs transaction costs and tax friction.",
+      "why": "The primary justification is risk control rather than return: without rebalancing, a portfolio drifts toward whichever asset grew most, so a 60/40 portfolio silently becomes 80/20 equity after a long bull market — exactly the wrong exposure before a correction. Framing rebalancing as return enhancement invites disappointment in trending markets; framing it as maintaining the intended risk profile is both honest and defensible.",
+      "followup": "'Calendar or threshold rebalancing?' Threshold (rebalance when weights drift by a band) generally dominates, trading less while controlling drift better."
+    },
+    {
+      "id": "der-01", "topic": "derivatives", "difficulty": 2,
+      "q": "What are calls and puts, and what does the payoff asymmetry create?",
+      "a": "A call gives the right, not the obligation, to buy at the strike; a put gives the right to sell. The buyer's loss is capped at the premium while gains are open-ended, producing a convex, asymmetric payoff. The seller has the mirror image: capped gain, large potential loss.",
+      "why": "Optionality has value precisely because of that asymmetry — you keep the upside and discard the downside, which is why option value rises with volatility even though volatility is normally undesirable. This is the root of real options thinking: a staged investment with an abandonment right is worth more than the same project committed upfront, and standard NPV systematically undervalues projects with embedded flexibility.",
+      "followup": "'Why does more time increase both call and put value?' More time means more chance of favourable movement, and the downside remains capped either way."
+    },
+    {
+      "id": "der-02", "topic": "derivatives", "difficulty": 2,
+      "q": "State put-call parity and explain why it must hold.",
+      "a": "C − P = S − K·e^(−rT) for European options on a non-dividend stock. Holding a call and shorting a put replicates a forward on the stock. If the relation fails, you can buy the cheap side, sell the expensive side, and lock in riskless profit — arbitrage forces it back.",
+      "why": "Its power is that it requires no model whatsoever: no assumption about volatility, distributions, or investor preferences, only that arbitrage is competed away. That makes it far more robust than Black-Scholes and a first-line sanity check on any option pricing. It also means calls and puts are not independent instruments — knowing one price plus the forward determines the other exactly.",
+      "followup": "'What breaks parity for American options?' Early-exercise rights make the relation an inequality rather than an equality."
+    },
+    {
+      "id": "der-03", "topic": "derivatives", "difficulty": 2,
+      "q": "What is the central idea behind Black-Scholes, and why does the stock's expected return not appear?",
+      "a": "A continuously rebalanced portfolio of stock and bonds can replicate an option's payoff exactly. Since the replicating portfolio and the option have identical payoffs, no-arbitrage forces identical prices. The drift disappears because hedging removes directional exposure — what remains is only the cost of running the hedge, which depends on volatility and rates.",
+      "why": "This is the deepest idea in derivatives pricing: the price does not depend on whether you think the stock will rise, because the hedger's cost is the same either way. Formally it appears as risk-neutral valuation, where you discount expected payoffs computed under a measure where all assets drift at the risk-free rate. Beginners consistently expect their forecast to matter, and its irrelevance is the conceptual hurdle.",
+      "followup": "'What assumptions fail in practice?' Continuous trading without costs, constant volatility, and lognormal prices — hence the volatility smile."
+    },
+    {
+      "id": "der-04", "topic": "derivatives", "difficulty": 3,
+      "q": "What is the volatility smile, and what does it reveal?",
+      "a": "Implied volatilities backed out of market prices vary by strike, forming a smile or skew rather than the flat line Black-Scholes implies. Equity index options show a pronounced skew — out-of-the-money puts trade at much higher implied volatility than calls.",
+      "why": "The smile is the market correcting the model's wrong assumption: real return distributions have fat tails and negative skew, so extreme downside moves are far likelier than lognormality allows. Traders keep the Black-Scholes formula as a quoting convention while adjusting the volatility input per strike — using a model they know is wrong as a common language. The equity skew steepened permanently after 1987, showing the market repricing crash risk after direct experience of it.",
+      "followup": "'What models fit the smile?' Local volatility, stochastic volatility such as Heston, and jump-diffusion — each adding a mechanism for tails Black-Scholes lacks."
+    },
+    {
+      "id": "der-05", "topic": "derivatives", "difficulty": 3,
+      "q": "What do the option Greeks measure, and why is gamma the dangerous one?",
+      "a": "Delta is sensitivity to the underlying's price, gamma the rate of change of delta, vega sensitivity to volatility, theta to time decay, rho to rates. Gamma is dangerous because it means delta is unstable: a delta-hedged position stays hedged only for small moves, and large moves leave you exposed in the direction that hurts.",
+      "why": "Short-gamma positions are the classic blow-up structure — they earn steady theta while requiring the hedger to buy as prices rise and sell as they fall, which is exactly the wrong trade in a fast move and mechanically amplifies market swings. This dynamic hedging feedback contributed to the 1987 crash via portfolio insurance, and gamma exposure remains a monitored systemic quantity for precisely that reason.",
+      "followup": "'What is the relationship between gamma and theta?' They trade off — long gamma costs time decay, short gamma earns it, which is why selling options feels profitable until it is not."
+    },
+    {
+      "id": "cor-01", "topic": "corporate", "difficulty": 2,
+      "q": "What does the Modigliani-Miller theorem say, and why is its unrealism the point?",
+      "a": "In perfect markets with no taxes, bankruptcy costs, or information asymmetry, capital structure is irrelevant — firm value depends only on its assets' cash flows, not on the debt-equity mix. Investors can replicate any leverage themselves, so the firm creates nothing by doing it for them.",
+      "why": "The theorem's value is diagnostic: since capital structure demonstrably does matter, it must matter through exactly the frictions MM assumed away. That converts a vague question into a checklist — the tax deductibility of interest, expected bankruptcy costs, agency conflicts between debt and equity holders, and signalling. This is a general and reusable style of reasoning: prove irrelevance under idealization, then study the deviations.",
+      "followup": "'What is the trade-off theory?' Optimal leverage balances the interest tax shield against rising expected costs of financial distress."
+    },
+    {
+      "id": "cor-02", "topic": "corporate", "difficulty": 2,
+      "q": "What is WACC, and what is the most common error in using it?",
+      "a": "The weighted average cost of capital blends the after-tax cost of debt and cost of equity by their market-value weights. It is the appropriate discount rate for a project of the same risk as the firm's existing operations. The common error is applying the firm-wide WACC to projects of different risk.",
+      "why": "Using one hurdle rate across a diversified firm systematically misallocates capital: safe projects get rejected because they cannot clear a rate inflated by the firm's risky divisions, while risky projects get approved too easily. Over time this makes the firm riskier than intended, one decision at a time. The remedy is divisional costs of capital based on comparable pure-play firms' betas.",
+      "followup": "'Why use market weights, not book?' The cost of capital is what investors require on today's value, and book values reflect historical accounting, not current claims."
+    },
+    {
+      "id": "cor-03", "topic": "corporate", "difficulty": 2,
+      "q": "Why is free cash flow rather than accounting earnings used in valuation?",
+      "a": "Earnings include non-cash items and accrual judgments and exclude capital expenditure and working-capital investment, so they can diverge sharply from cash available to investors. Free cash flow starts from operating profit, adds back non-cash charges, and subtracts the reinvestment needed to sustain the business.",
+      "why": "The gap is where value gets misjudged: a company can report growing earnings while consuming cash through receivables and inventory build, which is the standard signature of a business heading for trouble. Accruals also involve managerial discretion in a way cash does not, making them more manipulable. The discipline is that valuation should rest on what investors can actually receive, and only cash qualifies.",
+      "followup": "'Why does EBITDA get criticized?' It ignores capital expenditure, which is a real and often large cost — Buffett's objection that it treats capex as though it were optional."
+    },
+    {
+      "id": "cor-04", "topic": "corporate", "difficulty": 3,
+      "q": "What are agency costs, and how do capital structure and compensation address them?",
+      "a": "Costs arising when managers' interests diverge from shareholders' — empire building, excessive perquisites, risk aversion protecting their own position, or short-termism. Remedies include equity-linked compensation, debt (whose fixed obligations constrain free cash flow), board oversight, and the market for corporate control.",
+      "why": "Jensen's free cash flow hypothesis explains why leverage can add value beyond tax shields: debt service removes discretionary cash that might otherwise fund value-destroying acquisitions, imposing external discipline. But each remedy creates new distortions — equity compensation encourages risk-taking and earnings management, while heavy debt encourages underinvestment and risk-shifting. Governance is a matter of balancing conflicting incentive problems, not eliminating them.",
+      "followup": "'What is risk-shifting?' Near distress, equity holders favour risky gambles because they capture the upside while creditors bear the downside — a debt-equity agency conflict."
+    },
+    {
+      "id": "cor-05", "topic": "corporate", "difficulty": 3,
+      "q": "What does the pecking order theory predict about financing choices?",
+      "a": "Firms prefer internal funds first, then debt, then equity last. The driver is information asymmetry: managers issue equity when they believe shares are overvalued, so the market rationally discounts any equity issuance, making it expensive. Debt is less information-sensitive, and retained earnings avoid the problem entirely.",
+      "why": "This explains a pattern trade-off theory cannot: highly profitable firms often carry little debt, which contradicts the tax-shield logic but follows naturally from having ample internal funds. It also predicts the observed negative stock-price reaction to equity issuance announcements. The two theories are complements rather than rivals — trade-off explains long-run targets, pecking order explains the sequence of actual decisions.",
+      "followup": "'Why do firms issue equity after price run-ups?' Consistent with market timing — issuing when valuations are favourable, which is the asymmetry the theory predicts."
+    },
+    {
+      "id": "mkt-01", "topic": "markets", "difficulty": 2,
+      "q": "State the three forms of the efficient market hypothesis and what each implies.",
+      "a": "Weak form: prices reflect all past price data, so technical analysis cannot generate excess returns. Semi-strong: prices reflect all public information, so fundamental analysis of public data cannot either. Strong form: prices reflect all information including private, so even insiders cannot profit — which is empirically false.",
+      "why": "The useful framing is that efficiency is a claim about the difficulty of the problem, not a claim that prices are correct. Grossman and Stiglitz showed perfect efficiency is self-contradictory: if prices already reflected everything, no one would be paid to gather information, and prices would stop reflecting it. Markets must therefore be efficient enough to make beating them hard, and inefficient enough to reward the effort of trying.",
+      "followup": "'Why is EMH untestable in isolation?' The joint hypothesis problem — any test of efficiency is simultaneously a test of the asset pricing model used to define normal returns."
+    },
+    {
+      "id": "mkt-02", "topic": "markets", "difficulty": 2,
+      "q": "What is arbitrage, and why do limits to arbitrage matter?",
+      "a": "Arbitrage is a riskless profit from simultaneous offsetting trades in mispriced assets, and its pursuit is what enforces price efficiency. Limits to arbitrage are the frictions preventing it: capital constraints, short-selling costs and restrictions, horizon risk, and the possibility that mispricing widens before it corrects.",
+      "why": "This is why mispricings can persist visibly. Keynes's observation that markets can stay irrational longer than you can stay solvent is the formal content of Shleifer and Vishny's model: an arbitrageur facing redemptions must close positions exactly when the opportunity is greatest. LTCM's collapse is the textbook instance — the trades were largely correct and the fund could not survive the interim.",
+      "followup": "'Give a clean example of persistent mispricing.' Closed-end fund discounts, and dual-listed share pairs like Royal Dutch/Shell trading apart for years despite identical claims."
+    },
+    {
+      "id": "mkt-03", "topic": "markets", "difficulty": 2,
+      "q": "What are the main behavioral biases affecting investors?",
+      "a": "Loss aversion — losses hurt roughly twice as much as equivalent gains please. Overconfidence — excessive trading and underestimated uncertainty. Anchoring on arbitrary reference points such as purchase price. Herding. Recency bias. The disposition effect: selling winners too early and holding losers too long.",
+      "why": "The disposition effect is the clearest demonstration that these are real and costly, since it is tax-inefficient as well as return-destructive — investors realize gains (taxable) and defer losses (deductible), doing exactly the reverse of what is optimal. Prospect theory explains it: value is assessed as gains and losses relative to a reference point rather than in terms of final wealth, with risk-seeking behavior in the loss domain.",
+      "followup": "'Do professionals escape these biases?' They are attenuated but present, and institutional constraints add their own — window dressing, career risk, and benchmark hugging."
+    },
+    {
+      "id": "mkt-04", "topic": "markets", "difficulty": 3,
+      "q": "How do bubbles form, and why doesn't smart money stop them?",
+      "a": "A narrative justifies rising prices, price increases attract momentum buyers, credit expands to fund purchases, and rising prices are taken as validation. Sophisticated investors often ride bubbles rather than fight them, because shorting requires the mispricing to correct before your capital runs out — and it can be rational to buy an overvalued asset you expect to sell higher.",
+      "why": "Abreu and Brunnermeier showed the coordination problem formally: even when every sophisticated investor knows an asset is overvalued, none knows when others will sell, so each prefers to ride and exit early — and the bubble persists until enough coordinate. This is why 'if it were overvalued, someone would have sold' is a weak argument, and hedge funds demonstrably increased tech exposure through 1999.",
+      "followup": "'What did Minsky contribute?' The financial instability hypothesis — stability itself encourages leverage and risk-taking, so calm periods sow the next crisis."
+    },
+    {
+      "id": "mkt-05", "topic": "markets", "difficulty": 3,
+      "q": "Why do most active managers underperform their benchmarks?",
+      "a": "Arithmetically, before costs the average actively managed dollar must earn the market return, since active managers collectively hold the market. After fees, trading costs, and taxes, the average active dollar must underperform. Sharpe's argument requires no assumption about efficiency or skill — it follows from accounting.",
+      "why": "The arithmetic is the strongest case for indexing because it cannot be argued away by pointing to skilled managers: skill redistributes returns among active managers without changing their aggregate. Persistence studies compound the problem, showing past outperformance predicts future outperformance weakly. The counterargument that markets need active managers for price discovery is correct and separate — it explains why active management is socially useful, not why it is a good investment.",
+      "followup": "'Does this mean skill does not exist?' No — it means identifying it in advance is hard, and fees typically capture whatever skill exists before investors see it."
+    }
+  ]
+}

@@ -1,0 +1,225 @@
+{
+  "id": "philosophy",
+  "title": "Philosophy",
+  "blurb": "Knowledge, mind, ethics and science — the arguments themselves, with the strongest objection to each, rather than a parade of names and dates.",
+  "topics": [
+    { "id": "epistemology", "title": "Epistemology", "free": true },
+    { "id": "ethics", "title": "Ethics", "free": true },
+    { "id": "metaphysics", "title": "Metaphysics", "free": false },
+    { "id": "mind", "title": "Philosophy of Mind", "free": false },
+    { "id": "science", "title": "Philosophy of Science", "free": false },
+    { "id": "political", "title": "Political Philosophy", "free": false }
+  ],
+  "cards": [
+    {
+      "id": "epi-01", "topic": "epistemology", "difficulty": 1,
+      "q": "What is the classical analysis of knowledge, and what did Gettier show?",
+      "a": "Knowledge as justified true belief: you know P if P is true, you believe P, and your belief is justified. Gettier showed these conditions are insufficient with cases where all three hold but knowledge is absent — a justified belief that is true by accident, because the justification connects to the truth only coincidentally.",
+      "why": "The standard case: you see a stopped clock reading 3:00 and it happens to be 3:00. Your belief is true, and justified by ordinarily reliable evidence, yet calling it knowledge seems wrong because the truth-maker is unrelated to your reason. Fifty years of proposed fourth conditions — no false lemmas, causal connection, reliability, safety, sensitivity — have each met counterexamples, prompting some to conclude knowledge is unanalyzable into simpler parts.",
+      "followup": "'What does the safety condition propose?' That in nearby possible worlds where you believe similarly, you would not easily be wrong — which the clock case violates."
+    },
+    {
+      "id": "epi-02", "topic": "epistemology", "difficulty": 1,
+      "q": "Contrast rationalism and empiricism about the source of knowledge.",
+      "a": "Rationalism holds that substantive knowledge is available through reason alone, independent of experience — Descartes, Leibniz, Spinoza. Empiricism holds all substantive knowledge derives from sense experience, with the mind starting as a blank slate — Locke, Berkeley, Hume. The dispute is over whether there is synthetic a priori knowledge.",
+      "why": "Kant's synthesis is the pivotal move: experience supplies content while the mind supplies structure, so space, time, and causality are conditions of possible experience rather than things learned from it. That reframing survives in modern form — Chomsky's poverty-of-the-stimulus argument for innate grammar, and Bayesian accounts where priors do the structuring work, are recognizably descendants of the same dispute.",
+      "followup": "'What is the analytic/synthetic distinction?' Truths by meaning alone versus truths about the world — Quine attacked the distinction itself, arguing no belief is immune from revision."
+    },
+    {
+      "id": "epi-03", "topic": "epistemology", "difficulty": 2,
+      "q": "What is the regress problem of justification, and what are the responses?",
+      "a": "If every belief needs justification by another belief, that chain must terminate, circle, or continue infinitely. Foundationalism accepts basic beliefs needing no further justification; coherentism accepts that justification is holistic and circularity is acceptable if the web is mutually supporting; infinitism embraces the infinite chain; skepticism concludes justification fails.",
+      "why": "The trilemma is genuinely forcing — each option costs something real. Foundationalism must explain how a basic belief can be justified without evidence, which risks arbitrariness. Coherentism struggles with the isolation objection: an internally consistent fiction coheres perfectly while connecting to nothing. Most contemporary epistemologists take a hybrid line where perceptual beliefs carry defeasible default warrant that coherence then adjusts.",
+      "followup": "'How does reliabilism sidestep the regress?' It makes justification depend on the belief-forming process being truth-conducive, not on the believer possessing further beliefs."
+    },
+    {
+      "id": "epi-04", "topic": "epistemology", "difficulty": 2,
+      "q": "How does the problem of induction challenge scientific reasoning?",
+      "a": "Hume argued that inferring the future from the past requires assuming nature is uniform, and that assumption can only be supported inductively — by noting it has held so far — which is circular. No amount of past regularity deductively guarantees the next case, so induction has no non-circular justification.",
+      "why": "The problem resists solution rather than being solved. Popper's response was to deny science uses induction at all: theories are conjectured and falsified, never confirmed. Bayesians accept induction and formalize it as probability updating, which relocates rather than removes the difficulty into the choice of priors. Goodman's 'grue' problem sharpens it further, showing that even settling on induction leaves open which regularity to project.",
+      "followup": "'What is the grue puzzle?' Define grue as green before 2050 and blue after; all evidence supports both hypotheses equally, so induction alone cannot select the natural predicate."
+    },
+    {
+      "id": "epi-05", "topic": "epistemology", "difficulty": 3,
+      "q": "What is epistemic justification's internalism/externalism debate about?",
+      "a": "Internalism holds that what justifies a belief must be accessible to the believer through reflection — reasons you could cite. Externalism holds that justification can depend on facts outside your awareness, such as whether your perceptual system is in fact reliable, even if you cannot verify that reliability from the inside.",
+      "why": "The stakes show in cases of unreflective knowledge: a chicken-sexer reliably sorts chicks without being able to say how, and a child knows the stove is hot without any account of perceptual reliability. Externalism credits these as knowledge; internalism struggles to. Conversely externalism faces the new evil demon problem — a brain in a vat with identical experience seems equally justified despite being unreliable, suggesting justification does track something internal.",
+      "followup": "'Which view suits machine learning systems?' Externalist reliability fits naturally — a well-calibrated model's outputs are warranted by its track record, not by any internally citable reasoning."
+    },
+    {
+      "id": "eth-01", "topic": "ethics", "difficulty": 1,
+      "q": "Compare consequentialism, deontology, and virtue ethics.",
+      "a": "Consequentialism evaluates acts by their outcomes — the right act maximizes good, as in utilitarianism's greatest aggregate welfare. Deontology evaluates acts by conformity to duties or rules, holding some acts wrong regardless of consequences. Virtue ethics evaluates character rather than acts, asking what a person of practical wisdom would do and what dispositions constitute flourishing.",
+      "why": "Each captures a real moral intuition and each has a signature failure. Consequentialism licenses appalling acts when the arithmetic favours them — harvesting one patient's organs to save five. Deontology can demand disaster for the sake of a rule, as in refusing to lie to a murderer at the door. Virtue ethics gives less action-guidance in hard cases. Their persistence reflects that morality has outcome-shaped, constraint-shaped, and character-shaped aspects that no single framework absorbs.",
+      "followup": "'What is rule consequentialism?' Judging rules rather than acts by their consequences — an attempt to keep outcome-sensitivity while gaining deontology's stability."
+    },
+    {
+      "id": "eth-02", "topic": "ethics", "difficulty": 1,
+      "q": "What is the trolley problem designed to reveal?",
+      "a": "Most people will divert a trolley to kill one instead of five, but will not push a large man off a bridge to stop it, though the arithmetic is identical. The pair isolates whether the *manner* of causing harm matters morally — using someone as a means versus harming them as a side effect.",
+      "why": "The doctrine of double effect articulates the intuition: harm foreseen as a side effect of a good act differs from harm used as the instrument. Consequentialists reject the distinction as morally irrelevant psychology; deontologists take it as tracking a real constraint against treating persons merely as means. The problem is not a puzzle to solve but an instrument for locating where your commitments actually lie, which is why it has migrated into autonomous-vehicle ethics.",
+      "followup": "'Is the vehicle version genuinely analogous?' Only loosely — real systems face probability distributions and design-time policy choices, not clean binary certainties."
+    },
+    {
+      "id": "eth-03", "topic": "ethics", "difficulty": 2,
+      "q": "What is the is–ought gap, and what is the naturalistic fallacy?",
+      "a": "Hume observed that arguments moving from purely descriptive premises to a prescriptive conclusion contain an unexplained leap — no set of facts about how things are entails how they ought to be without a normative premise. Moore's naturalistic fallacy is the related error of defining 'good' in terms of a natural property such as pleasure or evolutionary fitness.",
+      "why": "The gap is the standing objection to grounding ethics directly in science: that a behavior is natural, evolved, or statistically typical establishes nothing about its permissibility, as infanticide in some species illustrates. Moore's open question argument tests any proposed definition — if 'this maximizes pleasure, but is it good?' remains a coherent question, the definition has not captured the concept. Naturalists reply that identity claims need not be definitional, much as water is H₂O without being synonymous with it.",
+      "followup": "'Does the gap make ethics unscientific?' No — science can settle which acts produce which outcomes, leaving only the evaluative premise to be argued separately."
+    },
+    {
+      "id": "eth-04", "topic": "ethics", "difficulty": 2,
+      "q": "What does moral luck reveal about our practices of blame?",
+      "a": "Williams and Nagel noted that we judge people for outcomes substantially outside their control. Two equally drunk drivers, one of whom happens to hit a child, attract vastly different blame and punishment despite identical choices and character. Yet we also hold that responsibility requires control — and the two commitments conflict.",
+      "why": "Nagel catalogued the varieties: resultant luck in how actions turn out, circumstantial luck in what situations you face, and constitutive luck in the character you happen to have. Push the control principle consistently and the domain of genuine responsibility shrinks toward vanishing, since character itself is unchosen. The persistence of outcome-sensitive blame in law and in ordinary life suggests our practices track something other than pure desert — deterrence, expression, or the social need to mark harm.",
+      "followup": "'Why does criminal law punish attempted murder less than murder?' Precisely the puzzle — identical intent and effort, different outcome, different sentence."
+    },
+    {
+      "id": "eth-05", "topic": "ethics", "difficulty": 2,
+      "q": "What is moral relativism, and what is the strongest objection?",
+      "a": "Descriptive relativism observes that moral codes vary across cultures — uncontroversial. Metaethical relativism claims moral truth is relative to a framework, with no standpoint from which to adjudicate between them. Normative relativism adds that we ought therefore to tolerate other frameworks — which is the version with the deepest problem.",
+      "why": "Normative relativism is self-undermining: it asserts a universal obligation to tolerate, which is exactly the kind of framework-independent moral claim relativism denies is available. Metaethical relativism avoids that trap but faces the reformer's objection — it makes moral progress unintelligible, since abolitionists were simply deviating from their society's code rather than getting something right. Variation in moral belief is also explicable without relativism, as variation in circumstance and factual belief.",
+      "followup": "'Does disagreement imply no fact of the matter?' No — disagreement is widespread in physics and history too, where we do not conclude that truth is relative."
+    },
+    {
+      "id": "met-01", "topic": "metaphysics", "difficulty": 2,
+      "q": "What is the problem of personal identity over time?",
+      "a": "What makes a person at one time the same person as at another, given complete change of matter, memory, and character? Candidates: bodily continuity, brain continuity, psychological continuity of memory and personality, or a bare further fact such as a soul. Each faces cases where it delivers the wrong verdict.",
+      "why": "Fission cases are the decisive test: split a brain, transplant each hemisphere, and psychological continuity holds with two people at once — but identity cannot be one-to-many, and it is arbitrary to pick either. Parfit's response is that identity is not what matters; what matters is psychological continuity and connectedness, which can hold to degrees and can branch. That deflationary conclusion has real implications for how we regard our future selves, promises, and death.",
+      "followup": "'What does the teleporter case test?' Whether continuity of pattern suffices, or whether spatiotemporal continuity of the physical stuff is required."
+    },
+    {
+      "id": "met-02", "topic": "metaphysics", "difficulty": 2,
+      "q": "Explain the free will debate between determinism, libertarianism, and compatibilism.",
+      "a": "Hard determinism holds that if every event is fixed by prior causes, free will is an illusion. Libertarianism holds that we have genuine alternative possibilities, so determinism must be false at least for choices. Compatibilism holds that free will requires acting from one's own desires without external coercion — which is entirely consistent with those desires being determined.",
+      "why": "Compatibilism is the majority position among philosophers because it identifies what we actually care about in freedom: whether the action flowed from your own reasoning and values rather than from compulsion or manipulation. The libertarian alternative faces the luck objection — undetermined choices are random, and randomness is no better foundation for responsibility than determinism. Frankfurt cases further argue that alternative possibilities were never required for responsibility in the first place.",
+      "followup": "'What is a Frankfurt case?' Someone chooses freely while a neuroscientist stands ready to intervene had they chosen otherwise — responsibility survives even though no alternative was truly available."
+    },
+    {
+      "id": "met-03", "topic": "metaphysics", "difficulty": 2,
+      "q": "What is the ship of Theseus, and what does it actually test?",
+      "a": "Replace a ship's planks one at a time until none of the original remain, then reassemble the originals into a second ship. Which is the original? The puzzle tests whether identity over time is settled by material continuity, by continuity of form and function, or by nothing beyond our conventions.",
+      "why": "The most defensible response is deflationary: 'the same ship' is not a single determinate relation but a family of criteria we normally apply together, and the case is engineered to pull them apart. Nothing further is hidden — the physical facts are fully specified, and what remains is a decision about how to use a word. Recognizing when a dispute is verbal rather than substantive is a transferable philosophical skill, though the deflationary move is contested for persons, where more seems at stake.",
+      "followup": "'Does this generalize to identity of nations or companies?' Yes — legal and social identity persist through complete turnover of members, sustained by convention and institutional continuity."
+    },
+    {
+      "id": "met-04", "topic": "metaphysics", "difficulty": 3,
+      "q": "What is the debate between realism and nominalism about universals?",
+      "a": "Many things are red. Realists hold there is a genuine universal, redness, existing in addition to red particulars — either Platonically independent or immanent in its instances. Nominalists deny universals exist, holding only particulars are real, and explain shared attributes by resemblance, class membership, or the use of general terms.",
+      "why": "The realist argument is that objective similarity needs a ground — resemblance alone seems to presuppose a respect of resemblance, which is the universal again. Nominalists reply that realism multiplies entities and faces its own regress in explaining how a universal relates to its instances. The dispute recurs concretely in mathematics: whether numbers are discovered objects or useful fictions determines what mathematical truth amounts to.",
+      "followup": "'What is trope theory?' A middle route — properties are particular, not shared, so each red thing has its own redness trope and similarity is primitive between tropes."
+    },
+    {
+      "id": "met-05", "topic": "metaphysics", "difficulty": 3,
+      "q": "What is causation, and why is it philosophically difficult?",
+      "a": "Hume argued we observe only constant conjunction and temporal succession, never a necessary connection — so causation may be a habit of expectation projected onto the world. Modern accounts include counterfactual dependence (had C not occurred, E would not have), probabilistic raising, and physical process or transference theories.",
+      "why": "Each account fails on well-known cases. Counterfactual analysis breaks on overdetermination — two assassins fire simultaneously, and neither is necessary for the death, though both caused it. Probabilistic accounts confront confounding, since correlation can be raised without causing. This difficulty is not merely academic: it is the same problem that makes causal inference from observational data hard, and Pearl's interventionist framework (defining causation via do-operations) is the most successful modern response.",
+      "followup": "'Why is intervention the key idea?' It distinguishes seeing from doing — P(Y|do(X)) differs from P(Y|X) exactly when confounding is present."
+    },
+    {
+      "id": "min-01", "topic": "mind", "difficulty": 2,
+      "q": "What is the mind–body problem, and what are the main positions?",
+      "a": "How do mental states relate to physical states? Substance dualism holds they are distinct kinds of thing; physicalism holds mental states are physical states; functionalism holds mental states are defined by their causal roles, so they can be realized in different substrates; idealism holds the physical is ultimately mental.",
+      "why": "Dualism's fatal difficulty is interaction — how a non-physical mind moves a physical body without violating conservation of energy has never been answered. Functionalism is the dominant view and underwrites cognitive science and artificial intelligence, because multiple realizability means the same mental state could be implemented in neurons or silicon. Its cost is that it seems to leave out what experience feels like from the inside, which is where the hard problem enters.",
+      "followup": "'What is multiple realizability?' Pain is defined by its causal role, so an octopus or a machine could be in pain despite radically different physical structure."
+    },
+    {
+      "id": "min-02", "topic": "mind", "difficulty": 2,
+      "q": "What is the hard problem of consciousness, and how does it differ from the easy problems?",
+      "a": "The easy problems concern explaining cognitive functions — discrimination, integration, reportability, attention — which are hard in practice but tractable in principle by finding mechanisms. The hard problem, named by Chalmers, is why any of that processing is accompanied by subjective experience at all: why there is something it is like to undergo it.",
+      "why": "The force of the problem is that a complete functional explanation seems to leave the question open — one can coherently imagine all the processing occurring 'in the dark', which is the philosophical zombie thought experiment. Illusionists and higher-order theorists reply that this intuition is itself a cognitive artifact to be explained away rather than a datum to be explained. Where you land determines whether consciousness is a research programme or a permanent puzzle.",
+      "followup": "'What is Mary's room?' A scientist knowing every physical fact about colour learns something new on first seeing red — an argument that physical facts omit phenomenal ones."
+    },
+    {
+      "id": "min-03", "topic": "mind", "difficulty": 2,
+      "q": "What does Searle's Chinese Room argue, and what is the systems reply?",
+      "a": "A person in a room manipulates Chinese symbols by rulebook, producing fluent responses without understanding Chinese. Searle concludes that syntax alone does not yield semantics, so a program running the same manipulations understands nothing — refuting strong AI. The systems reply grants the person lacks understanding but attributes it to the whole system of person, rules, and records.",
+      "why": "Searle's counter — internalize the entire rulebook so the person is the system, and still no understanding appears — trades on intuitions about scale that may not survive scrutiny, since a human executing a mind-sized program would take millennia per response. The deeper issue is whether understanding is an intrinsic property or a matter of causal embedding in a world, which is what the robot reply presses by connecting symbols to sensors and actions.",
+      "followup": "'How does grounding change the picture?' If symbols acquire meaning through causal contact with what they refer to, a purely rule-shuffling system genuinely does lack something an embodied one has."
+    },
+    {
+      "id": "min-04", "topic": "mind", "difficulty": 3,
+      "q": "What is intentionality, and why is it considered the mark of the mental?",
+      "a": "Intentionality is aboutness — the capacity of a mental state to be directed at something, including things that do not exist, as a belief about unicorns is. Brentano proposed it as the feature distinguishing mental from physical phenomena, since no merely physical state seems intrinsically to be about anything.",
+      "why": "The naturalizing project asks how physical states acquire aboutness. Causal theories say a state means what reliably causes it, but must then explain misrepresentation — a cow-thought caused by a horse on a dark night should be false, not about horses. Teleosemantics appeals to biological function: a state means what it was selected to track. The problem matters directly for whether a language model's representations are genuinely about anything or merely correlate with usage patterns.",
+      "followup": "'What is the disjunction problem?' If meaning is what causes the state, misrepresentation collapses into a broader disjunctive content — cow-or-horse-on-dark-night."
+    },
+    {
+      "id": "min-05", "topic": "mind", "difficulty": 3,
+      "q": "What does the extended mind thesis claim, and what is the parity principle?",
+      "a": "Clark and Chalmers argue that cognitive processes can extend beyond the skull into notebooks, phones, and instruments. The parity principle licenses this: if an external process plays a role that we would unhesitatingly call cognitive were it performed internally, then it is cognitive, and location is not what makes something part of a mind.",
+      "why": "Their case is Otto, who has Alzheimer's and relies on a notebook exactly as Inga relies on biological memory — same functional role, same reliability, same automatic endorsement. Critics reply that the differences (a notebook can be lost, forged, read by others) are precisely what memory's privileged status consists in. The thesis is more than academic now that external memory and reasoning aids are continuously available, raising real questions about cognitive ownership and dependence.",
+      "followup": "'What conditions does Otto's notebook have to meet?' Constant availability, automatic endorsement, easy accessibility, and past conscious endorsement — the glue-and-trust criteria."
+    },
+    {
+      "id": "sci-01", "topic": "science", "difficulty": 2,
+      "q": "What is Popper's falsificationism, and where does it fall short?",
+      "a": "Popper proposed falsifiability as the demarcation of science: a theory is scientific if it forbids something observable. Science advances by bold conjecture and severe attempted refutation, never by confirmation, since no finite evidence verifies a universal law while a single counterexample refutes it.",
+      "why": "The asymmetry is real, but the picture is too clean in practice. The Duhem–Quine thesis notes that hypotheses are never tested alone — a failed prediction may indict auxiliary assumptions, instruments, or background theory, so you can always preserve the core by adjusting elsewhere. That is not automatically dishonest: the anomalous orbit of Uranus was rescued by positing Neptune, which existed, while the same move for Mercury failed and needed general relativity instead.",
+      "followup": "'How do we distinguish good from bad rescue?' Lakatos: progressive research programmes make novel predictions that pan out; degenerating ones only patch failures after the fact."
+    },
+    {
+      "id": "sci-02", "topic": "science", "difficulty": 2,
+      "q": "What did Kuhn claim about paradigms and scientific revolutions?",
+      "a": "Kuhn described normal science as puzzle-solving within a paradigm — a shared framework of theory, methods, and exemplars. Anomalies accumulate until crisis, and a revolution replaces the paradigm wholesale. Competing paradigms are incommensurable: they define terms and standards differently, so no neutral evidence adjudicates between them.",
+      "why": "Incommensurability is the controversial part, since taken strongly it makes theory choice non-rational and undermines the idea of scientific progress toward truth. Kuhn resisted that reading, allowing shared values — accuracy, scope, simplicity, fruitfulness — that guide choice without algorithmically determining it. The lasting contribution is descriptive: science is not a smooth accumulation of facts, and what counts as a legitimate question is itself theory-laden.",
+      "followup": "'Is theory-ladenness of observation fatal?' It complicates neutral testing but does not eliminate it — observations can still constrain, since they are not laden with the specific theory under test."
+    },
+    {
+      "id": "sci-03", "topic": "science", "difficulty": 2,
+      "q": "What is the debate between scientific realism and instrumentalism?",
+      "a": "Realists hold that successful theories are approximately true and their unobservable entities — electrons, fields, genes — really exist. Instrumentalists and constructive empiricists hold theories are tools for predicting observations, and acceptance requires only empirical adequacy, not belief in the unobservable posits.",
+      "why": "The realist's best argument is the no-miracles argument: the predictive success of science would be inexplicable if its theories were not tracking reality. The strongest reply is pessimistic meta-induction — phlogiston, caloric, and the ether were all successful and all false, so present success is weak evidence of truth. Structural realism attempts a middle path: what survives theory change is mathematical structure rather than the entities posited.",
+      "followup": "'What does van Fraassen accept?' Empirical adequacy — the theory gets the observable phenomena right — while remaining agnostic about unobservables."
+    },
+    {
+      "id": "sci-04", "topic": "science", "difficulty": 3,
+      "q": "What is the underdetermination of theory by evidence?",
+      "a": "For any body of evidence, multiple mutually incompatible theories can accommodate it equally well. Weak underdetermination concerns current evidence and is resolved by further experiment. Strong underdetermination claims empirically equivalent rivals exist that no possible evidence could distinguish — which would make theory choice partly non-empirical.",
+      "why": "The strong version is what threatens realism, and its status is contested: genuine examples are hard to produce beyond artificial constructions, such as Newtonian mechanics with the universe drifting at any constant velocity. Where rivals exist, scientists appeal to simplicity, unification, and explanatory power — which raises the question of whether such theoretical virtues are evidence of truth or merely pragmatic preferences.",
+      "followup": "'How is this related to machine learning?' Directly — many models fit the training data equally well, and the inductive bias choosing among them plays exactly the role of theoretical virtues."
+    },
+    {
+      "id": "sci-05", "topic": "science", "difficulty": 3,
+      "q": "What makes something a scientific explanation rather than a mere description?",
+      "a": "The deductive-nomological model says explanation is derivation from laws plus initial conditions. But derivation is symmetric while explanation is not — a flagpole's height explains its shadow's length, not vice versa, though each is derivable from the other. Causal and unificationist accounts respond by adding directionality or by counting the reduction in independent assumptions.",
+      "why": "The asymmetry problem shows explanation involves more than logical entailment, and the barometer case makes it sharper: falling barometer readings predict storms without explaining them, because both share a common cause. This is exactly why prediction and explanation come apart in practice, and why a highly accurate black-box model can be predictively excellent while explaining nothing — a distinction with real consequences for scientific uses of machine learning.",
+      "followup": "'What does the pragmatic account add?' That explanation is answering a why-question relative to a contrast class and interests — which explains why the same fact gets different good explanations."
+    },
+    {
+      "id": "pol-01", "topic": "political", "difficulty": 2,
+      "q": "What is the social contract, and how do Hobbes, Locke, and Rousseau differ?",
+      "a": "The idea that political authority derives from an agreement among the governed. Hobbes takes the state of nature to be a war of all against all, justifying near-absolute sovereignty for security. Locke sees it as governed by natural law with pre-political rights to life, liberty and property, so government is a limited trust revocable when it violates them. Rousseau sees society itself as corrupting and seeks legitimacy in the general will.",
+      "why": "The differences flow from their premises about human nature and the state of nature, which is the analytical lesson: conclusions about legitimate authority are largely determined by what you assume people are like without it. Their influence is concrete — Locke's revocable trust runs directly into the American Declaration of Independence, while Rousseau's general will shaped the French revolutionary tradition and its authoritarian risks.",
+      "followup": "'What is the standard objection?' No one actually consented — prompting appeals to tacit or hypothetical consent, each of which weakens the argument's force."
+    },
+    {
+      "id": "pol-02", "topic": "political", "difficulty": 2,
+      "q": "What is Rawls's original position, and what does the veil of ignorance do?",
+      "a": "A thought experiment for deriving principles of justice: parties choose society's basic structure without knowing their own class, talents, race, gender, or conception of the good. Rawls argues they would choose equal basic liberties, plus the difference principle allowing inequality only where it benefits the least advantaged.",
+      "why": "The veil is a device for modelling impartiality — by removing knowledge that would let you tailor principles to your own advantage, it converts self-interested choice into fair reasoning. The contested step is his assumption of maximin risk aversion; expected-utility reasoners behind the veil might choose average utilitarianism instead, and Harsanyi argued exactly that. Which decision rule is rational under that specific kind of uncertainty is where the argument really turns.",
+      "followup": "'What is Nozick's objection?' That the difference principle ignores how holdings arose — justice is historical, and voluntary transfers from a just starting point remain just however unequal."
+    },
+    {
+      "id": "pol-03", "topic": "political", "difficulty": 2,
+      "q": "Distinguish negative and positive liberty.",
+      "a": "Berlin's distinction: negative liberty is freedom from interference — the range of action no one obstructs. Positive liberty is freedom to achieve self-mastery or realize one's genuine purposes, which may require resources, education, or capacities rather than merely the absence of obstacles.",
+      "why": "Berlin warned that positive liberty is susceptible to a dangerous slide: if freedom means acting according to one's real interests, an authority can claim to know those interests better than the person does and coerce them 'for their own freedom'. Yet negative liberty alone rings hollow for someone with formal rights and no means to exercise them. Most modern positions accept both and argue about the trade-off, which is essentially the dispute between libertarian and social-democratic politics.",
+      "followup": "'What does the republican tradition add?' Freedom as non-domination — being subject to arbitrary power is unfreedom even if that power is never exercised."
+    },
+    {
+      "id": "pol-04", "topic": "political", "difficulty": 3,
+      "q": "What is the paradox of tolerance, and how might it be resolved?",
+      "a": "Popper observed that unlimited tolerance leads to tolerance's destruction, since tolerating the intolerant permits them to dismantle the tolerant order. His resolution is that we should claim the right to suppress intolerant movements — but only when they refuse rational argument and answer with violence, not merely because their views are objectionable.",
+      "why": "The qualification does the essential work, since without it the paradox licenses suppressing anything labelled intolerant, which is precisely the abuse it was meant to prevent. Framing tolerance as a reciprocal social contract clarifies matters: the obligation extends to those who accept the same constraints, and forfeits when they do not. The remaining difficulty is entirely procedural — who decides where the line sits, and by what accountable process.",
+      "followup": "'How does this differ from legal free-speech doctrine?' Most systems protect advocacy while restricting incitement to imminent lawless action — an attempt to draw Popper's line operationally."
+    },
+    {
+      "id": "pol-05", "topic": "political", "difficulty": 3,
+      "q": "What does the tragedy of the commons show about collective action?",
+      "a": "When a shared resource is open to all, each user's rational self-interest is to take more, since they capture the full benefit while the cost of depletion is spread across everyone. The aggregate of individually rational choices is collective ruin — overfishing, aquifer depletion, emissions.",
+      "why": "Hardin's proposed remedies were privatization or state coercion, but Ostrom's fieldwork showed a third path, earning her the Nobel: communities repeatedly govern commons successfully through locally-evolved rules with monitoring, graduated sanctions, and conflict resolution. The conditions she identified — clear boundaries, participation in rule-making, recognition by higher authorities — turn an apparently inevitable tragedy into a design problem, which is a far more useful conclusion.",
+      "followup": "'How does this relate to prisoner's dilemma?' It is an n-player version — and Ostrom's conditions largely work by enabling the repetition and reputation that sustain cooperation."
+    }
+  ]
+}

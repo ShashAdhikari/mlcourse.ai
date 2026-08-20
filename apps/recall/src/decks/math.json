@@ -1,0 +1,232 @@
+{
+  "id": "math",
+  "title": "Mathematics",
+  "blurb": "Linear algebra, analysis, algebra and combinatorics — the structural ideas, stated the way someone who understands them would say them out loud.",
+  "topics": [
+    { "id": "linear", "title": "Linear Algebra", "free": true },
+    { "id": "calculus", "title": "Calculus", "free": true },
+    { "id": "analysis", "title": "Real Analysis", "free": false },
+    { "id": "proof", "title": "Proof & Structure", "free": false },
+    { "id": "combinatorics", "title": "Combinatorics & Number Theory", "free": false },
+    { "id": "algebra", "title": "Abstract Algebra", "free": false }
+  ],
+  "cards": [
+    {
+      "id": "lin-01", "topic": "linear", "difficulty": 1,
+      "q": "What do eigenvalues and eigenvectors mean geometrically?",
+      "a": "An eigenvector of A is a direction the transformation does not rotate: Av = λv, so v is merely scaled by the eigenvalue λ. Eigenvectors are the transformation's invariant axes, and eigenvalues say how much each axis stretches (|λ| > 1), shrinks (|λ| < 1), or flips (λ < 0).",
+      "why": "Once you see them as invariant directions, diagonalization becomes obvious: A = PDP⁻¹ says 'change to the coordinate system where the transformation is just independent scalings, scale, change back'. That is why Aⁿ = PDⁿP⁻¹ is cheap, why repeated application converges to the dominant eigenvector (power iteration, PageRank), and why differential equations decouple in the eigenbasis.",
+      "followup": "'When does a matrix fail to be diagonalizable?' When an eigenvalue's geometric multiplicity is less than its algebraic multiplicity — a shear matrix has one eigenvector where it needs two."
+    },
+    {
+      "id": "lin-02", "topic": "linear", "difficulty": 1,
+      "q": "What does the determinant measure, and what does det = 0 tell you?",
+      "a": "The signed volume scaling factor of the transformation: a unit cube maps to a parallelepiped of volume |det A|, and a negative sign means orientation flipped. det A = 0 means the transformation collapses space into a lower dimension — so it is not invertible, columns are linearly dependent, and some non-zero vector maps to zero.",
+      "why": "Every property of determinants follows from the volume reading: det(AB) = det(A)det(B) because applying two transformations multiplies their scalings; det(Aᵀ) = det(A); and the determinant equals the product of eigenvalues because each eigen-direction contributes its own stretch factor. It also explains the Jacobian in change-of-variables — you are correcting for local volume distortion.",
+      "followup": "'Is a small determinant the same as near-singular?' No — determinant scales with dimension and units. The condition number is the honest measure of numerical near-singularity."
+    },
+    {
+      "id": "lin-03", "topic": "linear", "difficulty": 2,
+      "q": "State the rank–nullity theorem and explain what it is really saying.",
+      "a": "For a linear map T: V → W with dim V = n, rank(T) + nullity(T) = n — the dimension of the image plus the dimension of the kernel equals the dimension of the domain. Every dimension of the input is either preserved into the output or crushed to zero; none disappear unaccounted for.",
+      "why": "It is a conservation law for dimension, and it settles a lot of questions instantly: a map from a higher to a lower dimension must have non-trivial kernel (so a homogeneous system with more unknowns than equations always has non-zero solutions), and an injective map between spaces of equal dimension is automatically surjective. In data terms, nullity is exactly the redundancy in your features.",
+      "followup": "'What is rank in plain terms?' The number of genuinely independent directions the map can produce — the true dimensionality of its output."
+    },
+    {
+      "id": "lin-04", "topic": "linear", "difficulty": 2,
+      "q": "What is the singular value decomposition, and why is it more general than eigendecomposition?",
+      "a": "Any matrix factors as A = UΣVᵀ, with U and V orthogonal and Σ diagonal with non-negative singular values. Geometrically every linear map is a rotation, then an axis-aligned scaling, then another rotation. Unlike eigendecomposition it exists for every matrix — rectangular, singular, non-diagonalizable alike.",
+      "why": "Universality is the point: eigendecomposition needs a square, diagonalizable matrix, while SVD always works, which is why it underlies PCA, pseudo-inverses, and low-rank approximation. The Eckart–Young theorem says truncating to the top k singular values gives the best rank-k approximation in Frobenius and spectral norm — the mathematical justification for compressing data by discarding small singular values.",
+      "followup": "'Relation to eigenvalues?' Singular values of A are square roots of eigenvalues of AᵀA; for a symmetric positive-definite matrix the two decompositions coincide."
+    },
+    {
+      "id": "lin-05", "topic": "linear", "difficulty": 2,
+      "q": "What makes a set of vectors a basis, and why does dimension not depend on which basis you pick?",
+      "a": "A basis is linearly independent and spans the space — every vector has exactly one representation in it. Independence gives uniqueness, spanning gives existence. Any two bases of the same space have the same number of elements, and that invariant count is the dimension.",
+      "why": "The independence of dimension from basis choice is what makes 'dimension' a property of the space rather than of your description of it, and it is proved by the Steinitz exchange lemma — you can swap basis vectors one at a time without ever running out. This is the template for a recurring mathematical move: define something via an arbitrary choice, then prove the result does not depend on the choice.",
+      "followup": "'Why do we care about orthonormal bases specifically?' Coordinates become simple inner products, and the change-of-basis matrix is its own transpose-inverse — numerically stable and computationally trivial."
+    },
+    {
+      "id": "lin-06", "topic": "linear", "difficulty": 3,
+      "q": "What is special about symmetric matrices?",
+      "a": "The spectral theorem: a real symmetric matrix has all-real eigenvalues and an orthonormal basis of eigenvectors, so A = QΛQᵀ with Q orthogonal. It is always diagonalizable, and diagonalizable by a rotation rather than a general change of basis.",
+      "why": "This is why covariance matrices, Hessians, and Laplacians behave so well — all are symmetric by construction. Real eigenvalues let you classify critical points by the Hessian's signs; orthogonal eigenvectors make PCA's components perpendicular, which is what makes them independent directions of variance. Positive-definiteness (all λ > 0) is then exactly the condition for a quadratic form to be a genuine bowl with a unique minimum.",
+      "followup": "'What does an indefinite Hessian mean at a critical point?' A saddle — the surface curves up along some eigen-directions and down along others."
+    },
+    {
+      "id": "cal-01", "topic": "calculus", "difficulty": 1,
+      "q": "What is a derivative, beyond 'the slope of the tangent'?",
+      "a": "The best linear approximation to a function near a point: f(x+h) ≈ f(x) + f′(x)h with error vanishing faster than h. The derivative is the linear map that locally imitates the function. In multiple dimensions it generalizes to the Jacobian — the matrix of that best linear approximation.",
+      "why": "The linear-approximation view is the one that scales. It explains why the chain rule is matrix multiplication (composing linear approximations composes the maps), why gradient descent works (follow the local linear model a short distance), and why backpropagation is exactly the chain rule applied right-to-left through composed layers. 'Slope of tangent' does not generalize past one dimension; 'best local linear model' does.",
+      "followup": "'Why must we take a small step in gradient descent?' The linear approximation is only trustworthy in a neighborhood; step too far and the model no longer describes the function."
+    },
+    {
+      "id": "cal-02", "topic": "calculus", "difficulty": 1,
+      "q": "State the fundamental theorem of calculus and explain why it is remarkable.",
+      "a": "Two halves: (1) if F(x) = ∫ₐˣ f(t)dt then F′(x) = f(x) — differentiating an accumulation recovers the rate; (2) ∫ₐᵇ f = F(b) − F(a) for any antiderivative F — a total change is computed from endpoints alone. Differentiation and integration are inverse operations.",
+      "why": "The remarkable part is that two independently motivated problems — instantaneous rates and accumulated areas — turn out to be inverses. Practically, part (2) is what makes integration tractable: instead of taking limits of Riemann sums you find an antiderivative and subtract. Conceptually it is the one-dimensional case of a much bigger pattern (Stokes' theorem): integrating a derivative over a region reduces to evaluating on its boundary.",
+      "followup": "'Does every continuous function have an antiderivative?' Yes, by part (1) — but not necessarily one expressible in elementary functions, as e^(−x²) shows."
+    },
+    {
+      "id": "cal-03", "topic": "calculus", "difficulty": 2,
+      "q": "What does a Taylor series do, and when does it fail?",
+      "a": "It approximates a function near a point by a polynomial built from its derivatives: f(a) + f′(a)(x−a) + f″(a)(x−a)²/2! + …, each term correcting the previous order. It fails when the function is not smooth enough, when the series has a finite radius of convergence, or — most subtly — when it converges to the wrong thing.",
+      "why": "The instructive failure is f(x) = e^(−1/x²) with f(0) = 0: every derivative at 0 vanishes, so the Taylor series is identically zero, yet the function is not. Being infinitely differentiable is strictly weaker than being analytic. Radius of convergence also has a hidden explanation — 1/(1+x²) has a perfectly nice real graph but radius 1, because of complex poles at ±i that the real picture cannot show.",
+      "followup": "'Why is the second-order term so important in optimization?' It is the curvature; Newton's method uses it to choose step size instead of guessing a learning rate."
+    },
+    {
+      "id": "cal-04", "topic": "calculus", "difficulty": 2,
+      "q": "What is the gradient, and why does it point in the direction of steepest ascent?",
+      "a": "The vector of partial derivatives, ∇f. The directional derivative along a unit vector u is ∇f · u = |∇f| cos θ, which is maximized when θ = 0 — that is, when u points along ∇f. So the gradient is the steepest-ascent direction, and its magnitude is that steepest rate.",
+      "why": "The same formula shows the gradient is perpendicular to level sets: moving along a contour means zero change, so ∇f · u = 0 there. That orthogonality is the geometric content of Lagrange multipliers — at a constrained optimum the objective's gradient must be parallel to the constraint's gradient, since any remaining tangential component would let you improve while staying feasible.",
+      "followup": "'Is steepest descent the fastest route to the minimum?' No — on an ill-conditioned surface it zigzags across the valley; Newton and momentum methods exist to fix exactly that."
+    },
+    {
+      "id": "cal-05", "topic": "calculus", "difficulty": 2,
+      "q": "Explain the difference between a local and a global extremum, and how you certify each.",
+      "a": "A local extremum beats its immediate neighborhood; a global one beats the entire domain. Local certification is calculus: first-order condition ∇f = 0 and a second-order condition on the Hessian. Global certification generally needs structure — convexity, or compactness plus continuity (extreme value theorem) plus checking the boundary.",
+      "why": "Calculus alone is a local instrument, which is the real lesson. Convexity is the property that upgrades local to global: in a convex function any local minimum is global, which is precisely why convex optimization is considered solved and non-convex optimization is not. Forgetting the boundary is the other classic error — on a closed interval the extremum may occur where the derivative is not zero at all.",
+      "followup": "'What if the Hessian is singular at a critical point?' Second-order test is inconclusive; you need higher-order terms or a direct argument, as with x⁴ at zero."
+    },
+    {
+      "id": "ana-01", "topic": "analysis", "difficulty": 2,
+      "q": "State the epsilon-delta definition of a limit and explain the logic of its quantifiers.",
+      "a": "lim_{x→a} f(x) = L means: for every ε > 0 there exists δ > 0 such that 0 < |x − a| < δ implies |f(x) − L| < ε. The order matters absolutely — ε is the challenge, δ is the response, so δ is allowed to depend on ε.",
+      "why": "The definition is an adversarial game: a challenger names any tolerance, and you must produce a neighborhood meeting it. That framing demystifies it and makes the quantifier order meaningful — swapping them ('there is a δ for all ε') would demand a single neighborhood working for every tolerance, which only a constant could satisfy. This same dependency structure distinguishes pointwise from uniform continuity, where δ must work for all points at once.",
+      "followup": "'Why does uniform continuity matter?' It is what lets you integrate: continuous functions on compact sets are uniformly continuous, which makes Riemann sums converge."
+    },
+    {
+      "id": "ana-02", "topic": "analysis", "difficulty": 2,
+      "q": "What does completeness of the real numbers mean, and why do the rationals fail?",
+      "a": "Every non-empty set bounded above has a least upper bound (equivalently, every Cauchy sequence converges). The rationals fail: the sequence of decimal truncations of √2 is Cauchy and its terms are all rational, but the limit is irrational, so it converges to nothing inside ℚ — there is a 'hole' where the supremum should be.",
+      "why": "Completeness is the axiom that makes analysis work; nearly every major theorem depends on it. The intermediate value theorem fails over ℚ (x² − 2 changes sign but has no rational root), as do the extreme value theorem and the convergence of monotone bounded sequences. Analysis is essentially the study of what completeness buys you, which is why ℝ is defined as the completion of ℚ rather than discovered.",
+      "followup": "'Is ℝ the only complete ordered field?' Up to isomorphism, yes — completeness plus the ordered-field axioms pins it down uniquely."
+    },
+    {
+      "id": "ana-03", "topic": "analysis", "difficulty": 2,
+      "q": "Distinguish pointwise from uniform convergence and say why the difference matters.",
+      "a": "Pointwise: for each x, fₙ(x) → f(x), with the rate allowed to differ wildly across x. Uniform: sup_x |fₙ(x) − f(x)| → 0, so a single N works for every x simultaneously. Uniform convergence preserves continuity, integrability, and allows swapping limits with integrals; pointwise convergence preserves none of these.",
+      "why": "The example that fixes it: fₙ(x) = xⁿ on [0,1] converges pointwise to a function that is 0 on [0,1) and 1 at x = 1 — continuous functions converging to a discontinuous limit. Uniform convergence forbids this. The practical consequence is that 'can I swap the limit and the integral?' is never automatic, which is exactly the question dominated convergence answers in the measure-theoretic setting.",
+      "followup": "'What is the cheap test for uniform convergence of a series?' The Weierstrass M-test: bound each term by a constant Mₙ with ΣMₙ convergent."
+    },
+    {
+      "id": "ana-04", "topic": "analysis", "difficulty": 3,
+      "q": "What is compactness, and why is it such a powerful hypothesis?",
+      "a": "A set is compact if every open cover has a finite subcover; in ℝⁿ this is equivalent to closed and bounded (Heine–Borel). Its power is that it converts infinite, local information into finite, global information — you can always extract a finite subcollection, or a convergent subsequence.",
+      "why": "Compactness is what makes 'the maximum is attained' true: a continuous function on a compact set is bounded and achieves its bounds, which is why optimization problems on closed bounded domains have solutions and those on open ones may not (x on (0,1) has no maximum). The same finite-extraction move proves uniform continuity and underlies existence theorems throughout analysis. In infinite dimensions closed and bounded is no longer enough, which is exactly why functional analysis is harder.",
+      "followup": "'Why does the unit ball fail to be compact in infinite dimensions?' The orthonormal sequence e₁, e₂, … stays bounded but has no convergent subsequence — all pairs are √2 apart."
+    },
+    {
+      "id": "ana-05", "topic": "analysis", "difficulty": 3,
+      "q": "What problem does measure theory solve that Riemann integration cannot?",
+      "a": "Riemann integration partitions the domain and fails for badly discontinuous functions — the indicator of the rationals on [0,1] is not Riemann integrable. Lebesgue integration partitions the range instead, asking how much domain-measure maps into each output band, which integrates far more functions and comes with powerful limit theorems.",
+      "why": "The decisive gain is the convergence theorems: monotone and dominated convergence let you exchange limits and integrals under mild conditions, where Riemann theory demands uniform convergence. That makes the Lebesgue spaces complete, which is what allows Fourier analysis, probability, and functional analysis to work at all — and it is why probability is formally built on measure theory, with a probability measure being just a measure of total mass 1.",
+      "followup": "'What is a set of measure zero?' One coverable by intervals of arbitrarily small total length — the rationals qualify, which is why they contribute nothing to a Lebesgue integral."
+    },
+    {
+      "id": "prf-01", "topic": "proof", "difficulty": 1,
+      "q": "Name the main proof techniques and say when each is the natural choice.",
+      "a": "Direct proof: chain implications from hypothesis to conclusion. Contrapositive: prove ¬Q ⟹ ¬P, useful when the negation is more concrete. Contradiction: assume P ∧ ¬Q and derive absurdity, good for non-existence and irrationality. Induction: for statements indexed by ℕ. Construction: exhibit an example for existence claims; counterexample for refuting universals.",
+      "why": "Choosing well is mostly about which form gives you something concrete to manipulate. 'If n² is even then n is even' resists direct proof but yields instantly to the contrapositive, because 'n is odd' hands you n = 2k+1 to compute with, whereas 'n² is even' gives an unhelpful n² = 2m. The general heuristic: pick the form whose hypothesis is most usable, since a hypothesis is data and a conclusion is a target.",
+      "followup": "'When is contradiction overused?' When the argument never actually uses the contradictory assumption — that is a direct proof wearing a disguise, and stating it directly is clearer."
+    },
+    {
+      "id": "prf-02", "topic": "proof", "difficulty": 1,
+      "q": "How does mathematical induction work, and what does strong induction add?",
+      "a": "Prove the base case P(1), then prove P(n) ⟹ P(n+1); conclude P(n) for all n. Strong induction assumes P(1) … P(n) all hold to prove P(n+1). They are logically equivalent in strength, but strong induction is more convenient when the step depends on much earlier cases, not just the immediate predecessor.",
+      "why": "Strong induction is the right tool whenever the recursion branches unpredictably — proving every integer > 1 has a prime factorization needs the claim for both factors of n = ab, which may be far below n−1. Both forms rest on the well-ordering of ℕ: if the set of counterexamples were non-empty it would have a least element, and the inductive step contradicts its minimality. That equivalence is worth knowing because well-ordering often gives the cleanest write-up.",
+      "followup": "'What is the classic induction error?' A base case that does not actually connect to the step — the 'all horses are the same color' fallacy breaks at n = 2, where the two groups fail to overlap."
+    },
+    {
+      "id": "prf-03", "topic": "proof", "difficulty": 2,
+      "q": "Prove that √2 is irrational, and identify where the argument gets its force.",
+      "a": "Suppose √2 = p/q in lowest terms. Then p² = 2q², so p² is even, hence p is even, say p = 2k. Substituting gives 4k² = 2q², so q² = 2k² and q is even too — contradicting 'lowest terms'. The force comes from that normalization: assuming the fraction is already reduced creates a resource the contradiction can exhaust.",
+      "why": "The pattern generalizes: the same argument shows √n is irrational for any non-square n, and it is really a statement about unique factorization — the exponent of 2 in p² is even while in 2q² it is odd, which is impossible. Seeing it that way explains why the proof does not show √4 is irrational, and connects a classical result to the fundamental theorem of arithmetic.",
+      "followup": "'Give a slicker version.' Compare the parity of the exponent of 2 in the prime factorizations of p² and 2q² — even versus odd, contradiction immediately."
+    },
+    {
+      "id": "prf-04", "topic": "proof", "difficulty": 2,
+      "q": "What is Cantor's diagonal argument, and what does it establish?",
+      "a": "Given any proposed list of all real numbers in [0,1], construct a new number differing from the n-th listed number in its n-th decimal place. The constructed number is in [0,1] but on no line of the list, so no such list exists: the reals are uncountable, strictly more numerous than the naturals.",
+      "why": "The argument's true subject is self-reference, and the same move recurs across mathematics: it powers the proof that the power set always exceeds the set, Turing's proof that the halting problem is undecidable, and Gödel's incompleteness theorems. All three build an object that differs from every item in a purported complete enumeration. Recognizing the diagonal shape is one of the highest-leverage pattern-matches in mathematical logic.",
+      "followup": "'Are the rationals countable?' Yes — enumerate by increasing numerator-plus-denominator. Density and countability are entirely unrelated properties."
+    },
+    {
+      "id": "prf-05", "topic": "proof", "difficulty": 3,
+      "q": "What does the pigeonhole principle claim, and why is such a trivial statement so useful?",
+      "a": "Placing n items into m < n boxes forces some box to hold at least two. The generalized form: some box holds at least ⌈n/m⌉. It is useful precisely because it proves existence without construction — you learn something must exist while learning nothing about where.",
+      "why": "It converts counting into existence, often startlingly: any 5 points in a unit square include a pair within √2/2, since dividing into 4 quadrants forces a shared quadrant. It proves that two Londoners have the same number of hairs, that any sequence of n²+1 distinct reals contains a monotone subsequence of length n+1 (Erdős–Szekeres), and it is the engine behind hash collisions and the probabilistic method's simplest cases.",
+      "followup": "'What is the infinite version?' Partition an infinite set into finitely many classes and at least one class is infinite — the basis of Ramsey theory."
+    },
+    {
+      "id": "cmb-01", "topic": "combinatorics", "difficulty": 1,
+      "q": "Distinguish permutations from combinations and explain the division that connects them.",
+      "a": "Permutations count ordered selections: P(n,k) = n!/(n−k)!. Combinations count unordered ones: C(n,k) = n!/(k!(n−k)!). The connection is that each unordered set of k items corresponds to exactly k! orderings, so dividing permutations by k! quotients out the ordering you decided not to care about.",
+      "why": "That division is an instance of the general orbit-counting move — count with structure, then divide by the size of the symmetry you want to ignore. Getting it right depends entirely on the symmetry acting uniformly; when it does not, division fails and you need Burnside's lemma instead. This is why counting necklaces up to rotation is genuinely harder than counting arrangements in a row.",
+      "followup": "'Why is C(n,k) = C(n,n−k)?' Choosing k to include is the same act as choosing n−k to exclude — a bijection, not a computation."
+    },
+    {
+      "id": "cmb-02", "topic": "combinatorics", "difficulty": 2,
+      "q": "State the inclusion–exclusion principle and explain the alternating signs.",
+      "a": "|A ∪ B ∪ C| = Σ|Aᵢ| − Σ|Aᵢ ∩ Aⱼ| + |A ∩ B ∩ C|, alternating over intersection sizes. The signs correct systematic over- and under-counting: summing the sets counts a doubly-covered element twice, subtracting pairs removes it once too often for triply-covered elements, and so on.",
+      "why": "The clean way to see it is per-element: an element in exactly k of the sets is counted C(k,1) − C(k,2) + C(k,3) − … = 1, because the alternating binomial sum collapses to 1 for k ≥ 1. That per-element verification is the standard proof technique for counting identities and is far more convincing than the Venn-diagram picture, which stops being drawable past three sets.",
+      "followup": "'What does it count with derangements?' The number of permutations fixing nothing: n!·Σ(−1)ᵏ/k! ≈ n!/e, so about 37% of permutations are derangements."
+    },
+    {
+      "id": "cmb-03", "topic": "combinatorics", "difficulty": 2,
+      "q": "What are modular arithmetic and congruences good for?",
+      "a": "a ≡ b (mod n) means n divides a − b; arithmetic then happens in the finite set of residue classes. It answers 'what remains' questions, and because addition and multiplication respect congruence, you can reduce at every step rather than computing enormous numbers first.",
+      "why": "That reduce-as-you-go property is what makes modular exponentiation feasible and therefore what makes RSA possible. It also gives quick impossibility proofs: no perfect square is ≡ 3 (mod 4), so any equation forcing that has no integer solutions — a two-line argument replacing an unbounded search. Fermat's little theorem (a^(p−1) ≡ 1 mod p for prime p) turns modular exponentiation into a primality test.",
+      "followup": "'What does the Chinese remainder theorem give you?' Congruences with coprime moduli combine uniquely mod their product — letting you compute in small pieces and reassemble."
+    },
+    {
+      "id": "cmb-04", "topic": "combinatorics", "difficulty": 2,
+      "q": "Why are prime numbers considered the building blocks of arithmetic?",
+      "a": "The fundamental theorem of arithmetic: every integer greater than 1 factors into primes uniquely up to order. Primes are the multiplicative atoms, and uniqueness means the factorization is a genuine fingerprint of the number rather than one description among many.",
+      "why": "Uniqueness is the load-bearing half and it is not automatic — in the ring ℤ[√−5], 6 factors as 2·3 and as (1+√−5)(1−√−5), both irreducibly. That failure is precisely what motivated ideal theory in algebraic number theory. In practice the theorem reduces divisibility, gcd, and lcm questions to comparing exponent vectors, and the computational asymmetry between multiplying primes and factoring their product is the foundation of public-key cryptography.",
+      "followup": "'Why is 1 not prime?' Admitting it would destroy uniqueness — 6 = 2·3 = 1·2·3 = 1·1·2·3, endlessly."
+    },
+    {
+      "id": "cmb-05", "topic": "combinatorics", "difficulty": 3,
+      "q": "What is a generating function, and what does it let you do?",
+      "a": "Encode a sequence a₀, a₁, a₂, … as coefficients of a formal power series Σaₙxⁿ. Operations on sequences become algebra on functions: convolution of sequences is multiplication of series, shifting is multiplying by x, and a recurrence becomes an equation you can solve in closed form.",
+      "why": "It converts combinatorial bookkeeping into algebra. Fibonacci's recurrence yields the series x/(1−x−x²), and partial fractions extract Binet's closed form immediately — no clever guess required. The same technique counts partitions, solves recurrences arising from divide-and-conquer algorithms, and in probability appears as the probability generating function, whose derivatives give moments and whose products handle sums of independent variables.",
+      "followup": "'Do convergence questions matter?' Usually not — formal power series manipulate coefficients symbolically, and convergence only matters if you evaluate at a specific x."
+    },
+    {
+      "id": "alg-01", "topic": "algebra", "difficulty": 1,
+      "q": "What is a group, and why is such a spare definition so productive?",
+      "a": "A set with an associative binary operation, an identity element, and inverses for every element. That is all — no commutativity required. The definition is productive because it captures exactly what 'symmetry' means: the reversible transformations of an object, composed.",
+      "why": "The abstraction pays because a single theorem then applies everywhere the axioms hold — integers under addition, invertible matrices, permutations of a set, rotations of a molecule, and moves of a Rubik's cube are all one object studied once. Lagrange's theorem (subgroup order divides group order) is proved abstractly and instantly constrains all of them. This is the central bargain of abstract algebra: assume less, prove once, apply everywhere.",
+      "followup": "'What does dropping inverses give you?' A monoid — strings under concatenation, for instance, where you can build but never undo."
+    },
+    {
+      "id": "alg-02", "topic": "algebra", "difficulty": 2,
+      "q": "What is a homomorphism, and why do mathematicians care more about maps than objects?",
+      "a": "A structure-preserving map: φ(ab) = φ(a)φ(b). It need not be injective or surjective — it simply carries the operation across. Its kernel (what maps to the identity) measures exactly how much information it destroys, and φ is injective precisely when the kernel is trivial.",
+      "why": "Maps reveal structure that objects alone conceal. The first isomorphism theorem, G/ker φ ≅ im φ, says every homomorphism is a quotient followed by an inclusion — a complete description of how structures can relate. The modern view that morphisms matter more than objects is the founding idea of category theory, and it recurs everywhere: linear maps in linear algebra, continuous maps in topology, all playing the same role.",
+      "followup": "'Why must a kernel be a normal subgroup?' Because it must be invariant under conjugation for the quotient's operation to be well-defined."
+    },
+    {
+      "id": "alg-03", "topic": "algebra", "difficulty": 2,
+      "q": "Compare rings and fields, and explain what makes fields special.",
+      "a": "A ring has two operations — addition forming an abelian group, multiplication associative and distributing over addition. A field is a commutative ring where every non-zero element has a multiplicative inverse, so division is always possible. ℤ is a ring but not a field; ℚ, ℝ, ℂ, and ℤ/p for prime p are fields.",
+      "why": "Invertibility is exactly the property linear algebra needs. Over a field you can always solve ax = b for a ≠ 0, which is why Gaussian elimination works and why vector spaces are defined over fields; over a mere ring you get modules, where bases may not exist. ℤ/n is a field precisely when n is prime — because a non-trivial factorization gives zero divisors, and a zero divisor can never be invertible.",
+      "followup": "'What are finite fields good for?' Error-correcting codes and cryptography — GF(2⁸) underpins both Reed–Solomon codes and AES."
+    },
+    {
+      "id": "alg-04", "topic": "algebra", "difficulty": 2,
+      "q": "What is a vector space, and how does it differ from ℝⁿ specifically?",
+      "a": "A set closed under addition and scalar multiplication over a field, satisfying eight axioms. ℝⁿ is one example; polynomials of degree ≤ n, continuous functions on an interval, and matrices of fixed size are equally legitimate ones. Fixing a basis gives an isomorphism to ℝⁿ, but the space itself carries no preferred coordinates.",
+      "why": "Distinguishing the space from its coordinates is the conceptual leap. Coordinates are a choice; the space is not — which is why 'is this quantity basis-independent?' is the recurring soundness check (traces and determinants are, individual matrix entries are not). It also explains why function spaces can be treated with linear-algebraic intuition, the move that makes Fourier analysis a change of basis rather than a trick.",
+      "followup": "'Is the set of invertible matrices a vector space?' No — it is not closed under addition, and lacks the zero element entirely. It is a group under multiplication."
+    },
+    {
+      "id": "alg-05", "topic": "algebra", "difficulty": 3,
+      "q": "What does Galois theory accomplish, and why was it revolutionary?",
+      "a": "It attaches to each polynomial a group of symmetries of its roots, and shows that solvability by radicals corresponds exactly to a structural property of that group (solvability). This proves no general formula in radicals exists for degree five and above, and settles ancient construction problems like trisecting the angle.",
+      "why": "The revolution was methodological, not just the result: a hard question about equations was translated into an easier question about groups, and the answer transported back. That translation between domains — problem in one category, solution in another, via a structure-preserving correspondence — became the dominant strategy of modern mathematics, later formalized in category theory and visible in everything from algebraic topology to representation theory.",
+      "followup": "'Why is degree five the threshold?' The alternating group A₅ is simple and non-abelian, so S₅ is not solvable — while S₂, S₃, S₄ all are."
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "_WARNING": "THROWAWAY DEMO KEYPAIR — the private key is public in this repo, so demo licenses are forgeable by anyone. Before selling: node tools/keygen.mjs > keys.json (gitignored), then build with --pubkey.",
+  "publicKey": "rRNxiY1CIxkBnKTjMuKZ1bjlKi9JnZvMdRpzRtJjGKg",
+  "privateKeyPkcs8": "-----BEGIN PRIVATE KEY-----\nMC4CAQAwBQYDK2VwBCIEIJdI/ou/NsOzbO+5tAzzcRUbv6AXqjKJsrq+pKJI7ru8\n-----END PRIVATE KEY-----\n"
+}

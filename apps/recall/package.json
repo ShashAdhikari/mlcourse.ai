@@ -1,0 +1,17 @@
+{
+  "name": "recall",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Spaced-repetition trainer for machine-learning interviews — one self-contained HTML file.",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node --test test/bank.test.js test/engine.test.js test/license.test.js",
+    "test:smoke": "node build.mjs && node test/smoke.mjs",
+    "keygen": "node tools/keygen.mjs",
+    "license": "node tools/make-license.mjs"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.49.0"
+  }
+}

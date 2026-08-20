@@ -1,0 +1,700 @@
+<title>Recall</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --bg: #F5F6F8;
+    --surface: #FFFFFF;
+    --surface-2: #EDEFF3;
+    --ink: #1F242B;
+    --ink-2: #5A6472;
+    --ink-3: #8B93A0;
+    --line: #DDE1E7;
+    --accent: #9A7118;
+    --accent-ink: #7A5A12;
+    --accent-soft: #F3EAD4;
+    --good: #2E7D4F;
+    --good-soft: #E3F0E8;
+    --warn: #A05C12;
+    --warn-soft: #F6EBDC;
+    --bad: #B3423A;
+    --bad-soft: #F7E6E4;
+    --easy: #2F6AA0;
+    --easy-soft: #E3EDF6;
+    --shadow: 0 1px 2px rgba(31, 36, 43, 0.06), 0 4px 16px rgba(31, 36, 43, 0.07);
+    --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+    --font-body: "Public Sans", -apple-system, "Segoe UI", system-ui, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14181D;
+      --surface: #1C222A;
+      --surface-2: #232A33;
+      --ink: #E8EAED;
+      --ink-2: #98A2AE;
+      --ink-3: #6C7683;
+      --line: #2C343E;
+      --accent: #D9A441;
+      --accent-ink: #E3B45C;
+      --accent-soft: #2E2817;
+      --good: #5CAD7F;
+      --good-soft: #1E2F26;
+      --warn: #CF9250;
+      --warn-soft: #322718;
+      --bad: #D97B72;
+      --bad-soft: #33201E;
+      --easy: #6FA3D0;
+      --easy-soft: #1D2936;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 20px rgba(0, 0, 0, 0.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14181D;
+    --surface: #1C222A;
+    --surface-2: #232A33;
+    --ink: #E8EAED;
+    --ink-2: #98A2AE;
+    --ink-3: #6C7683;
+    --line: #2C343E;
+    --accent: #D9A441;
+    --accent-ink: #E3B45C;
+    --accent-soft: #2E2817;
+    --good: #5CAD7F;
+    --good-soft: #1E2F26;
+    --warn: #CF9250;
+    --warn-soft: #322718;
+    --bad: #D97B72;
+    --bad-soft: #33201E;
+    --easy: #6FA3D0;
+    --easy-soft: #1D2936;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 20px rgba(0, 0, 0, 0.35);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 20px 80px; }
+
+  /* ---------- top bar ---------- */
+  .topbar {
+    display: flex; align-items: center; gap: 16px;
+    padding: 18px 0 14px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 28px;
+  }
+  .wordmark {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 600;
+    font-size: 26px;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    margin: 0;
+  }
+  .wordmark .dot { color: var(--accent); font-style: normal; }
+  .nav { display: flex; gap: 4px; margin-left: auto; }
+  .nav button {
+    font-family: var(--font-body); font-size: 14px; font-weight: 500;
+    color: var(--ink-2); background: none; border: none;
+    padding: 7px 12px; border-radius: 8px; cursor: pointer;
+  }
+  .nav button:hover { color: var(--ink); background: var(--surface-2); }
+  .nav button[aria-current="true"] { color: var(--ink); background: var(--surface-2); font-weight: 600; }
+  .streak-chip {
+    font-family: var(--font-mono); font-size: 13px; color: var(--accent-ink);
+    background: var(--accent-soft); border-radius: 999px; padding: 4px 12px;
+    white-space: nowrap; font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- shared ---------- */
+  .panel {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 14px; padding: 24px; box-shadow: var(--shadow);
+  }
+  .stack { display: flex; flex-direction: column; gap: 20px; }
+  h2 {
+    font-family: var(--font-display); font-weight: 600; font-size: 22px;
+    margin: 0; letter-spacing: -0.01em; text-wrap: balance;
+  }
+  .eyebrow {
+    font-size: 11.5px; font-weight: 600; letter-spacing: 0.09em;
+    text-transform: uppercase; color: var(--ink-3);
+  }
+  .btn {
+    font-family: var(--font-body); font-size: 15px; font-weight: 600;
+    border-radius: 10px; border: 1px solid var(--line);
+    background: var(--surface); color: var(--ink);
+    padding: 10px 18px; cursor: pointer;
+  }
+  .btn:hover { background: var(--surface-2); }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+  .btn-primary:hover { filter: brightness(1.07); background: var(--accent); }
+  .btn:focus-visible, .nav button:focus-visible, input:focus-visible, textarea:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 2px;
+  }
+  .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  .muted { color: var(--ink-2); }
+  .small { font-size: 13.5px; }
+
+  /* ---------- today ---------- */
+  .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .stat {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    padding: 14px 16px; display: flex; flex-direction: column; gap: 2px;
+  }
+  .stat .num {
+    font-family: var(--font-mono); font-size: 26px; font-weight: 500;
+    font-variant-numeric: tabular-nums; line-height: 1.2;
+  }
+  .stat .lbl { font-size: 12.5px; color: var(--ink-2); }
+  .today-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .topic-list { display: flex; flex-direction: column; gap: 0; }
+  .topic-row {
+    display: grid; grid-template-columns: 1fr 130px 48px; gap: 14px;
+    align-items: center; padding: 11px 0; border-bottom: 1px solid var(--line);
+  }
+  .topic-row:last-child { border-bottom: none; }
+  .topic-name { font-size: 14.5px; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+  .lock {
+    font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--accent-ink); background: var(--accent-soft);
+    padding: 2px 8px; border-radius: 999px;
+  }
+  .meter { height: 6px; background: var(--surface-2); border-radius: 3px; overflow: hidden; }
+  .meter > span { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+  .pct { font-family: var(--font-mono); font-size: 12.5px; color: var(--ink-2); text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* ---------- review card ---------- */
+  .review-meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+  .qcount { font-family: var(--font-mono); font-size: 13px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .card { animation: rise 0.28s ease; }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    .card { animation: none; }
+  }
+  .card-topic { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .diff { display: inline-flex; gap: 3px; }
+  .diff i {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--surface-2);
+    border: 1px solid var(--line);
+  }
+  .diff i.on { background: var(--accent); border-color: var(--accent); }
+  .question {
+    font-family: var(--font-display); font-size: 24px; font-weight: 500;
+    line-height: 1.35; letter-spacing: -0.005em; margin: 0 0 22px; text-wrap: balance;
+  }
+  .answer-block { border-top: 1px solid var(--line); padding-top: 18px; display: flex; flex-direction: column; gap: 16px; }
+  .answer-sec .eyebrow { margin-bottom: 5px; display: block; }
+  .answer-sec p { margin: 0; font-size: 15px; }
+  .grade-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 22px; }
+  .grade {
+    border-radius: 10px; border: 1px solid var(--line); cursor: pointer;
+    padding: 10px 6px 8px; display: flex; flex-direction: column; align-items: center; gap: 1px;
+    background: var(--surface); font-family: var(--font-body);
+  }
+  .grade b { font-size: 14px; font-weight: 600; }
+  .grade span { font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .grade small {
+    font-family: var(--font-mono); font-size: 10px; color: var(--ink-3);
+    border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; margin-top: 3px;
+  }
+  .grade-again b { color: var(--bad); }    .grade-again:hover { background: var(--bad-soft); }
+  .grade-hard b { color: var(--warn); }    .grade-hard:hover { background: var(--warn-soft); }
+  .grade-good b { color: var(--good); }    .grade-good:hover { background: var(--good-soft); }
+  .grade-easy b { color: var(--easy); }    .grade-easy:hover { background: var(--easy-soft); }
+  .reveal-hint { text-align: center; margin-top: 20px; }
+  .kbd {
+    font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-2);
+    border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px;
+    padding: 1px 6px; background: var(--surface-2);
+  }
+
+  /* ---------- browse ---------- */
+  details.topic-acc { border-bottom: 1px solid var(--line); }
+  details.topic-acc summary {
+    cursor: pointer; padding: 13px 0; font-weight: 600; font-size: 15px;
+    display: flex; align-items: center; gap: 10px; list-style: none;
+  }
+  details.topic-acc summary::-webkit-details-marker { display: none; }
+  details.topic-acc summary::before { content: "+"; color: var(--ink-3); font-family: var(--font-mono); }
+  details.topic-acc[open] summary::before { content: "−"; }
+  .browse-q { padding: 8px 0 8px 22px; border-top: 1px dashed var(--line); font-size: 14.5px; }
+  .browse-q .muted { display: block; }
+
+  /* ---------- settings ---------- */
+  .set-row { display: flex; flex-direction: column; gap: 8px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+  .set-row:last-child { border-bottom: none; }
+  .set-row label { font-weight: 600; font-size: 14.5px; }
+  input[type="number"], input[type="text"], textarea {
+    font-family: var(--font-mono); font-size: 13.5px;
+    background: var(--bg); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px;
+  }
+  textarea { width: 100%; min-height: 84px; resize: vertical; }
+  .lic-status { font-size: 13.5px; }
+  .lic-status.ok { color: var(--good); }
+  .lic-status.err { color: var(--bad); }
+  .inline-form { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+  /* ---------- upsell ---------- */
+  .upsell {
+    border: 1px solid var(--accent); border-radius: 14px; padding: 20px 24px;
+    background: var(--accent-soft); display: flex; flex-direction: column; gap: 8px;
+  }
+  .upsell h3 { font-family: var(--font-display); font-weight: 600; margin: 0; font-size: 18px; }
+  .upsell p { margin: 0; font-size: 14px; color: var(--ink-2); }
+
+  .done-mark {
+    font-family: var(--font-display); font-style: italic; font-size: 30px;
+    color: var(--accent-ink); text-align: center; margin: 8px 0 2px;
+  }
+  .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+</style>
+
+<div class="wrap">
+  <header class="topbar">
+    <h1 class="wordmark">Recall<span class="dot">.</span></h1>
+    <span class="streak-chip" id="streakChip" hidden></span>
+    <nav class="nav" aria-label="Views">
+      <button data-nav="today">Today</button>
+      <button data-nav="browse">Browse</button>
+      <button data-nav="settings">Settings</button>
+    </nav>
+  </header>
+  <main id="app" class="stack"></main>
+</div>
+
+<script type="module">
+/* __ENGINE__ */
+/* __LICENSE__ */
+
+const BANK = /* __BANK_JSON__ */ null;
+const PUBLIC_KEY = '__PUBLIC_KEY__';
+const STORE_KEY = 'recall.v1';
+const PRICE_LINE = 'One key, all 10 topics, yours forever.';
+
+// ---------------------------------------------------------------------------
+// persistence
+// ---------------------------------------------------------------------------
+function load() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch { /* corrupted or unavailable storage → fresh start */ }
+  return {
+    states: {}, day: { date: null, introduced: 0, reviews: 0 },
+    streak: { last: null, count: 0 }, licenseKey: null,
+    settings: { newPerDay: 10 }, totals: { reviews: 0 },
+  };
+}
+function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(db)); } catch { /* private mode */ } }
+
+const db = load();
+let pro = false;
+let licensee = null; // claims from the verified key, for display
+let view = 'today';
+let session = null; // {queue:[ids], done:{again,hard,good,easy}, drill:bool, revealed:bool}
+
+function cfg() { return { ...DEFAULT_CONFIG, newPerDay: db.settings.newPerDay }; }
+function nowMs() { return Date.now(); }
+function tzOff() { return new Date().getTimezoneOffset(); }
+function today() { return dayKey(nowMs(), tzOff()); }
+function rollDay() {
+  if (db.day.date !== today()) db.day = { date: today(), introduced: 0, reviews: 0 };
+}
+function topicById(id) { return BANK.topics.find((t) => t.id === id); }
+function unlockedTopics() { return BANK.topics.filter((t) => t.free || pro); }
+function unlockedCards() {
+  const ok = new Set(unlockedTopics().map((t) => t.id));
+  return BANK.cards.filter((c) => ok.has(c.topic));
+}
+function cardById(id) { return BANK.cards.find((c) => c.id === id); }
+
+// ---------------------------------------------------------------------------
+// tiny DOM helper
+// ---------------------------------------------------------------------------
+// Appends children, skipping the null/undefined/false that conditional
+// expressions produce. Native append() would stringify those into the page.
+function add(parent, ...children) {
+  for (const c of children.flat()) {
+    if (c === null || c === undefined || c === false) continue;
+    parent.append(c.nodeType ? c : document.createTextNode(String(c)));
+  }
+  return parent;
+}
+
+function h(tag, attrs = {}, ...children) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'class') el.className = v;
+    else if (k === 'hidden') el.hidden = !!v;
+    else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+    else if (v !== null && v !== undefined) el.setAttribute(k, v);
+  }
+  return add(el, ...children);
+}
+
+function fmtInterval(ms) {
+  const min = Math.round(ms / MIN);
+  if (min < 60) return `${Math.max(1, min)}m`;
+  const days = Math.round(ms / DAY);
+  if (days < 1) return '<1d';
+  if (days < 30) return `${days}d`;
+  return `${(days / 30).toFixed(1).replace(/\.0$/, '')}mo`;
+}
+function fmtPct(x) { return `${Math.round(x * 100)}%`; }
+
+// ---------------------------------------------------------------------------
+// views
+// ---------------------------------------------------------------------------
+const app = document.getElementById('app');
+
+function render() {
+  rollDay();
+  document.querySelectorAll('[data-nav]').forEach((b) => {
+    b.setAttribute('aria-current', String(b.dataset.nav === view && !session));
+  });
+  const chip = document.getElementById('streakChip');
+  chip.hidden = db.streak.count < 1;
+  chip.textContent = `${db.streak.count}-day streak`;
+  app.replaceChildren();
+  if (session) return renderSession();
+  if (view === 'today') return renderToday();
+  if (view === 'browse') return renderBrowse();
+  if (view === 'settings') return renderSettings();
+}
+
+function renderToday() {
+  const cards = unlockedCards();
+  const o = overview(cards, db.states, nowMs());
+  const q = buildQueue(cards, db.states, nowMs(), cfg(), db.day.introduced);
+  const ready = q.due.length + q.learning.length + q.fresh.length;
+
+  add(app,
+    h('section', { class: 'panel stack' },
+      h('div', { class: 'today-head' },
+        h('h2', {}, 'Today'),
+        h('span', { class: 'small muted mono' }, `${db.totals.reviews} reviews all-time`)),
+      h('div', { class: 'stat-row' },
+        stat(q.due.length + q.learning.length, 'due for review'),
+        stat(q.fresh.length, 'new today'),
+        stat(o.review, `known of ${o.total}`)),
+      ready > 0
+        ? h('div', {},
+            h('button', { class: 'btn btn-primary', onclick: startReview }, `Start review — ${ready} card${ready === 1 ? '' : 's'}`),
+            ' ',
+            h('button', { class: 'btn', onclick: startDrill }, 'Drill 10'))
+        : caughtUp()),
+    h('section', { class: 'panel' },
+      h('div', { class: 'today-head', style: 'margin-bottom:6px' },
+        h('h2', {}, 'Topics'),
+        h('span', { class: 'small muted' }, pro ? 'Pro — all topics unlocked' : 'Free tier — 3 of 10 topics')),
+      topicTable()),
+    !pro && upsell());
+}
+
+function stat(num, lbl) {
+  return h('div', { class: 'stat' }, h('span', { class: 'num' }, num), h('span', { class: 'lbl' }, lbl));
+}
+
+function caughtUp() {
+  const next = nextLearningDueAt(db.states, nowMs());
+  return h('div', {},
+    h('p', { class: 'done-mark' }, 'All caught up.'),
+    h('p', { class: 'small muted', style: 'text-align:center' },
+      next ? `Next card ready in ${fmtInterval(next - nowMs())}.` : 'Come back tomorrow — spacing is the point.'),
+    h('p', { style: 'text-align:center' }, h('button', { class: 'btn', onclick: startDrill }, 'Drill 10 anyway')));
+}
+
+function topicTable() {
+  const mastery = topicMastery(BANK.cards, db.states);
+  return h('div', { class: 'topic-list' },
+    BANK.topics.map((t) => {
+      const locked = !t.free && !pro;
+      const m = mastery[t.id] ?? 0;
+      return h('div', { class: 'topic-row' },
+        h('span', { class: 'topic-name' }, t.title, locked && h('span', { class: 'lock' }, 'pro')),
+        h('div', { class: 'meter', role: 'img', 'aria-label': `${t.title} mastery ${fmtPct(m)}` },
+          // No sliver at zero — an empty track should read as empty.
+          m > 0 && h('span', { style: `width:${Math.max(3, m * 100)}%` })),
+        h('span', { class: 'pct' }, locked ? '—' : fmtPct(m)));
+    }));
+}
+
+function upsell() {
+  return h('section', { class: 'upsell' },
+    h('h3', {}, 'Unlock the full bank'),
+    h('p', {}, `7 more topics — trees, ensembles, boosting, feature engineering, unsupervised learning, optimization, time series. ${PRICE_LINE}`),
+    h('p', {}, h('button', { class: 'btn', onclick: () => { view = 'settings'; render(); } }, 'I have a license key')));
+}
+
+// ---------------------------------------------------------------------------
+// review session
+// ---------------------------------------------------------------------------
+function startReview() {
+  rollDay();
+  const q = buildQueue(unlockedCards(), db.states, nowMs(), cfg(), db.day.introduced);
+  const queue = [...q.learning, ...interleave(q.due, q.fresh)];
+  if (!queue.length) return;
+  session = { queue, done: { again: 0, hard: 0, good: 0, easy: 0 }, drill: false, revealed: false };
+  render();
+}
+function interleave(reviews, fresh) {
+  // one new card after every 3 reviews, remainder appended
+  const out = []; let f = 0;
+  for (let i = 0; i < reviews.length; i++) {
+    out.push(reviews[i]);
+    if ((i + 1) % 3 === 0 && f < fresh.length) out.push(fresh[f++]);
+  }
+  while (f < fresh.length) out.push(fresh[f++]);
+  return out;
+}
+function startDrill() {
+  const pool = [...unlockedCards()];
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  session = { queue: pool.slice(0, 10).map((c) => c.id), done: { again: 0, hard: 0, good: 0, easy: 0 }, drill: true, revealed: false };
+  render();
+}
+
+function renderSession() {
+  if (!session.queue.length) return renderSummary();
+  const card = cardById(session.queue[0]);
+  const t = topicById(card.topic);
+  const state = db.states[card.id] ?? initState(nowMs());
+
+  const gradeBtn = (g, cls, name, key) => {
+    const preview = session.drill ? null : fmtInterval(applyGrade(state, g, nowMs(), cfg()).due - nowMs());
+    return h('button', { class: `grade grade-${cls}`, onclick: () => gradeCard(g) },
+      h('b', {}, name), preview && h('span', {}, preview), h('small', {}, key));
+  };
+
+  add(app,
+    h('div', { class: 'review-meta' },
+      h('span', { class: 'eyebrow' }, session.drill ? 'Drill — no scheduling' : 'Review'),
+      h('span', { class: 'qcount' }, `${session.queue.length} left`),
+      h('button', { class: 'btn', onclick: endSession }, 'End')),
+    h('section', { class: 'panel card' },
+      h('div', { class: 'card-topic' },
+        h('span', { class: 'eyebrow' }, t.title),
+        h('span', { class: 'diff', role: 'img', 'aria-label': `difficulty ${card.difficulty} of 3` },
+          [1, 2, 3].map((i) => h('i', { class: i <= card.difficulty ? 'on' : '' })))),
+      h('p', { class: 'question' }, card.q),
+      !session.revealed
+        ? h('p', { class: 'reveal-hint' },
+            h('button', { class: 'btn btn-primary', onclick: reveal }, 'Reveal answer'),
+            h('span', { class: 'small muted' }, '  or press '), h('span', { class: 'kbd' }, 'space'))
+        : h('div', { class: 'answer-block' },
+            answerSec('Answer', card.a),
+            answerSec('Intuition', card.why),
+            card.followup && answerSec('Interview follow-up', card.followup),
+            session.drill
+              ? h('p', { style: 'text-align:center;margin:10px 0 0' },
+                  h('button', { class: 'btn btn-primary', onclick: () => gradeCard(null) }, 'Next'),
+                  h('span', { class: 'small muted' }, '  or press '), h('span', { class: 'kbd' }, 'space'))
+              : h('div', { class: 'grade-bar' },
+                  gradeBtn(GRADE.AGAIN, 'again', 'Again', '1'),
+                  gradeBtn(GRADE.HARD, 'hard', 'Hard', '2'),
+                  gradeBtn(GRADE.GOOD, 'good', 'Good', '3'),
+                  gradeBtn(GRADE.EASY, 'easy', 'Easy', '4')))));
+}
+
+function answerSec(label, text) {
+  return h('div', { class: 'answer-sec' }, h('span', { class: 'eyebrow' }, label), h('p', {}, text));
+}
+
+function reveal() { session.revealed = true; render(); }
+
+function gradeCard(g) {
+  const id = session.queue.shift();
+  session.revealed = false;
+  if (!session.drill && g !== null) {
+    const prev = db.states[id] ?? initState(nowMs());
+    const wasNew = !db.states[id] || db.states[id].status === 'new';
+    const next = applyGrade(prev, g, nowMs(), cfg());
+    db.states[id] = next;
+    if (wasNew) db.day.introduced += 1;
+    db.day.reviews += 1;
+    db.totals.reviews += 1;
+    db.streak = bumpStreak(db.streak, nowMs(), tzOff());
+    session.done[['again', 'hard', 'good', 'easy'][g]] += 1;
+    // learning cards due again within 15 minutes come back this session
+    if (next.status === 'learning' && next.due <= nowMs() + 15 * MIN) session.queue.push(id);
+    save();
+  }
+  render();
+}
+
+function endSession() { session = null; render(); }
+
+function renderSummary() {
+  const d = session.done;
+  const graded = d.again + d.hard + d.good + d.easy;
+  add(app,
+    h('section', { class: 'panel stack' },
+      h('p', { class: 'done-mark' }, session.drill ? 'Drill complete.' : 'Session complete.'),
+      !session.drill && graded > 0 && h('div', { class: 'summary-grid' },
+        stat(d.again, 'again'), stat(d.hard, 'hard'), stat(d.good, 'good'), stat(d.easy, 'easy')),
+      h('p', { style: 'text-align:center;margin:0' },
+        h('button', { class: 'btn btn-primary', onclick: endSession }, 'Back to Today'))));
+}
+
+// ---------------------------------------------------------------------------
+// browse
+// ---------------------------------------------------------------------------
+function renderBrowse() {
+  add(app,
+    h('section', { class: 'panel' },
+      h('h2', { style: 'margin-bottom:8px' }, 'The bank'),
+      h('p', { class: 'small muted', style: 'margin-top:0' },
+        `${BANK.cards.length} cards. Every card: the crisp answer, the intuition behind it, and the follow-up an interviewer actually asks.`),
+      BANK.topics.map((t) => {
+        const cards = BANK.cards.filter((c) => c.topic === t.id);
+        const locked = !t.free && !pro;
+        return h('details', { class: 'topic-acc' },
+          h('summary', {}, t.title,
+            h('span', { class: 'small muted mono' }, `${cards.length}`),
+            locked && h('span', { class: 'lock' }, 'pro')),
+          locked
+            ? h('div', { class: 'browse-q' },
+                h('span', { class: 'muted' }, `Locked. Sample question: “${cards[0].q}”`),
+                h('button', { class: 'btn', style: 'margin-top:8px', onclick: () => { view = 'settings'; render(); } }, 'Unlock with a key'))
+            : cards.map((c) => h('div', { class: 'browse-q' }, c.q,
+                h('span', { class: 'muted small' }, `difficulty ${c.difficulty} · ${stateWord(c.id)}`))));
+      })),
+    !pro && upsell());
+}
+function stateWord(id) {
+  const s = db.states[id];
+  if (!s || s.status === 'new') return 'unseen';
+  if (s.status === 'learning') return 'learning';
+  return `review · every ${s.intervalDays}d`;
+}
+
+// ---------------------------------------------------------------------------
+// settings
+// ---------------------------------------------------------------------------
+function renderSettings() {
+  const licRow = h('div', { class: 'set-row' });
+  const licStatus = h('p', { class: 'lic-status', style: 'margin:0' });
+  const licInput = h('input', { type: 'text', placeholder: 'RECALL-…', style: 'flex:1;min-width:220px', 'aria-label': 'License key' });
+  async function applyKey() {
+    const res = await verifyLicense(licInput.value, PUBLIC_KEY);
+    if (res.ok) {
+      db.licenseKey = licInput.value.trim(); save();
+      await refreshLicense();
+      licStatus.className = 'lic-status ok';
+      licStatus.textContent = `Unlocked — licensed to ${res.claims.email}. All topics are yours.`;
+      render();
+    } else {
+      licStatus.className = 'lic-status err';
+      licStatus.textContent = res.reason === 'malformed'
+        ? 'That doesn’t look like a Recall key. Keys start with RECALL- — check for missing characters.'
+        : 'This key didn’t verify. Paste it exactly as it was sent to you.';
+    }
+  }
+  add(licRow,
+    h('label', {}, 'License'),
+    pro
+      ? h('p', { class: 'lic-status ok', style: 'margin:0' },
+          `Pro — licensed to ${licensee?.email ?? 'this device'}. All topics unlocked.`)
+      : h('div', { class: 'inline-form' }, licInput, h('button', { class: 'btn btn-primary', onclick: applyKey }, 'Unlock')),
+    !pro && licStatus,
+    !pro && h('p', { class: 'small muted', style: 'margin:0' }, PRICE_LINE));
+
+  const newInput = h('input', {
+    type: 'number', min: '1', max: '30', value: String(db.settings.newPerDay),
+    onchange: (e) => {
+      db.settings.newPerDay = Math.max(1, Math.min(30, Number(e.target.value) || 10));
+      e.target.value = String(db.settings.newPerDay);
+      save();
+    },
+    'aria-label': 'New cards per day',
+  });
+
+  const exportArea = h('textarea', { readonly: true, 'aria-label': 'Progress export' });
+  const importArea = h('textarea', { placeholder: 'Paste a previous export here', 'aria-label': 'Progress import' });
+  const importStatus = h('span', { class: 'small muted' });
+
+  add(app,h('section', { class: 'panel' },
+    h('h2', { style: 'margin-bottom:4px' }, 'Settings'),
+    licRow,
+    h('div', { class: 'set-row' },
+      h('label', {}, 'New cards per day'),
+      h('div', { class: 'inline-form' }, newInput,
+        h('span', { class: 'small muted' }, 'Steady beats binge — the scheduler compounds.'))),
+    h('div', { class: 'set-row' },
+      h('label', {}, 'Back up progress'),
+      h('div', { class: 'inline-form' },
+        h('button', { class: 'btn', onclick: () => {
+          exportArea.value = JSON.stringify(db);
+          exportArea.hidden = false; exportArea.select();
+        } }, 'Show export'),
+        h('button', { class: 'btn', onclick: async () => {
+          try { await navigator.clipboard.writeText(JSON.stringify(db)); importStatus.textContent = 'Copied.'; }
+          catch { exportArea.value = JSON.stringify(db); exportArea.hidden = false; exportArea.select(); }
+        } }, 'Copy to clipboard'), importStatus),
+      exportArea),
+    h('div', { class: 'set-row' },
+      h('label', {}, 'Restore progress'),
+      importArea,
+      h('div', {}, h('button', { class: 'btn', onclick: () => {
+        try {
+          const data = JSON.parse(importArea.value);
+          if (!data || typeof data.states !== 'object') throw new Error('shape');
+          Object.assign(db, data); save(); refreshLicense().then(render);
+        } catch {
+          importStatus.textContent = 'That didn’t parse as a Recall export.';
+        }
+      } }, 'Restore'))),
+    h('div', { class: 'set-row' },
+      h('label', {}, 'Start over'),
+      h('div', {}, h('button', { class: 'btn', onclick: () => {
+        if (confirm('Erase all review history on this device? Your license key is kept.')) {
+          db.states = {}; db.day = { date: null, introduced: 0, reviews: 0 };
+          db.streak = { last: null, count: 0 }; db.totals = { reviews: 0 };
+          save(); render();
+        }
+      } }, 'Reset progress')))));
+  exportArea.hidden = true;
+}
+
+// ---------------------------------------------------------------------------
+// keyboard, license, boot
+// ---------------------------------------------------------------------------
+document.addEventListener('keydown', (e) => {
+  if (!session || e.target.matches('input, textarea')) return;
+  if (e.key === ' ') {
+    e.preventDefault();
+    if (!session.revealed && session.queue.length) reveal();
+    else if (session.drill && session.queue.length) gradeCard(null);
+  }
+  if (session.revealed && !session.drill && ['1', '2', '3', '4'].includes(e.key)) {
+    gradeCard(Number(e.key) - 1);
+  }
+});
+document.querySelectorAll('[data-nav]').forEach((b) => {
+  b.addEventListener('click', () => { session = null; view = b.dataset.nav; render(); });
+});
+
+async function refreshLicense() {
+  pro = false; licensee = null;
+  if (db.licenseKey) {
+    const res = await verifyLicense(db.licenseKey, PUBLIC_KEY);
+    pro = res.ok;
+    if (res.ok) licensee = res.claims;
+  }
+}
+
+refreshLicense().then(render);
+render();
+</script>

@@ -1,0 +1,5 @@
+node_modules/
+# Real signing keys never belong in the repo. keys.demo.json is a deliberate,
+# documented throwaway; anything else named keys*.json is presumed real.
+keys.json
+keys.prod.json

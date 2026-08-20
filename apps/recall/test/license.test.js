@@ -124,3 +124,60 @@ test('plan:pro alongside an explicit deck list does not grant all access', () =>
   assert.equal(unlocksDeck(claims, 'ml'), true);
   assert.equal(unlocksDeck(claims, 'physics'), false);
 });
+
+// ---------------------------------------------------------------------------
+// real-world paste robustness
+// ---------------------------------------------------------------------------
+
+test('a key wrapped across lines still verifies', async () => {
+  // Mail and chat clients wrap long keys. A buyer must not be told their
+  // paid-for key is invalid because their client inserted a newline.
+  const wrapped = key.slice(0, 60) + '\n' + key.slice(60, 120) + '\r\n' + key.slice(120);
+  const res = await verifyLicense(wrapped, keys.publicKey);
+  assert.equal(res.ok, true);
+});
+
+test('a key with stray spaces or tabs still verifies', async () => {
+  const spaced = key.slice(0, 40) + ' ' + key.slice(40, 90) + '\t' + key.slice(90);
+  const res = await verifyLicense(spaced, keys.publicKey);
+  assert.equal(res.ok, true);
+  const padded = await verifyLicense(`   ${key}   `, keys.publicKey);
+  assert.equal(padded.ok, true);
+});
+
+test('stripping whitespace does not make junk parse', async () => {
+  // The forgiving parse must not turn a non-key into a key.
+  for (const junk of ['RECALL- . ', 'RE CALL-abc.def', 'RECALL-abc def.ghi!']) {
+    const res = await verifyLicense(junk, keys.publicKey);
+    assert.equal(res.ok, false, junk);
+  }
+});
+
+test('a browser without Ed25519 reports unsupported, not a bad key', async () => {
+  // Chrome shipped Ed25519 in 137, Safari in 17. Older browsers must not be
+  // told the customer's key is wrong.
+  const noEd25519 = {
+    subtle: {
+      importKey() {
+        const err = new Error('Unrecognized name.');
+        err.name = 'NotSupportedError';
+        return Promise.reject(err);
+      },
+    },
+  };
+  const res = await verifyLicense(key, keys.publicKey, noEd25519);
+  assert.equal(res.ok, false);
+  assert.equal(res.reason, 'unsupported');
+});
+
+test('a context without WebCrypto reports unsupported', async () => {
+  // `undefined` is not tested here: it triggers the default parameter and
+  // correctly falls back to the platform's real crypto.
+  assert.equal((await verifyLicense(key, keys.publicKey, {})).reason, 'unsupported');
+  assert.equal((await verifyLicense(key, keys.publicKey, null)).reason, 'unsupported');
+});
+
+test('other crypto failures stay distinct from unsupported', async () => {
+  const broken = { subtle: { importKey: () => Promise.reject(new Error('boom')) } };
+  assert.equal((await verifyLicense(key, keys.publicKey, broken)).reason, 'verify-error');
+});

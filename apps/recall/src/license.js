@@ -53,7 +53,10 @@ export function unlocksDeck(claims, deckId) {
 /** Parse without verifying. Returns {payloadBytes, sigBytes, claims} or null. */
 export function parseLicense(key) {
   if (typeof key !== 'string') return null;
-  const m = key.trim().match(/^RECALL-([A-Za-z0-9_-]+)\.([A-Za-z0-9_-]+)$/);
+  // Strip *all* whitespace, not just the ends: these keys are ~150 characters,
+  // and mail and chat clients wrap them. A buyer pasting a line-wrapped key
+  // must not be told their key is invalid.
+  const m = key.replace(/\s+/g, '').match(/^RECALL-([A-Za-z0-9_-]+)\.([A-Za-z0-9_-]+)$/);
   if (!m) return null;
   try {
     const payloadBytes = b64uToBytes(m[1]);
@@ -68,19 +71,34 @@ export function parseLicense(key) {
 
 /**
  * Verify a license key against a raw 32-byte Ed25519 public key (b64url).
+ * Reasons: 'malformed' (not a Recall key), 'bad-signature' (not ours or
+ * altered), 'unsupported' (this browser has no Ed25519 in WebCrypto), or
+ * 'verify-error' (anything else).
  * @returns {Promise<{ok: true, claims: object} | {ok: false, reason: string}>}
  */
 export async function verifyLicense(key, publicKeyB64u, cryptoImpl = globalThis.crypto) {
   const parsed = parseLicense(key);
   if (!parsed) return { ok: false, reason: 'malformed' };
   if (parsed.sigBytes.length !== 64) return { ok: false, reason: 'malformed' };
+
+  // No WebCrypto at all — an insecure (non-HTTPS) context, typically.
+  if (!cryptoImpl?.subtle) return { ok: false, reason: 'unsupported' };
+
+  let pub;
   try {
-    const pub = await cryptoImpl.subtle.importKey(
+    pub = await cryptoImpl.subtle.importKey(
       'raw', b64uToBytes(publicKeyB64u), { name: 'Ed25519' }, false, ['verify']);
+  } catch (err) {
+    // Ed25519 reached Chrome only in 137 and Safari in 17. On an older browser
+    // the algorithm is rejected outright — that is not the buyer's key being
+    // wrong, and reporting it as such sends them chasing a non-existent typo.
+    return { ok: false, reason: err?.name === 'NotSupportedError' ? 'unsupported' : 'verify-error' };
+  }
+
+  try {
     const valid = await cryptoImpl.subtle.verify(
       { name: 'Ed25519' }, pub, parsed.sigBytes, parsed.payloadBytes);
-    if (!valid) return { ok: false, reason: 'bad-signature' };
-    return { ok: true, claims: parsed.claims };
+    return valid ? { ok: true, claims: parsed.claims } : { ok: false, reason: 'bad-signature' };
   } catch {
     return { ok: false, reason: 'verify-error' };
   }

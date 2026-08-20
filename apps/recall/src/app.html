@@ -712,9 +712,13 @@ function renderSettings() {
       render();
     } else {
       licStatus.className = 'lic-status err';
-      licStatus.textContent = res.reason === 'malformed'
-        ? 'That doesn’t look like a Recall key. Keys start with RECALL- — check for missing characters.'
-        : 'This key didn’t verify. Paste it exactly as it was sent to you.';
+      // Each reason gets its own remedy — a wrong message sends someone
+      // hunting for a typo that isn't there.
+      licStatus.textContent = {
+        malformed: 'That doesn’t look like a Recall key. Keys start with RECALL- and contain a single dot — copy the whole thing, including the part after the dot.',
+        'bad-signature': 'This key didn’t verify. Check you copied all of it, and that it was issued for this version of Recall.',
+        unsupported: 'This browser can’t check license keys — it doesn’t support Ed25519 signatures. Recall works in current Chrome, Edge, Safari and Firefox; your progress is safe either way.',
+      }[res.reason] ?? 'Something went wrong checking that key. Try again, or reload the page.';
     }
   }
 

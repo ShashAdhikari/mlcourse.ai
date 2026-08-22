@@ -1,0 +1,17 @@
+{
+  "name": "lantern",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A check-in watch: if someone stops answering, the people who love them find out.",
+  "type": "module",
+  "bin": { "lantern": "./bin/lantern.js" },
+  "engines": { "node": ">=22.5.0" },
+  "scripts": {
+    "test": "node --no-warnings --test test/time.test.js test/machine.test.js test/tokens.test.js test/store.test.js test/smtp.test.js test/scheduler.test.js test/server.test.js",
+    "simulate": "node --no-warnings --test --test-timeout=900000 test/simulation.test.js",
+    "test:all": "npm test && npm run simulate",
+    "start": "node --no-warnings bin/lantern.js serve"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

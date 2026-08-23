@@ -9,7 +9,9 @@
   "scripts": {
     "test": "node --no-warnings --test test/time.test.js test/machine.test.js test/tokens.test.js test/store.test.js test/smtp.test.js test/scheduler.test.js test/server.test.js",
     "simulate": "node --no-warnings --test --test-timeout=900000 test/simulation.test.js",
-    "test:all": "npm test && npm run simulate",
+    "artifact": "node build-artifact.mjs",
+    "test:artifact": "node --no-warnings build-artifact.mjs && node --no-warnings test/artifact.mjs",
+    "test:all": "npm test && npm run simulate && npm run test:artifact",
     "start": "node --no-warnings bin/lantern.js serve"
   },
   "dependencies": {},

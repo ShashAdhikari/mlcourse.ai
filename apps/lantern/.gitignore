@@ -4,3 +4,4 @@ lantern.config.json
 *.db-wal
 *.db-shm
 outbox.jsonl
+dist/
